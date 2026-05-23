@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 public class InputManager : MonoBehaviour
 {
@@ -13,11 +14,19 @@ public class InputManager : MonoBehaviour
 
     private void CheckForDeselection()
     {
-        Vector2 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        // Если кликнули по UI
+        if (EventSystem.current.IsPointerOverGameObject())
+        {
+            return;
+        }
 
-        RaycastHit2D hit = Physics2D.Raycast(mousePosition, Vector2.zero);
+        Vector2 mousePosition =
+            Camera.main.ScreenToWorldPoint(Input.mousePosition);
 
-        // Если никуда не попали
+        RaycastHit2D hit =
+            Physics2D.Raycast(mousePosition, Vector2.zero);
+
+        // Если не попали в объект
         if (hit.collider == null)
         {
             SelectionManager.Instance.DeselectCurrent();

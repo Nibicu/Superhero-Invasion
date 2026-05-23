@@ -14,6 +14,8 @@ public class UIManager : MonoBehaviour
     public TMP_Text factionText;
     public TMP_Text incomeText;
 
+    private Base currentBase;
+
     private void Awake()
     {
         Instance = this;
@@ -33,19 +35,31 @@ public class UIManager : MonoBehaviour
             "Faction: " +
             selectedObject.ownerFaction.ToString();
 
-        Base baseObject = selectedObject as Base;
+        currentBase = selectedObject as Base;
 
-        if (baseObject != null)
+        if (currentBase != null)
         {
             incomeText.gameObject.SetActive(true);
 
             incomeText.text =
                 "Income: " +
-                baseObject.income;
+                currentBase.income;
         }
         else
         {
             incomeText.gameObject.SetActive(false);
+        }
+    }
+    public void BuildGenerator()
+    {
+        if (currentBase != null)
+        {
+            currentBase.BuildGenerator();
+
+            // Обновляем income UI
+            incomeText.text =
+                "Income: " +
+                currentBase.income;
         }
     }
 
