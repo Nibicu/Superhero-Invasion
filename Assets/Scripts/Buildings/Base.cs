@@ -1,30 +1,14 @@
 using UnityEngine;
 
-public class Base : MonoBehaviour, ISelectable
+public class Base : MapObject
 {
-    [Header("Base Info")]
-    public string baseName = "Player Base";
-
-    [Header("Base Stats")]
-    public int health = 1000;
+    [Header("Base Economy")]
     public int income = 100;
 
-    private void OnMouseDown()
+    public override void Select()
     {
-        SelectionManager.Instance.Select(this);
-    }
+        base.Select();
 
-    public void Select()
-    {
-        Debug.Log(baseName + " selected");
-
-        UIManager.Instance.OpenBasePanel(this);
-    }
-
-    public void Deselect()
-    {
-        Debug.Log(baseName + " deselected");
-
-        UIManager.Instance.CloseBasePanel();
+        Debug.Log("Base specific UI");
     }
 }

@@ -8,9 +8,10 @@ public class UIManager : MonoBehaviour
     [Header("Panels")]
     public GameObject basePanel;
 
-    [Header("Base UI")] 
+    [Header("UI Text")]
     public TMP_Text titleText;
     public TMP_Text healthText;
+    public TMP_Text factionText;
     public TMP_Text incomeText;
 
     private void Awake()
@@ -18,19 +19,37 @@ public class UIManager : MonoBehaviour
         Instance = this;
     }
 
-    public void OpenBasePanel(Base selectedBase)// selectedBase - ссылка на конкретную базу, UI читает данные и отображает их.
+    public void OpenMapObjectPanel(MapObject selectedObject)
     {
         basePanel.SetActive(true);
 
-        // Обновляем UI данными базы
-        titleText.text = selectedBase.baseName;
-        healthText.text = "Health: " + selectedBase.health;
-        incomeText.text = "Income: " + selectedBase.income;
+        titleText.text = selectedObject.objectName;
 
-        Debug.Log("Opening UI for: " + selectedBase.baseName);
+        healthText.text =
+            "Health: " +
+            selectedObject.GetCurrentHealth();
+
+        factionText.text =
+            "Faction: " +
+            selectedObject.ownerFaction.ToString();
+
+        Base baseObject = selectedObject as Base;
+
+        if (baseObject != null)
+        {
+            incomeText.gameObject.SetActive(true);
+
+            incomeText.text =
+                "Income: " +
+                baseObject.income;
+        }
+        else
+        {
+            incomeText.gameObject.SetActive(false);
+        }
     }
 
-    public void CloseBasePanel()
+    public void CloseMapObjectPanel()
     {
         basePanel.SetActive(false);
     }
