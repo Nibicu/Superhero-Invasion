@@ -31,6 +31,55 @@ public class Base : MapObject
         Debug.Log("Base specific UI");
     }
 
+    public void BuildInSlot(
+    BuildingData buildingData,
+    BuildingSlot targetSlot
+)
+    {
+        // Проверка слота
+        if (!targetSlot.CanBuild())
+        {
+            Debug.Log("Cannot build here");
+
+            return;
+        }
+
+        // Проверка денег
+        if (EconomyManager.Instance.playerData.currentMoney
+            < buildingData.cost)
+        {
+            Debug.Log("Not enough money");
+
+            return;
+        }
+
+        // Списываем деньги
+        EconomyManager.Instance.playerData.currentMoney
+            -= buildingData.cost;
+
+        // Создаем объект
+        GameObject newBuildingObject =
+            new GameObject(buildingData.buildingName);
+
+        // Добавляем Building
+        Building newBuilding =
+            newBuildingObject.AddComponent<Building>();
+
+        // Назначаем data
+        newBuilding.data = buildingData;
+
+        // Назначаем в слот
+        targetSlot.AssignBuilding(newBuilding);
+
+        // Добавляем income
+        income += buildingData.incomeBonus;
+
+        Debug.Log(
+            buildingData.buildingName +
+            " built!"
+        );
+    }
+
     // BUILD GENERATOR
     public void Build(BuildingData buildingData)
     {

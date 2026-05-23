@@ -6,9 +6,13 @@ public class UIManager : MonoBehaviour
     public static UIManager Instance;
     public TMP_Text levelText;
     public BuildingSlotUI[] slotUIElements;
+    private BuildingSlot selectedSlot;
 
     [Header("Panels")]
     public GameObject basePanel;
+
+    [Header("Build Menu")]
+    public GameObject buildMenuPanel;
 
     [Header("UI Text")]
     public TMP_Text titleText;
@@ -58,19 +62,42 @@ public class UIManager : MonoBehaviour
 
         RefreshSlotUI();
     }
+    public void OpenBuildMenu(BuildingSlot slot)
+    {
+        selectedSlot = slot;
+
+        buildMenuPanel.SetActive(true);
+    }
+
+    public void CloseBuildMenu()
+    {
+        buildMenuPanel.SetActive(false);
+    }
 
     public void BuildGenerator()
     {
-        if (currentBase != null)
+        if (currentBase == null)
         {
-            currentBase.Build(currentBase.generatorData);
-
-            incomeText.text =
-                "Income: " +
-                currentBase.income;
-
-            RefreshSlotUI();
+            return;
         }
+
+        if (selectedSlot == null)
+        {
+            return;
+        }
+
+        currentBase.BuildInSlot(
+            currentBase.generatorData,
+            selectedSlot
+        );
+
+        incomeText.text =
+            "Income: " +
+            currentBase.income;
+
+        RefreshSlotUI();
+
+        CloseBuildMenu();
     }
     public void UpgradeBase()
     {
