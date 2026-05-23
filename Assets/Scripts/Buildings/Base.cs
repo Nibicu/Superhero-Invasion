@@ -11,7 +11,7 @@ public class Base : MapObject
     public int upgradeCost = 1000;
 
     [Header("Available Buildings")]
-    public BuildingData generatorData;
+    public BuildingData[] availableBuildings;
 
     [Header("Base Economy")]
     public int income = 100;

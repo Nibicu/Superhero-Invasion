@@ -2315,7 +2315,10 @@ MonoBehaviour:
   currentLevel: 1
   maxLevel: 4
   upgradeCost: 1000
-  generatorData: {fileID: 11400000, guid: c464385a81f6e544390747c0cd75aaaf, type: 2}
+  availableBuildings:
+  - {fileID: 11400000, guid: c464385a81f6e544390747c0cd75aaaf, type: 2}
+  - {fileID: 11400000, guid: 5c632b0438cd7994186628683ac1b0a3, type: 2}
+  - {fileID: 11400000, guid: b92e50129f62e27408285c2c78427f6e, type: 2}
   income: 100
   buildingSlots:
   - {fileID: 1419463682}
@@ -2966,8 +2969,9 @@ GameObject:
   - component: {fileID: 1488850521}
   - component: {fileID: 1488850520}
   - component: {fileID: 1488850519}
+  - component: {fileID: 1488850522}
   m_Layer: 5
-  m_Name: Build Barracks
+  m_Name: BarracksButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3075,6 +3079,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1488850517}
   m_CullTransparentMesh: 1
+--- !u!114 &1488850522
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1488850517}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0e2f0a767a740624480e4b52eeeff4b6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  buildingData: {fileID: 11400000, guid: 5c632b0438cd7994186628683ac1b0a3, type: 2}
 --- !u!1 &1533937121
 GameObject:
   m_ObjectHideFlags: 0
@@ -3366,8 +3383,9 @@ GameObject:
   - component: {fileID: 1562742732}
   - component: {fileID: 1562742731}
   - component: {fileID: 1562742730}
+  - component: {fileID: 1562742733}
   m_Layer: 5
-  m_Name: Build Generator
+  m_Name: GeneratorButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3436,19 +3454,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1562742731}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 1784452934}
-        m_TargetAssemblyTypeName: UIManager, Assembly-CSharp
-        m_MethodName: BuildGenerator
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!114 &1562742731
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3487,6 +3493,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1562742728}
   m_CullTransparentMesh: 1
+--- !u!114 &1562742733
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1562742728}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0e2f0a767a740624480e4b52eeeff4b6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  buildingData: {fileID: 11400000, guid: c464385a81f6e544390747c0cd75aaaf, type: 2}
 --- !u!1 &1683840508
 GameObject:
   m_ObjectHideFlags: 0
@@ -3825,8 +3844,9 @@ GameObject:
   - component: {fileID: 1798047453}
   - component: {fileID: 1798047452}
   - component: {fileID: 1798047451}
+  - component: {fileID: 1798047454}
   m_Layer: 5
-  m_Name: Build Radar
+  m_Name: RadarButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3934,6 +3954,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1798047449}
   m_CullTransparentMesh: 1
+--- !u!114 &1798047454
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1798047449}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0e2f0a767a740624480e4b52eeeff4b6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  buildingData: {fileID: 11400000, guid: b92e50129f62e27408285c2c78427f6e, type: 2}
 --- !u!1 &1857228007
 GameObject:
   m_ObjectHideFlags: 0

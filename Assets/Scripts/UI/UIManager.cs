@@ -74,7 +74,9 @@ public class UIManager : MonoBehaviour
         buildMenuPanel.SetActive(false);
     }
 
-    public void BuildGenerator()
+    public void BuildSelectedBuilding(
+    BuildingData selectedBuilding
+)
     {
         if (currentBase == null)
         {
@@ -87,7 +89,7 @@ public class UIManager : MonoBehaviour
         }
 
         currentBase.BuildInSlot(
-            currentBase.generatorData,
+            selectedBuilding,
             selectedSlot
         );
 
