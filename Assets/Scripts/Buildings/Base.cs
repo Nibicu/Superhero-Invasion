@@ -3,6 +3,9 @@ using System.Collections.Generic;
 
 public class Base : MapObject
 {
+    [Header("Available Buildings")]
+    public BuildingData generatorData;
+
     [Header("Base Economy")]
     public int income = 100;
 
@@ -18,7 +21,7 @@ public class Base : MapObject
     }
 
     // BUILD GENERATOR
-    public void BuildGenerator()
+    public void Build(BuildingData buildingData)
     {
         BuildingSlot freeSlot = GetFreeSlot();
 
@@ -29,27 +32,39 @@ public class Base : MapObject
             return;
         }
 
-        // Создаем объект здания
-        GameObject newBuildingObject =
-            new GameObject("Generator");
+        // Проверка денег
+        if (EconomyManager.Instance.playerData.currentMoney
+            < buildingData.cost)
+        {
+            Debug.Log("Not enough money");
 
-        // Добавляем Building component
+            return;
+        }
+
+        // Списываем деньги
+        EconomyManager.Instance.playerData.currentMoney
+            -= buildingData.cost;
+
+        // Создаем объект
+        GameObject newBuildingObject =
+            new GameObject(buildingData.buildingName);
+
+        // Добавляем Building
         Building newBuilding =
             newBuildingObject.AddComponent<Building>();
 
-        // Настраиваем Generator
-        newBuilding.buildingName = "Generator";
-        newBuilding.incomeBonus = 50;
+        // Назначаем data
+        newBuilding.data = buildingData;
 
         // Назначаем в слот
         freeSlot.AssignBuilding(newBuilding);
 
-        // Увеличиваем income базы
-        income += newBuilding.incomeBonus;
+        // Добавляем income
+        income += buildingData.incomeBonus;
 
         Debug.Log(
-            "Generator built! Income increased to: " +
-            income
+            buildingData.buildingName +
+            " built!"
         );
     }
 

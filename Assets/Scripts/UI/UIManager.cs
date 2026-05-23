@@ -50,13 +50,13 @@ public class UIManager : MonoBehaviour
             incomeText.gameObject.SetActive(false);
         }
     }
+
     public void BuildGenerator()
     {
         if (currentBase != null)
         {
-            currentBase.BuildGenerator();
+            currentBase.Build(currentBase.generatorData);
 
-            // Обновляем income UI
             incomeText.text =
                 "Income: " +
                 currentBase.income;

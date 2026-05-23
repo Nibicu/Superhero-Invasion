@@ -1268,6 +1268,7 @@ MonoBehaviour:
   objectName: Player Base
   maxHealth: 1000
   ownerFaction: 1
+  generatorData: {fileID: 11400000, guid: c464385a81f6e544390747c0cd75aaaf, type: 2}
   income: 100
   buildingSlots:
   - {fileID: 1419463682}

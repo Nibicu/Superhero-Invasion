@@ -2,9 +2,16 @@ using UnityEngine;
 
 public class Building : MonoBehaviour
 {
-    [Header("Building Info")]
-    public string buildingName;
+    [Header("Data")]
+    public BuildingData data;
 
-    [Header("Economy")]
-    public int incomeBonus = 50;
+    public string GetBuildingName()
+    {
+        return data.buildingName;
+    }
+
+    public int GetIncomeBonus()
+    {
+        return data.incomeBonus;
+    }
 }
