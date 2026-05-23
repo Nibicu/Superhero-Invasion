@@ -17,4 +17,4 @@ MonoBehaviour:
     + 50"
   cost: 100
   incomeBonus: 50
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 92344083ef128be49bf26090e29f2291, type: 3}

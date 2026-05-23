@@ -16,4 +16,4 @@ MonoBehaviour:
   description: "\u041D\u0430\u0439\u043C \u0433\u0435\u0440\u043E\u0435\u0432 2 \u0443\u0440\u043E\u0432\u043D\u044F"
   cost: 200
   incomeBonus: 0
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 044ceb0cdabb9e4429dffb253c813c69, type: 3}

@@ -11,6 +11,11 @@ public class BuildingSlotUI : MonoBehaviour
 
     public Image backgroundImage;
 
+    [Header("Visuals")]
+    public GameObject lockOverlay;
+
+    public Image buildingIcon;
+
     [Header("Gameplay Slot")]
     public BuildingSlot targetSlot;
 
@@ -46,21 +51,37 @@ public class BuildingSlotUI : MonoBehaviour
     }
     public void RefreshUI()
     {
+        // LOCKED
         if (!targetSlot.isUnlocked)
         {
-            slotText.text = "LOCK";
+            lockOverlay.SetActive(true);
+
+            buildingIcon.gameObject.SetActive(false);
+
+            slotText.text = "";
 
             return;
         }
 
+        // SLOT OPEN
+        lockOverlay.SetActive(false);
+
+        // EMPTY
         if (!targetSlot.isOccupied)
         {
+            buildingIcon.gameObject.SetActive(false);
+
             slotText.text = "EMPTY";
 
             return;
         }
 
-        slotText.text =
-            targetSlot.currentBuilding.data.buildingName;
+        // BUILDING EXISTS
+        slotText.text = "";
+
+        buildingIcon.gameObject.SetActive(true);
+
+        buildingIcon.sprite =
+            targetSlot.currentBuilding.data.icon;
     }
 }
