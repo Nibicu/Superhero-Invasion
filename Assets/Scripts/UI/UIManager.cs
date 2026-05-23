@@ -4,6 +4,8 @@ using TMPro;
 public class UIManager : MonoBehaviour
 {
     public static UIManager Instance;
+    public TMP_Text levelText;
+    public BuildingSlotUI[] slotUIElements;
 
     [Header("Panels")]
     public GameObject basePanel;
@@ -44,11 +46,17 @@ public class UIManager : MonoBehaviour
             incomeText.text =
                 "Income: " +
                 currentBase.income;
+
+            levelText.text =
+                "Level: " +
+                currentBase.currentLevel;
         }
         else
         {
             incomeText.gameObject.SetActive(false);
         }
+
+        RefreshSlotUI();
     }
 
     public void BuildGenerator()
@@ -60,6 +68,34 @@ public class UIManager : MonoBehaviour
             incomeText.text =
                 "Income: " +
                 currentBase.income;
+
+            RefreshSlotUI();
+        }
+    }
+    public void UpgradeBase()
+    {
+        if (currentBase != null)
+        {
+            currentBase.UpgradeBase();
+
+            // Обновляем UI
+            levelText.text =
+                "Level: " +
+                currentBase.currentLevel;
+
+            incomeText.text =
+                "Income: " +
+                currentBase.income;
+
+            RefreshSlotUI();
+        }
+    }
+
+    private void RefreshSlotUI()
+    {
+        foreach (BuildingSlotUI slotUI in slotUIElements)
+        {
+            slotUI.RefreshUI();
         }
     }
 

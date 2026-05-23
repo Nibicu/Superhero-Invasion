@@ -3,6 +3,13 @@ using System.Collections.Generic;
 
 public class Base : MapObject
 {
+    [Header("Base Level")]
+    public int currentLevel = 1;
+
+    public int maxLevel = 4;
+
+    public int upgradeCost = 1000;
+
     [Header("Available Buildings")]
     public BuildingData generatorData;
 
@@ -13,6 +20,10 @@ public class Base : MapObject
     public List<BuildingSlot> buildingSlots =
         new List<BuildingSlot>();
 
+    private void Start()
+    {
+        UnlockSlotsByLevel();
+    }
     public override void Select()
     {
         base.Select();
@@ -66,6 +77,53 @@ public class Base : MapObject
             buildingData.buildingName +
             " built!"
         );
+    }
+
+    public void UpgradeBase()
+    {
+        // Проверка max level
+        if (currentLevel >= maxLevel)
+        {
+            Debug.Log("Base already max level");
+
+            return;
+        }
+
+        // Проверка денег
+        if (EconomyManager.Instance.playerData.currentMoney
+            < upgradeCost)
+        {
+            Debug.Log("Not enough money");
+
+            return;
+        }
+
+        // Списываем деньги
+        EconomyManager.Instance.playerData.currentMoney
+            -= upgradeCost;
+
+        // Повышаем уровень
+        currentLevel++;
+
+        Debug.Log(
+            "Base upgraded to level: " +
+            currentLevel
+        );
+
+        UnlockSlotsByLevel();
+    }
+
+    private void UnlockSlotsByLevel()
+    {
+        int unlockedSlots = 2 + currentLevel;
+
+        for (int i = 0; i < buildingSlots.Count; i++)
+        {
+            if (i < unlockedSlots)
+            {
+                buildingSlots[i].UnlockSlot();
+            }
+        }
     }
 
     private BuildingSlot GetFreeSlot()
