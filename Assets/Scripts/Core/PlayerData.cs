@@ -2,12 +2,9 @@ using UnityEngine;
 
 public class PlayerData : MonoBehaviour
 {
-    [Header("Resources")]
-    public int money = 1000;
+    [Header("Player Economy")]
+    public int currentMoney = 500; // стартовые деньги и текущие
 
-    [Header("Hero Capacity")]
-    public int heroCapacity = 5;
-
-    [Header("Current Heroes")]
-    public int currentHeroes = 0;
+    [Header("Income")]
+    public int totalIncome = 0; // общие деньги от всех обьектов
 }
