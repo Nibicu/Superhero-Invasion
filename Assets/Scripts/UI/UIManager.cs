@@ -1,5 +1,6 @@
 using UnityEngine;
 using TMPro;
+using UnityEngine.UI;
 
 public class UIManager : MonoBehaviour
 {
@@ -10,6 +11,20 @@ public class UIManager : MonoBehaviour
 
     [Header("Dynamic Build Menu")]
     public Transform buttonsContainer;
+
+    private BuildingData selectedBuildingData;
+
+    [Header("Building Preview")]
+    public Image previewIcon;
+    private UniversalBuildButton selectedButton;
+
+    public TMPro.TMP_Text previewName;
+
+    public TMPro.TMP_Text previewCost;
+
+    public TMPro.TMP_Text previewDescription;
+
+    public GameObject buildConfirmButton;
 
     public GameObject buildButtonTemplate;
 
@@ -81,9 +96,40 @@ public class UIManager : MonoBehaviour
         buildMenuPanel.SetActive(false);
     }
 
-    public void BuildSelectedBuilding(
-    BuildingData selectedBuilding
+    public void SelectBuilding(
+    BuildingData buildingData,
+    UniversalBuildButton button
 )
+    {
+        selectedBuildingData = buildingData;
+
+        // RESET OLD
+        if (selectedButton != null)
+        {
+            selectedButton.SetSelected(false);
+        }
+
+        // NEW
+        selectedButton = button;
+
+        selectedButton.SetSelected(true);
+
+        previewIcon.sprite = buildingData.icon;
+
+        previewName.text =
+            buildingData.buildingName;
+
+        previewCost.text =
+            "Cost: " +
+            buildingData.cost;
+
+        previewDescription.text =
+            buildingData.description;
+
+        buildConfirmButton.SetActive(true);
+    }
+
+    public void BuildSelectedBuilding()
     {
         if (currentBase == null)
         {
@@ -95,8 +141,13 @@ public class UIManager : MonoBehaviour
             return;
         }
 
+        if (selectedBuildingData == null)
+        {
+            return;
+        }
+
         currentBase.BuildInSlot(
-            selectedBuilding,
+            selectedBuildingData,
             selectedSlot
         );
 
@@ -107,6 +158,8 @@ public class UIManager : MonoBehaviour
         RefreshSlotUI();
 
         CloseBuildMenu();
+
+        buildConfirmButton.SetActive(false);
     }
     public void UpgradeBase()
     {

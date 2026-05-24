@@ -9,6 +9,7 @@ public class BuildingData : ScriptableObject
     [Header("Info")]
     public string buildingName;
 
+    [Header("Description")]
     [TextArea]
     public string description;
 
