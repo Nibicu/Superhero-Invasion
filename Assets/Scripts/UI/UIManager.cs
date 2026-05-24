@@ -8,6 +8,11 @@ public class UIManager : MonoBehaviour
     public BuildingSlotUI[] slotUIElements;
     private BuildingSlot selectedSlot;
 
+    [Header("Dynamic Build Menu")]
+    public Transform buttonsContainer;
+
+    public GameObject buildButtonTemplate;
+
     [Header("Panels")]
     public GameObject basePanel;
 
@@ -66,6 +71,8 @@ public class UIManager : MonoBehaviour
     {
         selectedSlot = slot;
 
+        GenerateBuildMenu();
+
         buildMenuPanel.SetActive(true);
     }
 
@@ -117,6 +124,39 @@ public class UIManager : MonoBehaviour
                 currentBase.income;
 
             RefreshSlotUI();
+        }
+    }
+
+    private void GenerateBuildMenu()
+    {
+        // Удаляем старые кнопки
+        foreach (Transform child in buttonsContainer)
+        {
+            Destroy(child.gameObject);
+        }
+
+        // Создаем новые
+        foreach (BuildingData buildingData
+            in currentBase.availableBuildings)
+        {
+            GameObject buttonObject =
+                Instantiate(
+                    buildButtonTemplate,
+                    buttonsContainer
+                );
+
+            buttonObject.SetActive(true);
+
+            UniversalBuildButton buildButton =
+                buttonObject.GetComponent<UniversalBuildButton>();
+
+            buildButton.buildingData = buildingData;
+
+            TMPro.TMP_Text buttonText =
+                buttonObject.GetComponentInChildren<TMPro.TMP_Text>();
+
+            buttonText.text =
+                buildingData.buildingName;
         }
     }
 
