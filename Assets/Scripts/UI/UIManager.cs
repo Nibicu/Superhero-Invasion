@@ -12,6 +12,9 @@ public class UIManager : MonoBehaviour
     [Header("Dynamic Build Menu")]
     public Transform buttonsContainer;
 
+    [Header("Error UI")]
+    public GameObject errorText;
+
     private BuildingData selectedBuildingData;
 
     [Header("Building Preview")]
@@ -94,6 +97,19 @@ public class UIManager : MonoBehaviour
     public void CloseBuildMenu()
     {
         buildMenuPanel.SetActive(false);
+
+        buildConfirmButton.SetActive(false);
+
+        errorText.SetActive(false);
+
+        selectedBuildingData = null;
+
+        if (selectedButton != null)
+        {
+            selectedButton.SetSelected(false);
+
+            selectedButton = null;
+        }
     }
 
     public void SelectBuilding(
@@ -145,6 +161,18 @@ public class UIManager : MonoBehaviour
         {
             return;
         }
+
+        // NOT ENOUGH MONEY
+        if (PlayerData.Instance.currentMoney <
+            selectedBuildingData.cost)
+        {
+            errorText.SetActive(true);
+
+            return;
+        }
+
+        // HIDE ERROR
+        errorText.SetActive(false);
 
         currentBase.BuildInSlot(
             selectedBuildingData,
