@@ -9,6 +9,9 @@ public class UIManager : MonoBehaviour
     public BuildingSlotUI[] slotUIElements;
     private BuildingSlot selectedSlot;
 
+    [Header("Hero Recruit UI")]
+    public GameObject heroRecruitPanel;
+
     [Header("Dynamic Build Menu")]
     public Transform buttonsContainer;
 
@@ -241,12 +244,22 @@ public class UIManager : MonoBehaviour
         }
     }
 
+    public void OpenRecruitPanel()
+    {
+        heroRecruitPanel.SetActive(true);
+    }
+
     private void RefreshSlotUI()
     {
         foreach (BuildingSlotUI slotUI in slotUIElements)
         {
             slotUI.RefreshUI();
         }
+    }
+
+    public void CloseRecruitPanel()
+    {
+        heroRecruitPanel.SetActive(false);
     }
 
     public void CloseMapObjectPanel()
