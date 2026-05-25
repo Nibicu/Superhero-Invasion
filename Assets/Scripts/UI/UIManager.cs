@@ -17,6 +17,10 @@ public class UIManager : MonoBehaviour
 
     public HeroData[] availableHeroes;
 
+    [Header("Hero Roster UI")]
+
+    public GameObject heroRosterPanel;
+
     [Header("Hero Recruit UI")]
     public GameObject heroRecruitPanel;
 
@@ -252,11 +256,45 @@ public class UIManager : MonoBehaviour
         }
     }
 
+    public void RecruitHero(HeroData heroData)
+    {
+        // CHECK MONEY
+        if (PlayerData.Instance.currentMoney <
+            heroData.cost)
+        {
+            Debug.Log("Not enough money");
+
+            return;
+        }
+
+        // PAY
+        PlayerData.Instance.currentMoney -=
+            heroData.cost;
+
+        // ADD HERO
+        HeroManager.Instance.RecruitHero(
+            heroData
+        );
+
+        Debug.Log(
+            "Money left: " +
+            PlayerData.Instance.currentMoney
+        );
+    }
+
     public void OpenRecruitPanel()
     {
         heroRecruitPanel.SetActive(true);
 
         GenerateHeroRecruitList();
+    }
+    public void OpenHeroRosterPanel()
+    {
+        heroRosterPanel.SetActive(true);
+    }
+    public void CloseHeroRosterPanel()
+    {
+        heroRosterPanel.SetActive(false);
     }
 
     private void GenerateHeroRecruitList()

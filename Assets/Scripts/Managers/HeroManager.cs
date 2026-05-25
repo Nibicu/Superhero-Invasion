@@ -5,7 +5,6 @@ public class HeroManager : MonoBehaviour
 {
     public static HeroManager Instance;
 
-    [Header("Owned Heroes")]
     public List<HeroData> ownedHeroes =
         new List<HeroData>();
 
@@ -19,8 +18,8 @@ public class HeroManager : MonoBehaviour
         ownedHeroes.Add(heroData);
 
         Debug.Log(
-            "Hero recruited: " +
-            heroData.heroName
+            heroData.heroName +
+            " recruited!"
         );
     }
 }
