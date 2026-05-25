@@ -999,6 +999,7 @@ GameObject:
   - component: {fileID: 208016527}
   - component: {fileID: 208016526}
   - component: {fileID: 208016525}
+  - component: {fileID: 208016528}
   m_Layer: 5
   m_Name: HeroButtonTemplate
   m_TagString: Untagged
@@ -1110,6 +1111,21 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 208016523}
   m_CullTransparentMesh: 1
+--- !u!114 &208016528
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 208016523}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 25dabcff537899546b294b0039bd4018, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  heroNameText: {fileID: 1133964763}
+  costText: {fileID: 1550585968}
+  tierText: {fileID: 1466909727}
 --- !u!1 &216731942
 GameObject:
   m_ObjectHideFlags: 0
@@ -7370,6 +7386,10 @@ MonoBehaviour:
   - {fileID: 744279314}
   - {fileID: 581982922}
   - {fileID: 1973544237}
+  heroRecruitContent: {fileID: 1968664897}
+  heroButtonTemplate: {fileID: 208016523}
+  availableHeroes:
+  - {fileID: 11400000, guid: e611685f4f71f6f418612b31bd7d4fcf, type: 2}
   heroRecruitPanel: {fileID: 61602649}
   buttonsContainer: {fileID: 505816182}
   errorText: {fileID: 518125232}

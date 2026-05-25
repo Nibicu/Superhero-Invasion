@@ -9,6 +9,14 @@ public class UIManager : MonoBehaviour
     public BuildingSlotUI[] slotUIElements;
     private BuildingSlot selectedSlot;
 
+    [Header("Hero Recruit")]
+
+    public Transform heroRecruitContent;
+
+    public GameObject heroButtonTemplate;
+
+    public HeroData[] availableHeroes;
+
     [Header("Hero Recruit UI")]
     public GameObject heroRecruitPanel;
 
@@ -247,6 +255,32 @@ public class UIManager : MonoBehaviour
     public void OpenRecruitPanel()
     {
         heroRecruitPanel.SetActive(true);
+
+        GenerateHeroRecruitList();
+    }
+
+    private void GenerateHeroRecruitList()
+    {
+        foreach (Transform child in heroRecruitContent)
+        {
+            Destroy(child.gameObject);
+        }
+
+        foreach (HeroData heroData in availableHeroes)
+        {
+            GameObject newButton =
+                Instantiate(
+                    heroButtonTemplate,
+                    heroRecruitContent
+                );
+
+            newButton.SetActive(true);
+
+            HeroRecruitButton heroButton =
+                newButton.GetComponent<HeroRecruitButton>();
+
+            heroButton.Setup(heroData);
+        }
     }
 
     private void RefreshSlotUI()
