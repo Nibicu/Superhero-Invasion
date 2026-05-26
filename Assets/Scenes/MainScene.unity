@@ -757,8 +757,8 @@ MonoBehaviour:
     m_Right: 0
     m_Top: 0
     m_Bottom: 0
-  m_ChildAlignment: 0
-  m_Spacing: 0
+  m_ChildAlignment: 1
+  m_Spacing: 10
   m_ChildForceExpandWidth: 1
   m_ChildForceExpandHeight: 1
   m_ChildControlWidth: 0
@@ -6092,8 +6092,8 @@ MonoBehaviour:
     m_Right: 0
     m_Top: 0
     m_Bottom: 0
-  m_ChildAlignment: 0
-  m_Spacing: 0
+  m_ChildAlignment: 4
+  m_Spacing: 10
   m_ChildForceExpandWidth: 1
   m_ChildForceExpandHeight: 1
   m_ChildControlWidth: 0
@@ -9213,12 +9213,14 @@ MonoBehaviour:
   - {fileID: 744279314}
   - {fileID: 581982922}
   - {fileID: 1973544237}
-  heroRosterContent: {fileID: 1184057500}
+  heroRosterContent: {fileID: 1011225170}
   heroRosterButtonTemplate: {fileID: 66507449}
-  heroRecruitContent: {fileID: 1968664897}
+  heroRecruitContent: {fileID: 149666551}
   heroButtonTemplate: {fileID: 208016523}
   availableHeroes:
   - {fileID: 11400000, guid: e611685f4f71f6f418612b31bd7d4fcf, type: 2}
+  - {fileID: 11400000, guid: 913988f36aef4cf4584a4f43012fa9af, type: 2}
+  - {fileID: 11400000, guid: df4483e937a9ac640825478eea36cdd7, type: 2}
   heroRosterPanel: {fileID: 1877949794}
   heroRecruitPanel: {fileID: 61602649}
   buttonsContainer: {fileID: 505816182}
