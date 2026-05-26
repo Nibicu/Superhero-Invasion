@@ -11,6 +11,10 @@ public class UIManager : MonoBehaviour
 
     [Header("Hero Recruit")]
 
+    public Transform heroRosterContent;
+
+    public GameObject heroRosterButtonTemplate;
+
     public Transform heroRecruitContent;
 
     public GameObject heroButtonTemplate;
@@ -256,6 +260,31 @@ public class UIManager : MonoBehaviour
         }
     }
 
+    private void GenerateHeroRoster()
+    {
+        foreach (Transform child in heroRosterContent)
+        {
+            Destroy(child.gameObject);
+        }
+
+        foreach (HeroData heroData
+            in HeroManager.Instance.ownedHeroes)
+        {
+            GameObject newButton =
+                Instantiate(
+                    heroRosterButtonTemplate,
+                    heroRosterContent
+                );
+
+            newButton.SetActive(true);
+
+            HeroRosterButton heroButton =
+                newButton.GetComponent<HeroRosterButton>();
+
+            heroButton.Setup(heroData);
+        }
+    }
+
     public void RecruitHero(HeroData heroData)
     {
         // CHECK MONEY
@@ -291,6 +320,8 @@ public class UIManager : MonoBehaviour
     public void OpenHeroRosterPanel()
     {
         heroRosterPanel.SetActive(true);
+
+        GenerateHeroRoster();
     }
     public void CloseHeroRosterPanel()
     {
