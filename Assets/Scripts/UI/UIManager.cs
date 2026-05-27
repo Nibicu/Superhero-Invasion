@@ -309,6 +309,8 @@ public class UIManager : MonoBehaviour
             heroData
         );
 
+        GenerateHeroRecruitList();
+
         Debug.Log(
             "Money left: " +
             PlayerData.Instance.currentMoney
