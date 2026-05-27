@@ -71,6 +71,10 @@ public class UIManager : MonoBehaviour
 
     public void OpenMapObjectPanel(MapObject selectedObject)
     {
+        heroRecruitPanel.SetActive(false);
+
+        heroRosterPanel.SetActive(false);
+
         basePanel.SetActive(true);
 
         titleText.text = selectedObject.objectName;
@@ -313,12 +317,21 @@ public class UIManager : MonoBehaviour
 
     public void OpenRecruitPanel()
     {
+        basePanel.SetActive(false);
+
+        heroRosterPanel.SetActive(false);
+
         heroRecruitPanel.SetActive(true);
 
         GenerateHeroRecruitList();
     }
+
     public void OpenHeroRosterPanel()
     {
+        basePanel.SetActive(false);
+
+        heroRecruitPanel.SetActive(false);
+
         heroRosterPanel.SetActive(true);
 
         GenerateHeroRoster();
@@ -337,6 +350,12 @@ public class UIManager : MonoBehaviour
 
         foreach (HeroData heroData in availableHeroes)
         {
+            if (HeroManager.Instance.ownedHeroes
+                .Contains(heroData))
+            {
+                continue;
+            }
+
             GameObject newButton =
                 Instantiate(
                     heroButtonTemplate,
