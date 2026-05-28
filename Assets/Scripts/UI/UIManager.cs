@@ -271,8 +271,8 @@ public class UIManager : MonoBehaviour
             Destroy(child.gameObject);
         }
 
-        foreach (HeroData heroData
-            in HeroManager.Instance.ownedHeroes)
+        foreach (HeroInstance hero
+    in HeroManager.Instance.ownedHeroes)
         {
             GameObject newButton =
                 Instantiate(
@@ -284,8 +284,7 @@ public class UIManager : MonoBehaviour
 
             HeroRosterButton heroButton =
                 newButton.GetComponent<HeroRosterButton>();
-
-            heroButton.Setup(heroData);
+            heroButton.Setup(hero);
         }
     }
 
@@ -352,8 +351,20 @@ public class UIManager : MonoBehaviour
 
         foreach (HeroData heroData in availableHeroes)
         {
-            if (HeroManager.Instance.ownedHeroes
-                .Contains(heroData))
+            bool alreadyOwned = false;
+
+            foreach (HeroInstance hero
+                in HeroManager.Instance.ownedHeroes)
+            {
+                if (hero.heroData == heroData)
+                {
+                    alreadyOwned = true;
+
+                    break;
+                }
+            }
+
+            if (alreadyOwned)
             {
                 continue;
             }

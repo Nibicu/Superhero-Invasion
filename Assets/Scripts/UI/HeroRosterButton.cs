@@ -9,16 +9,17 @@ public class HeroRosterButton : MonoBehaviour
 
     public TMP_Text tierText;
 
-    public void Setup(HeroData heroData)
+    public void Setup(HeroInstance hero)
     {
         heroNameText.text =
-            heroData.heroName;
+            hero.heroData.heroName;
 
         statusText.text =
-            "Status: Idle";
+            "Status: " +
+            hero.status.ToString();
 
         tierText.text =
             "Tier: " +
-            heroData.tier;
+            hero.heroData.tier;
     }
 }
