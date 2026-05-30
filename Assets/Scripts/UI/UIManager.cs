@@ -8,6 +8,8 @@ public class UIManager : MonoBehaviour
     public TMP_Text levelText;
     public BuildingSlotUI[] slotUIElements;
     private BuildingSlot selectedSlot;
+    private HeroData selectedHeroData;
+    public Button buyHeroButton;
 
     [Header("Hero Recruit")]
 
@@ -20,6 +22,20 @@ public class UIManager : MonoBehaviour
     public GameObject heroButtonTemplate;
 
     public HeroData[] availableHeroes;
+
+    [Header("Recruit Hero Details")]
+
+    public GameObject recruitHeroDetailsPanel;
+
+    public Image recruitHeroPortrait;
+
+    public TMP_Text recruitHeroName;
+
+    public TMP_Text recruitHeroTier;
+
+    public TMP_Text recruitHeroCost;
+
+    public TMP_Text recruitHeroDescription;
 
     [Header("Hero Roster UI")]
 
@@ -337,6 +353,33 @@ public class UIManager : MonoBehaviour
 
         GenerateHeroRoster();
     }
+
+    public void OpenHeroRecruitDetails(
+    HeroData heroData)
+    {
+        selectedHeroData = heroData;
+
+        recruitHeroDetailsPanel.SetActive(true);
+
+        recruitHeroPortrait.sprite =
+            heroData.portrait;
+
+        recruitHeroName.text =
+            heroData.heroName;
+
+        recruitHeroTier.text =
+            "Tier: " + heroData.tier;
+
+        recruitHeroCost.text =
+            "Cost: " + heroData.cost;
+
+        recruitHeroDescription.text =
+            heroData.description;
+    }
+    public void CloseHeroRecruitDetails()
+    {
+        recruitHeroDetailsPanel.SetActive(false);
+    }
     public void CloseHeroRosterPanel()
     {
         heroRosterPanel.SetActive(false);
@@ -400,5 +443,17 @@ public class UIManager : MonoBehaviour
     public void CloseMapObjectPanel()
     {
         basePanel.SetActive(false);
+    }
+
+    public void BuySelectedHero()
+    {
+        if (selectedHeroData == null)
+        {
+            return;
+        }
+
+        RecruitHero(selectedHeroData);
+
+        recruitHeroDetailsPanel.SetActive(false);
     }
 }

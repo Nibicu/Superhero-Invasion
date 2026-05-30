@@ -37,8 +37,7 @@ public class HeroRecruitButton : MonoBehaviour
     }
     private void Recruit()
     {
-        UIManager.Instance.RecruitHero(
-            currentHeroData
-        );
+        UIManager.Instance
+            .OpenHeroRecruitDetails(currentHeroData);
     }
 }
