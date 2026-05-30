@@ -10,6 +10,7 @@ public class UIManager : MonoBehaviour
     private BuildingSlot selectedSlot;
     private HeroData selectedHeroData;
     public Button buyHeroButton;
+    private HeroInstance selectedHero;
 
     [Header("Hero Recruit")]
 
@@ -391,6 +392,37 @@ public class UIManager : MonoBehaviour
 
         recruitHeroDescription.text =
             heroData.description;
+    }
+
+    public void OpenHeroDetails(
+    HeroInstance hero)
+    {
+        selectedHero = hero;
+
+        heroDetailsPanel.SetActive(true);
+
+        heroDetailsPortrait.sprite =
+            hero.heroData.portrait;
+
+        heroDetailsName.text =
+            hero.heroData.heroName;
+
+        heroDetailsLevel.text =
+            "Level: " + hero.level;
+
+        heroDetailsStatus.text =
+            "Status: " + hero.status;
+
+        heroDetailsTier.text =
+            "Tier: " + hero.heroData.tier;
+
+        heroDetailsDescription.text =
+            hero.heroData.description;
+    }
+
+    public void CloseHeroDetails()
+    {
+        heroDetailsPanel.SetActive(false);
     }
     public void CloseHeroRecruitDetails()
     {
