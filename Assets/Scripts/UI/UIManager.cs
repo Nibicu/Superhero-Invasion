@@ -37,6 +37,22 @@ public class UIManager : MonoBehaviour
 
     public TMP_Text recruitHeroDescription;
 
+    [Header("Hero Details")]
+
+    public GameObject heroDetailsPanel;
+
+    public Image heroDetailsPortrait;
+
+    public TMP_Text heroDetailsName;
+
+    public TMP_Text heroDetailsLevel;
+
+    public TMP_Text heroDetailsStatus;
+
+    public TMP_Text heroDetailsTier;
+
+    public TMP_Text heroDetailsDescription;
+
     [Header("Hero Roster UI")]
 
     public GameObject heroRosterPanel;
