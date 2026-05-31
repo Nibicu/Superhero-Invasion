@@ -614,6 +614,34 @@ public class UIManager : MonoBehaviour
         heroRosterPanel.SetActive(false);
     }
 
+    public void SendCurrentSquad()
+    {
+        if (currentSquad.commander == null)
+        {
+            return;
+        }
+
+        currentSquad.commander.status =
+            HeroStatus.InSquad;
+
+        foreach (HeroInstance hero
+            in currentSquad.members)
+        {
+            hero.status =
+                HeroStatus.InSquad;
+        }
+
+        SquadManager.Instance.CreateSquad(
+            currentSquad
+        );
+
+        CloseSquadFormationPanel();
+
+        Debug.Log(
+            "Squad sent!"
+        );
+    }
+
     private void GenerateHeroRecruitList()
     {
         foreach (Transform child in heroRecruitContent)
