@@ -1219,7 +1219,7 @@ GameObject:
   - component: {fileID: 137116958}
   - component: {fileID: 137116957}
   m_Layer: 5
-  m_Name: Empty
+  m_Name: Member2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2272,7 +2272,7 @@ GameObject:
   - component: {fileID: 238973477}
   - component: {fileID: 238973476}
   m_Layer: 5
-  m_Name: Empty
+  m_Name: Member1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -11616,7 +11616,7 @@ GameObject:
   - component: {fileID: 1490974943}
   - component: {fileID: 1490974942}
   m_Layer: 5
-  m_Name: Empty
+  m_Name: Member3
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -14125,6 +14125,10 @@ MonoBehaviour:
   setDefenderButton: {fileID: 1027057}
   squadHeroButtonTemplate: {fileID: 880237377}
   commanderSlotText: {fileID: 369023186}
+  memberSlot1Text: {fileID: 238973476}
+  memberSlot2Text: {fileID: 137116957}
+  memberSlot3Text: {fileID: 1490974942}
+  memberSlot4Text: {fileID: 2044538270}
   heroRosterContent: {fileID: 1011225170}
   heroRosterButtonTemplate: {fileID: 66507449}
   heroRecruitContent: {fileID: 149666551}
@@ -16690,7 +16694,7 @@ GameObject:
   - component: {fileID: 2044538271}
   - component: {fileID: 2044538270}
   m_Layer: 5
-  m_Name: Empty
+  m_Name: Member4
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

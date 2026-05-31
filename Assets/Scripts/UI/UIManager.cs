@@ -1,5 +1,6 @@
-using UnityEngine;
+using System.Collections.Generic;
 using TMPro;
+using UnityEngine;
 using UnityEngine.UI;
 
 public class UIManager : MonoBehaviour
@@ -15,6 +16,13 @@ public class UIManager : MonoBehaviour
     public GameObject squadHeroButtonTemplate;
     public TMP_Text commanderSlotText;
     private HeroInstance selectedCommander;
+    public TMP_Text memberSlot1Text;
+    public TMP_Text memberSlot2Text;
+    public TMP_Text memberSlot3Text;
+    public TMP_Text memberSlot4Text;
+
+    private List<HeroInstance> squadMembers =
+    new List<HeroInstance>();
 
     [Header("Hero Recruit")]
 
@@ -211,6 +219,72 @@ public class UIManager : MonoBehaviour
             buildingData.description;
 
         buildConfirmButton.SetActive(true);
+    }
+
+    public void AddHeroToSquad(
+    HeroInstance hero)
+    {
+        if (selectedCommander == null)
+        {
+            SelectCommander(hero);
+
+            return;
+        }
+
+        if (hero == selectedCommander)
+        {
+            return;
+        }
+
+        if (squadMembers.Contains(hero))
+        {
+            return;
+        }
+
+        if (squadMembers.Count >= 4)
+        {
+            return;
+        }
+
+        squadMembers.Add(hero);
+
+        RefreshSquadSlots();
+    }
+
+    private void RefreshSquadSlots()
+    {
+        memberSlot1Text.text = "Empty";
+        memberSlot2Text.text = "Empty";
+        memberSlot3Text.text = "Empty";
+        memberSlot4Text.text = "Empty";
+
+        if (squadMembers.Count > 0)
+        {
+            memberSlot1Text.text =
+                squadMembers[0]
+                .heroData.heroName;
+        }
+
+        if (squadMembers.Count > 1)
+        {
+            memberSlot2Text.text =
+                squadMembers[1]
+                .heroData.heroName;
+        }
+
+        if (squadMembers.Count > 2)
+        {
+            memberSlot3Text.text =
+                squadMembers[2]
+                .heroData.heroName;
+        }
+
+        if (squadMembers.Count > 3)
+        {
+            memberSlot4Text.text =
+                squadMembers[3]
+                .heroData.heroName;
+        }
     }
 
     public void BuildSelectedBuilding()

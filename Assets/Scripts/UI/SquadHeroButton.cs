@@ -29,6 +29,6 @@ public class SquadHeroButton : MonoBehaviour
     private void SelectHero()
     {
         UIManager.Instance
-            .SelectCommander(hero);
+            .AddHeroToSquad(hero);
     }
 }
