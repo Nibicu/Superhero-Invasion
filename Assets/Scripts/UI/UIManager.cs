@@ -9,8 +9,9 @@ public class UIManager : MonoBehaviour
     public BuildingSlotUI[] slotUIElements;
     private BuildingSlot selectedSlot;
     private HeroData selectedHeroData;
-    public Button buyHeroButton;
+    //public Button buyHeroButton;
     private HeroInstance selectedHero;
+    public GameObject setDefenderButton;
 
     [Header("Hero Recruit")]
 
@@ -297,7 +298,7 @@ public class UIManager : MonoBehaviour
         }
     }
 
-    private void GenerateHeroRoster()
+    public void GenerateHeroRoster()
     {
         foreach (Transform child in heroRosterContent)
         {
@@ -503,5 +504,27 @@ public class UIManager : MonoBehaviour
         RecruitHero(selectedHeroData);
 
         recruitHeroDetailsPanel.SetActive(false);
+    }
+
+    public void SetHeroDefender()
+    {
+        if (selectedHero == null)
+        {
+            return;
+        }
+
+        selectedHero.status =
+            HeroStatus.Defending;
+
+        heroDetailsStatus.text =
+            "Status: " +
+            selectedHero.status;
+
+        GenerateHeroRoster();
+
+        Debug.Log(
+            selectedHero.heroData.heroName +
+            " is now defending."
+        );
     }
 }
