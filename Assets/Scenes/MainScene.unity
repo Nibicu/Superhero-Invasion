@@ -14161,6 +14161,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: e611685f4f71f6f418612b31bd7d4fcf, type: 2}
   - {fileID: 11400000, guid: 913988f36aef4cf4584a4f43012fa9af, type: 2}
   - {fileID: 11400000, guid: df4483e937a9ac640825478eea36cdd7, type: 2}
+  - {fileID: 11400000, guid: fdaee59e3e00d9840bc8f8834c7ff7eb, type: 2}
+  - {fileID: 11400000, guid: 140950f20192f0746b4484cf0b58f27b, type: 2}
   recruitHeroDetailsPanel: {fileID: 1773544702}
   recruitHeroPortrait: {fileID: 248192312}
   recruitHeroName: {fileID: 1206592943}
