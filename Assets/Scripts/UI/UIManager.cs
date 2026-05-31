@@ -621,25 +621,33 @@ public class UIManager : MonoBehaviour
             return;
         }
 
-        currentSquad.commander.status =
-            HeroStatus.InSquad;
+        // 1. меняем статус командира
+        currentSquad.commander.status = HeroStatus.InSquad;
 
-        foreach (HeroInstance hero
-            in currentSquad.members)
+        // 2. меняем статус членов
+        foreach (HeroInstance hero in currentSquad.members)
         {
-            hero.status =
-                HeroStatus.InSquad;
+            hero.status = HeroStatus.InSquad;
         }
 
-        SquadManager.Instance.CreateSquad(
-            currentSquad
-        );
+        // 3. сохраняем отряд
+        SquadManager.Instance.CreateSquad(currentSquad);
 
+        // 4. очищаем текущий отряд (ВАЖНО)
+        currentSquad = new Squad();
+
+        // 5. очищаем UI
+        commanderSlotText.text = "Commander";
+
+        memberSlot1Text.text = "Empty";
+        memberSlot2Text.text = "Empty";
+        memberSlot3Text.text = "Empty";
+        memberSlot4Text.text = "Empty";
+
+        // 6. закрываем панель
         CloseSquadFormationPanel();
 
-        Debug.Log(
-            "Squad sent!"
-        );
+        Debug.Log("Squad sent and reset!");
     }
 
     private void GenerateHeroRecruitList()
