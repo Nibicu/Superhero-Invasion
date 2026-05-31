@@ -15,14 +15,13 @@ public class UIManager : MonoBehaviour
     public GameObject setDefenderButton;
     public GameObject squadHeroButtonTemplate;
     public TMP_Text commanderSlotText;
-    private HeroInstance selectedCommander;
     public TMP_Text memberSlot1Text;
     public TMP_Text memberSlot2Text;
     public TMP_Text memberSlot3Text;
     public TMP_Text memberSlot4Text;
 
-    private List<HeroInstance> squadMembers =
-    new List<HeroInstance>();
+    private Squad currentSquad =
+    new Squad();
 
     [Header("Hero Recruit")]
 
@@ -224,29 +223,29 @@ public class UIManager : MonoBehaviour
     public void AddHeroToSquad(
     HeroInstance hero)
     {
-        if (selectedCommander == null)
+        if (currentSquad.commander == null)
         {
             SelectCommander(hero);
 
             return;
         }
 
-        if (hero == selectedCommander)
+        if (hero == currentSquad.commander)
         {
             return;
         }
 
-        if (squadMembers.Contains(hero))
+        if (currentSquad.members.Contains(hero))
         {
             return;
         }
 
-        if (squadMembers.Count >= 4)
+        if (currentSquad.members.Count >= 4)
         {
             return;
         }
 
-        squadMembers.Add(hero);
+        currentSquad.members.Add(hero);
 
         RefreshSquadSlots();
     }
@@ -258,31 +257,31 @@ public class UIManager : MonoBehaviour
         memberSlot3Text.text = "Empty";
         memberSlot4Text.text = "Empty";
 
-        if (squadMembers.Count > 0)
+        if (currentSquad.members.Count > 0)
         {
             memberSlot1Text.text =
-                squadMembers[0]
+                currentSquad.members[0]
                 .heroData.heroName;
         }
 
-        if (squadMembers.Count > 1)
+        if (currentSquad.members.Count > 1)
         {
             memberSlot2Text.text =
-                squadMembers[1]
+                currentSquad.members[1]
                 .heroData.heroName;
         }
 
-        if (squadMembers.Count > 2)
+        if (currentSquad.members.Count > 2)
         {
             memberSlot3Text.text =
-                squadMembers[2]
+                currentSquad.members[2]
                 .heroData.heroName;
         }
 
-        if (squadMembers.Count > 3)
+        if (currentSquad.members.Count > 3)
         {
             memberSlot4Text.text =
-                squadMembers[3]
+                currentSquad.members[3]
                 .heroData.heroName;
         }
     }
@@ -551,7 +550,7 @@ public class UIManager : MonoBehaviour
     public void SelectCommander(
     HeroInstance hero)
     {
-        selectedCommander = hero;
+        currentSquad.commander = hero;
 
         commanderSlotText.text =
             hero.heroData.heroName;
