@@ -547,6 +547,47 @@ public class UIManager : MonoBehaviour
             hero.heroData.description;
     }
 
+    public void RemoveMember(
+    int index)
+    {
+        if (index < 0)
+        {
+            return;
+        }
+
+        if (index >=
+            currentSquad.members.Count)
+        {
+            return;
+        }
+
+        currentSquad.members.RemoveAt(
+            index
+        );
+
+        RefreshSquadSlots();
+    }
+
+    public void RemoveMember1()
+    {
+        RemoveMember(0);
+    }
+
+    public void RemoveMember2()
+    {
+        RemoveMember(1);
+    }
+
+    public void RemoveMember3()
+    {
+        RemoveMember(2);
+    }
+
+    public void RemoveMember4()
+    {
+        RemoveMember(3);
+    }
+
     public void SelectCommander(
     HeroInstance hero)
     {
