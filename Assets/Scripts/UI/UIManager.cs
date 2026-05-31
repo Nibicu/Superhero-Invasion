@@ -12,6 +12,7 @@ public class UIManager : MonoBehaviour
     //public Button buyHeroButton;
     private HeroInstance selectedHero;
     public GameObject setDefenderButton;
+    public GameObject squadHeroButtonTemplate;
 
     [Header("Hero Recruit")]
 
@@ -38,6 +39,12 @@ public class UIManager : MonoBehaviour
     public TMP_Text recruitHeroCost;
 
     public TMP_Text recruitHeroDescription;
+
+    [Header("Squad Formation")]
+
+    public GameObject squadFormationPanel;
+
+    public Transform availableHeroesContent;
 
     [Header("Hero Details")]
 
@@ -106,6 +113,8 @@ public class UIManager : MonoBehaviour
     public void OpenMapObjectPanel(MapObject selectedObject)
     {
         heroRecruitPanel.SetActive(false);
+
+        squadFormationPanel.SetActive(false);
 
         heroRosterPanel.SetActive(false);
 
@@ -298,6 +307,45 @@ public class UIManager : MonoBehaviour
         }
     }
 
+    public void OpenSquadFormationPanel()
+    {
+        basePanel.SetActive(false);
+
+        heroRecruitPanel.SetActive(false);
+
+        heroRosterPanel.SetActive(false);
+
+        squadFormationPanel.SetActive(true);
+
+        GenerateAvailableHeroes();
+    }
+    public void GenerateAvailableHeroes()
+    {
+        foreach (Transform child
+            in availableHeroesContent)
+        {
+            Destroy(child.gameObject);
+        }
+
+        foreach (HeroInstance hero
+            in HeroManager.Instance.ownedHeroes)
+        {
+            GameObject buttonObject =
+                Instantiate(
+                    squadHeroButtonTemplate,
+                    availableHeroesContent
+                );
+
+            buttonObject.SetActive(true);
+
+            TMP_Text text =
+                buttonObject.GetComponentInChildren<TMP_Text>();
+
+            text.text =
+                hero.heroData.heroName;
+        }
+    }
+
     public void GenerateHeroRoster()
     {
         foreach (Transform child in heroRosterContent)
@@ -356,6 +404,8 @@ public class UIManager : MonoBehaviour
 
         heroRosterPanel.SetActive(false);
 
+        squadFormationPanel.SetActive(false);
+
         heroRecruitPanel.SetActive(true);
 
         GenerateHeroRecruitList();
@@ -364,6 +414,8 @@ public class UIManager : MonoBehaviour
     public void OpenHeroRosterPanel()
     {
         basePanel.SetActive(false);
+
+        squadFormationPanel.SetActive(false);
 
         heroRecruitPanel.SetActive(false);
 
@@ -421,6 +473,10 @@ public class UIManager : MonoBehaviour
             hero.heroData.description;
     }
 
+    public void CloseSquadFormationPanel()
+    {
+        squadFormationPanel.SetActive(false);
+    }
     public void CloseHeroDetails()
     {
         heroDetailsPanel.SetActive(false);
