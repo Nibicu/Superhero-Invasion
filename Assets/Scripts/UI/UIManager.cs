@@ -13,6 +13,8 @@ public class UIManager : MonoBehaviour
     private HeroInstance selectedHero;
     public GameObject setDefenderButton;
     public GameObject squadHeroButtonTemplate;
+    public TMP_Text commanderSlotText;
+    private HeroInstance selectedCommander;
 
     [Header("Hero Recruit")]
 
@@ -338,11 +340,10 @@ public class UIManager : MonoBehaviour
 
             buttonObject.SetActive(true);
 
-            TMP_Text text =
-                buttonObject.GetComponentInChildren<TMP_Text>();
+            SquadHeroButton heroButton =
+    buttonObject.GetComponent<SquadHeroButton>();
 
-            text.text =
-                hero.heroData.heroName;
+            heroButton.Setup(hero);
         }
     }
 
@@ -471,6 +472,15 @@ public class UIManager : MonoBehaviour
 
         heroDetailsDescription.text =
             hero.heroData.description;
+    }
+
+    public void SelectCommander(
+    HeroInstance hero)
+    {
+        selectedCommander = hero;
+
+        commanderSlotText.text =
+            hero.heroData.heroName;
     }
 
     public void CloseSquadFormationPanel()
