@@ -71,6 +71,14 @@ public class UIManager : MonoBehaviour
 
     public TMP_Text heroDetailsDescription;
 
+    [Header("Squads")]
+
+    public GameObject squadPanel;
+
+    public Transform squadContent;
+
+    public GameObject squadButtonTemplate;
+
     [Header("Hero Roster UI")]
 
     public GameObject heroRosterPanel;
