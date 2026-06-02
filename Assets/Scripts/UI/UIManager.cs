@@ -177,6 +177,50 @@ public class UIManager : MonoBehaviour
         buildMenuPanel.SetActive(true);
     }
 
+    public void OpenSquadPanel()
+    {
+        basePanel.SetActive(false);
+
+        heroRecruitPanel.SetActive(false);
+
+        heroRosterPanel.SetActive(false);
+
+        squadPanel.SetActive(true);
+
+        GenerateSquadList();
+    }
+
+    private void GenerateSquadList()
+
+    {
+        foreach (Transform child
+            in squadContent)
+        {
+            Destroy(child.gameObject);
+        }
+        foreach (Squad squad
+            in SquadManager.Instance.activeSquads)
+        {
+            GameObject newButton =
+                Instantiate(
+                    squadButtonTemplate,
+                    squadContent
+                );
+
+            newButton.SetActive(true);
+
+            SquadButton squadButton =
+                newButton.GetComponent<SquadButton>();
+
+            squadButton.Setup(squad);
+        }
+    }
+
+    public void CloseSquadPanel()
+    {
+        squadPanel.SetActive(false);
+    }
+
     public void CloseBuildMenu()
     {
         buildMenuPanel.SetActive(false);
@@ -411,8 +455,13 @@ public class UIManager : MonoBehaviour
         }
 
         foreach (HeroInstance hero
-            in HeroManager.Instance.ownedHeroes)
+     in HeroManager.Instance.ownedHeroes)
         {
+            if (hero.status != HeroStatus.Idle)
+            {
+                continue;
+            }
+
             GameObject buttonObject =
                 Instantiate(
                     squadHeroButtonTemplate,
@@ -643,6 +692,7 @@ public class UIManager : MonoBehaviour
 
         // 4. очищаем текущий отряд (ВАЖНО)
         currentSquad = new Squad();
+        GenerateSquadList();
 
         // 5. очищаем UI
         commanderSlotText.text = "Commander";
