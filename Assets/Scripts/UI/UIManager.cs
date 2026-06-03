@@ -19,9 +19,37 @@ public class UIManager : MonoBehaviour
     public TMP_Text memberSlot2Text;
     public TMP_Text memberSlot3Text;
     public TMP_Text memberSlot4Text;
+    private Squad selectedSquad;
+
+    private Squad[] squadSlots =
+    new Squad[5];
 
     private Squad currentSquad =
     new Squad();
+
+    [Header("Squad Slots")]
+
+    public Button squadSlot1;
+    public Button squadSlot2;
+    public Button squadSlot3;
+    public Button squadSlot4;
+    public Button squadSlot5;
+
+    public TMP_Text squadSlot1Text;
+    public TMP_Text squadSlot2Text;
+    public TMP_Text squadSlot3Text;
+    public TMP_Text squadSlot4Text;
+    public TMP_Text squadSlot5Text;
+
+    [Header("Squad Details")]
+
+    public GameObject squadDetailsPanel;
+
+    public TMP_Text squadCommanderText;
+
+    public TMP_Text squadMembersText;
+
+    public TMP_Text squadStatusText;
 
     [Header("Hero Recruit")]
 
@@ -125,6 +153,33 @@ public class UIManager : MonoBehaviour
     private void Awake()
     {
         Instance = this;
+    }
+
+    public void OpenSquadDetails(Squad squad)
+    {
+        selectedSquad = squad;
+
+        squadDetailsPanel.SetActive(true);
+
+        squadCommanderText.text =
+            "Commander: " +
+            squad.commander.heroData.heroName;
+
+        string members = "";
+
+        foreach (HeroInstance hero
+            in squad.members)
+        {
+            members +=
+                hero.heroData.heroName +
+                "\n";
+        }
+
+        squadMembersText.text =
+            members;
+
+        squadStatusText.text =
+            "Status: Ready";
     }
 
     public void OpenMapObjectPanel(MapObject selectedObject)
@@ -238,6 +293,10 @@ public class UIManager : MonoBehaviour
             selectedButton = null;
         }
     }
+    public void CloseSquadDetails()
+    {
+        squadDetailsPanel.SetActive(false);
+    }
 
     public void SelectBuilding(
     BuildingData buildingData,
@@ -302,6 +361,57 @@ public class UIManager : MonoBehaviour
         RefreshSquadSlots();
     }
 
+    private void RefreshSquadButtons()
+    {
+        Button[] buttons =
+        {
+        squadSlot1,
+        squadSlot2,
+        squadSlot3,
+        squadSlot4,
+        squadSlot5
+    };
+
+        TMP_Text[] texts =
+        {
+        squadSlot1Text,
+        squadSlot2Text,
+        squadSlot3Text,
+        squadSlot4Text,
+        squadSlot5Text
+    };
+
+        // Очищаем массив отрядов
+        for (int i = 0; i < squadSlots.Length; i++)
+        {
+            squadSlots[i] = null;
+        }
+
+        // Скрываем все кнопки
+        for (int i = 0; i < buttons.Length; i++)
+        {
+            buttons[i].gameObject.SetActive(false);
+        }
+
+        // Показываем существующие отряды
+        for (
+            int i = 0;
+            i < SquadManager.Instance.activeSquads.Count &&
+            i < buttons.Length;
+            i++
+        )
+        {
+            Squad squad =
+                SquadManager.Instance.activeSquads[i];
+
+            squadSlots[i] = squad;
+
+            buttons[i].gameObject.SetActive(true);
+
+            texts[i].text =
+                squad.commander.heroData.heroName;
+        }
+    }
     private void RefreshSquadSlots()
     {
         memberSlot1Text.text = "Empty";
@@ -529,6 +639,46 @@ public class UIManager : MonoBehaviour
         );
     }
 
+    public void OpenSquadSlot1()
+    {
+        if (squadSlots[0] != null)
+        {
+            OpenSquadDetails(squadSlots[0]);
+        }
+    }
+
+    public void OpenSquadSlot2()
+    {
+        if (squadSlots[1] != null)
+        {
+            OpenSquadDetails(squadSlots[1]);
+        }
+    }
+
+    public void OpenSquadSlot3()
+    {
+        if (squadSlots[2] != null)
+        {
+            OpenSquadDetails(squadSlots[2]);
+        }
+    }
+
+    public void OpenSquadSlot4()
+    {
+        if (squadSlots[3] != null)
+        {
+            OpenSquadDetails(squadSlots[3]);
+        }
+    }
+
+    public void OpenSquadSlot5()
+    {
+        if (squadSlots[4] != null)
+        {
+            OpenSquadDetails(squadSlots[4]);
+        }
+    }
+
     public void OpenRecruitPanel()
     {
         basePanel.SetActive(false);
@@ -654,6 +804,37 @@ public class UIManager : MonoBehaviour
             hero.heroData.heroName;
     }
 
+    public void DisbandSelectedSquad()
+    {
+        if (selectedSquad == null)
+        {
+            return;
+        }
+
+        // Командир
+        selectedSquad.commander.status =
+            HeroStatus.Idle;
+
+        // Участники
+        foreach (HeroInstance hero
+            in selectedSquad.members)
+        {
+            hero.status =
+                HeroStatus.Idle;
+        }
+
+        // Удаляем отряд
+        SquadManager.Instance.activeSquads
+            .Remove(selectedSquad);
+
+        // Обновляем кнопки
+        RefreshSquadButtons();
+
+        // Закрываем окно
+        CloseSquadDetails();
+
+        Debug.Log("Squad disbanded!");
+    }
     public void CloseSquadFormationPanel()
     {
         squadFormationPanel.SetActive(false);
@@ -689,6 +870,7 @@ public class UIManager : MonoBehaviour
 
         // 3. сохраняем отряд
         SquadManager.Instance.CreateSquad(currentSquad);
+        RefreshSquadButtons();
 
         // 4. очищаем текущий отряд (ВАЖНО)
         currentSquad = new Squad();

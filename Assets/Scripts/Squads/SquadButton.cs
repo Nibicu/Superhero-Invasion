@@ -1,5 +1,6 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class SquadButton : MonoBehaviour
 {
@@ -9,8 +10,21 @@ public class SquadButton : MonoBehaviour
 
     public TMP_Text statusText;
 
-    public void Setup(Squad squad)
+    private Squad squad;
+
+    private Button button;
+
+    private void Awake()
     {
+        button = GetComponent<Button>();
+
+        button.onClick.AddListener(OpenDetails);
+    }
+
+    public void Setup(Squad newSquad)
+    {
+        squad = newSquad;
+
         commanderText.text =
             squad.commander.heroData.heroName;
 
@@ -20,5 +34,11 @@ public class SquadButton : MonoBehaviour
 
         statusText.text =
             "Ready";
+    }
+
+    private void OpenDetails()
+    {
+        UIManager.Instance
+            .OpenSquadDetails(squad);
     }
 }
