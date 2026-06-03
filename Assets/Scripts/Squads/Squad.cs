@@ -4,6 +4,8 @@ using System.Collections.Generic;
 public class Squad
 {
     public HeroInstance commander;
+    public SquadStatus status =
+    SquadStatus.Ready;
 
     public List<HeroInstance> members =
         new List<HeroInstance>();

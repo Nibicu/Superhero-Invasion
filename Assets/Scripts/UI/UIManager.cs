@@ -10,7 +10,6 @@ public class UIManager : MonoBehaviour
     public BuildingSlotUI[] slotUIElements;
     private BuildingSlot selectedSlot;
     private HeroData selectedHeroData;
-    //public Button buyHeroButton;
     private HeroInstance selectedHero;
     public GameObject setDefenderButton;
     public GameObject squadHeroButtonTemplate;
@@ -99,14 +98,6 @@ public class UIManager : MonoBehaviour
 
     public TMP_Text heroDetailsDescription;
 
-    [Header("Squads")]
-
-    public GameObject squadPanel;
-
-    public Transform squadContent;
-
-    public GameObject squadButtonTemplate;
-
     [Header("Hero Roster UI")]
 
     public GameObject heroRosterPanel;
@@ -179,7 +170,8 @@ public class UIManager : MonoBehaviour
             members;
 
         squadStatusText.text =
-            "Status: Ready";
+    "Status: " +
+    squad.status.ToString();
     }
 
     public void OpenMapObjectPanel(MapObject selectedObject)
@@ -230,50 +222,6 @@ public class UIManager : MonoBehaviour
         GenerateBuildMenu();
 
         buildMenuPanel.SetActive(true);
-    }
-
-    public void OpenSquadPanel()
-    {
-        basePanel.SetActive(false);
-
-        heroRecruitPanel.SetActive(false);
-
-        heroRosterPanel.SetActive(false);
-
-        squadPanel.SetActive(true);
-
-        GenerateSquadList();
-    }
-
-    private void GenerateSquadList()
-
-    {
-        foreach (Transform child
-            in squadContent)
-        {
-            Destroy(child.gameObject);
-        }
-        foreach (Squad squad
-            in SquadManager.Instance.activeSquads)
-        {
-            GameObject newButton =
-                Instantiate(
-                    squadButtonTemplate,
-                    squadContent
-                );
-
-            newButton.SetActive(true);
-
-            SquadButton squadButton =
-                newButton.GetComponent<SquadButton>();
-
-            squadButton.Setup(squad);
-        }
-    }
-
-    public void CloseSquadPanel()
-    {
-        squadPanel.SetActive(false);
     }
 
     public void CloseBuildMenu()
@@ -874,7 +822,6 @@ public class UIManager : MonoBehaviour
 
         // 4. очищаем текущий отряд (ВАЖНО)
         currentSquad = new Squad();
-        GenerateSquadList();
 
         // 5. очищаем UI
         commanderSlotText.text = "Commander";
