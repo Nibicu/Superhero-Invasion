@@ -42,6 +42,14 @@ public class UIManager : MonoBehaviour
     public TMP_Text squadSlot4Text;
     public TMP_Text squadSlot5Text;
 
+    [Header("Select Squad Panel")]
+
+    public GameObject selectSquadPanel;
+
+    public Transform squadSelectContent;
+
+    public GameObject squadSelectButtonTemplate;
+
     [Header("Squad Details")]
 
     public GameObject squadDetailsPanel;
@@ -591,6 +599,13 @@ public class UIManager : MonoBehaviour
         );
     }
 
+    public void OpenSelectSquadPanel()
+    {
+        selectSquadPanel.SetActive(true);
+
+        GenerateSquadSelection();
+    }
+
     public void OpenSquadSlot1()
     {
         if (squadSlots[0] != null)
@@ -804,6 +819,13 @@ public class UIManager : MonoBehaviour
         heroRosterPanel.SetActive(false);
     }
 
+    public void CloseSelectSquadPanel()
+    {
+        selectSquadPanel.SetActive(false);
+
+        selectedSquad = null;
+    }
+
     public void SendCurrentSquad()
     {
         if (currentSquad.commander == null)
@@ -880,6 +902,39 @@ public class UIManager : MonoBehaviour
                 newButton.GetComponent<HeroRecruitButton>();
 
             heroButton.Setup(heroData);
+        }
+    }
+
+    private void GenerateSquadSelection()
+    {
+        foreach (Transform child
+            in squadSelectContent)
+        {
+            if (child.gameObject ==
+                squadSelectButtonTemplate)
+            {
+                continue;
+            }
+
+            Destroy(child.gameObject);
+        }
+
+        foreach (Squad squad
+            in SquadManager.Instance.activeSquads)
+        {
+            GameObject buttonObject =
+                Instantiate(
+                    squadSelectButtonTemplate,
+                    squadSelectContent
+                );
+
+            buttonObject.SetActive(true);
+
+            TMP_Text text =
+                buttonObject.GetComponentInChildren<TMP_Text>();
+
+            text.text =
+                squad.commander.heroData.heroName;
         }
     }
 
