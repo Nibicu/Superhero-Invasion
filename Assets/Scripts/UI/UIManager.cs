@@ -19,6 +19,8 @@ public class UIManager : MonoBehaviour
     public TMP_Text memberSlot3Text;
     public TMP_Text memberSlot4Text;
     private Squad selectedSquad;
+    public GameObject sendSquadButton;
+    private MapObject selectedMapObject;
 
     private Squad[] squadSlots =
     new Squad[5];
@@ -176,6 +178,8 @@ public class UIManager : MonoBehaviour
 
     public void OpenMapObjectPanel(MapObject selectedObject)
     {
+        selectedMapObject = selectedObject;
+
         heroRecruitPanel.SetActive(false);
 
         squadFormationPanel.SetActive(false);
@@ -212,7 +216,7 @@ public class UIManager : MonoBehaviour
         {
             incomeText.gameObject.SetActive(false);
         }
-
+        sendSquadButton.SetActive(true);
         RefreshSlotUI();
     }
     public void OpenBuildMenu(BuildingSlot slot)

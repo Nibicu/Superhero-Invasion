@@ -7,6 +7,8 @@ public class Squad
     public SquadStatus status =
     SquadStatus.Ready;
 
+    public MapObject targetObject;
+
     public List<HeroInstance> members =
         new List<HeroInstance>();
 }
