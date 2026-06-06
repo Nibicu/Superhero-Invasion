@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 
 public class UIManager : MonoBehaviour
 {
@@ -228,6 +229,7 @@ public class UIManager : MonoBehaviour
             ShowBuildingSlots();
 
             incomeText.gameObject.SetActive(true);
+            levelText.gameObject.SetActive(true);
 
             incomeText.text =
                 "Income: " +
@@ -242,6 +244,7 @@ public class UIManager : MonoBehaviour
         else
         {
             incomeText.gameObject.SetActive(false);
+            levelText.gameObject.SetActive(false);
 
             HideBuildingSlots();
         }

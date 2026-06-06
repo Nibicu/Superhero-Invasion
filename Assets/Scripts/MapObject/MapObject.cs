@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 public class MapObject : MonoBehaviour, ISelectable
 {
@@ -19,6 +20,11 @@ public class MapObject : MonoBehaviour, ISelectable
 
     private void OnMouseDown()
     {
+        if (EventSystem.current.IsPointerOverGameObject())
+        {
+            return;
+        }
+
         SelectionManager.Instance.Select(this);
     }
 
