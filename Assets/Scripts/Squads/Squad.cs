@@ -9,6 +9,8 @@ public class Squad
 
     public MapObject targetObject;
 
+    public SquadWorldObject worldObject;
+
     public List<HeroInstance> members =
         new List<HeroInstance>();
 }
