@@ -21,6 +21,7 @@ public class UIManager : MonoBehaviour
     private Squad selectedSquad;
     public GameObject sendSquadButton;
     private MapObject selectedMapObject;
+    private Squad squadToAssign;
 
     private Squad[] squadSlots =
     new Squad[5];
@@ -77,6 +78,8 @@ public class UIManager : MonoBehaviour
     public GameObject recruitHeroDetailsPanel;
 
     public Image recruitHeroPortrait;
+
+    public TMP_Text squadTargetText;
 
     public TMP_Text recruitHeroName;
 
@@ -182,6 +185,18 @@ public class UIManager : MonoBehaviour
         squadStatusText.text =
     "Status: " +
     squad.status.ToString();
+
+        if (squad.targetObject != null)
+        {
+            squadTargetText.text =
+                "Target: " +
+                squad.targetObject.objectName;
+        }
+        else
+        {
+            squadTargetText.text =
+                "Target: None";
+        }
     }
 
     public void OpenMapObjectPanel(MapObject selectedObject)
@@ -210,6 +225,8 @@ public class UIManager : MonoBehaviour
 
         if (currentBase != null)
         {
+            ShowBuildingSlots();
+
             incomeText.gameObject.SetActive(true);
 
             incomeText.text =
@@ -219,13 +236,35 @@ public class UIManager : MonoBehaviour
             levelText.text =
                 "Level: " +
                 currentBase.currentLevel;
+
+            RefreshSlotUI();
         }
         else
         {
             incomeText.gameObject.SetActive(false);
+
+            HideBuildingSlots();
         }
+
         sendSquadButton.SetActive(true);
-        RefreshSlotUI();
+    }
+
+    private void ShowBuildingSlots()
+    {
+        foreach (BuildingSlotUI slotUI
+            in slotUIElements)
+        {
+            slotUI.gameObject.SetActive(true);
+        }
+    }
+
+    private void HideBuildingSlots()
+    {
+        foreach (BuildingSlotUI slotUI
+            in slotUIElements)
+        {
+            slotUI.gameObject.SetActive(false);
+        }
     }
     public void OpenBuildMenu(BuildingSlot slot)
     {
@@ -930,12 +969,29 @@ public class UIManager : MonoBehaviour
 
             buttonObject.SetActive(true);
 
-            TMP_Text text =
-                buttonObject.GetComponentInChildren<TMP_Text>();
+            SquadSelectButton squadButton =
+    buttonObject.GetComponent<SquadSelectButton>();
 
-            text.text =
-                squad.commander.heroData.heroName;
+            squadButton.Setup(squad);
         }
+    }
+
+    public void AssignSquadToSelectedObject(
+    Squad squad)
+    {
+        squad.targetObject =
+            selectedMapObject;
+
+        squad.status =
+            SquadStatus.Traveling;
+
+        CloseSelectSquadPanel();
+
+        Debug.Log(
+            squad.commander.heroData.heroName +
+            " sent to " +
+            selectedMapObject.objectName
+        );
     }
 
     private void RefreshSlotUI()
