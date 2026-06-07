@@ -282,7 +282,14 @@ public class UIManager : MonoBehaviour
             HideBuildingSlots();
         }
 
-        sendSquadButton.SetActive(true);
+        if (selectedObject == playerBase)
+        {
+            sendSquadButton.SetActive(false);
+        }
+        else
+        {
+            sendSquadButton.SetActive(true);
+        }
     }
 
     private void ShowBuildingSlots()
@@ -1015,6 +1022,13 @@ public class UIManager : MonoBehaviour
     public void AssignSquadToSelectedObject(
     Squad squad)
     {
+       /* if (selectedMapObject.ownerFaction ==
+    FactionType.Player)
+        {
+            Debug.Log("Object already belongs to player");
+
+            return;
+        } */
         squad.targetObject =
             selectedMapObject;
 
@@ -1028,6 +1042,7 @@ public class UIManager : MonoBehaviour
         }
 
         CloseSelectSquadPanel();
+        CloseMapObjectPanel();
 
         Debug.Log(
             squad.commander.heroData.heroName +
