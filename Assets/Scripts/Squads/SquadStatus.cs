@@ -4,5 +4,8 @@ public enum SquadStatus
     Traveling,
     Attacking,
     Defending,
-    OnMission
+    OnMission,
+    Occupying,
+    Mining,
+    Arrived
 }

@@ -6,6 +6,7 @@ using UnityEngine.EventSystems;
 
 public class UIManager : MonoBehaviour
 {
+    public Base playerBase;
     public static UIManager Instance;
     public TMP_Text levelText;
     public BuildingSlotUI[] slotUIElements;
@@ -43,6 +44,11 @@ public class UIManager : MonoBehaviour
     public TMP_Text squadSlot3Text;
     public TMP_Text squadSlot4Text;
     public TMP_Text squadSlot5Text;
+
+    public GameObject commanderPanel;
+    public TMP_Text commanderDialogText;
+    public Button returnButton;
+    public Button guardButton;
 
     [Header("Select Squad Panel")]
 
@@ -154,6 +160,8 @@ public class UIManager : MonoBehaviour
     public TMP_Text incomeText;
 
     private Base currentBase;
+    public MovementType movementType =
+    MovementType.Ground;
 
     private void Awake()
     {
@@ -197,6 +205,31 @@ public class UIManager : MonoBehaviour
         {
             squadTargetText.text =
                 "Target: None";
+        }
+    }
+
+    public void RefreshSquadDetails(Squad squad)
+    {
+        if (
+            squadDetailsPanel.activeSelf &&
+            selectedSquad == squad
+        )
+        {
+            squadStatusText.text =
+                "Status: " +
+                squad.status.ToString();
+
+            if (squad.targetObject != null)
+            {
+                squadTargetText.text =
+                    "Target: " +
+                    squad.targetObject.objectName;
+            }
+            else
+            {
+                squadTargetText.text =
+                    "Target: None";
+            }
         }
     }
 
@@ -1053,5 +1086,38 @@ public class UIManager : MonoBehaviour
             selectedHero.heroData.heroName +
             " is now defending."
         );
+    }
+
+    public void OpenCommanderPanel(Squad squad)
+    {
+        commanderPanel.SetActive(true);
+        commanderDialogText.text = squad.commander.heroData.heroName + " захватил объект!";
+
+        // Убираем старые слушатели, чтобы не дублировались
+        returnButton.onClick.RemoveAllListeners();
+        guardButton.onClick.RemoveAllListeners();
+
+        returnButton.onClick.AddListener(() => ReturnToBase(squad));
+        guardButton.onClick.AddListener(() => GuardObject(squad));
+    }
+
+    public void CloseCommanderPanel()
+    {
+        commanderPanel.SetActive(false);
+    }
+
+    private void ReturnToBase(Squad squad)
+    {
+        squad.targetObject = playerBase; // ссылка на базу игрока
+        squad.status = SquadStatus.Traveling;
+        CloseCommanderPanel();
+        RefreshSquadDetails(squad);
+    }
+
+    private void GuardObject(Squad squad)
+    {
+        squad.status = SquadStatus.Occupying;
+        CloseCommanderPanel();
+        RefreshSquadDetails(squad);
     }
 }

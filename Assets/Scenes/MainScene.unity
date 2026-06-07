@@ -13846,6 +13846,17 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1360051847}
   m_CullTransparentMesh: 1
+--- !u!114 &1379840967 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4290266543376016504, guid: 5dcef3f1df79b6f4f96c71d730c46f00, type: 3}
+  m_PrefabInstance: {fileID: 4676830988557957359}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b45ce6aa803a5084382e300b4f2e1dad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!114 &1389955263 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 8817944259320442068, guid: 5dcef3f1df79b6f4f96c71d730c46f00, type: 3}
@@ -18371,6 +18382,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9117630702c1c564a95f22eb4e4974d9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  playerBase: {fileID: 1379840967}
   levelText: {fileID: 633375094}
   slotUIElements:
   - {fileID: 1043672294}
@@ -18397,6 +18409,10 @@ MonoBehaviour:
   squadSlot3Text: {fileID: 2044667622}
   squadSlot4Text: {fileID: 2091675413}
   squadSlot5Text: {fileID: 660927658}
+  commanderPanel: {fileID: 0}
+  commanderDialogText: {fileID: 0}
+  returnButton: {fileID: 0}
+  guardButton: {fileID: 0}
   selectSquadPanel: {fileID: 1323493886}
   squadSelectContent: {fileID: 1070547631}
   squadSelectButtonTemplate: {fileID: 316996588}
@@ -18446,6 +18462,7 @@ MonoBehaviour:
   healthText: {fileID: 1904831191}
   factionText: {fileID: 2135462826}
   incomeText: {fileID: 1857228008}
+  movementType: 0
 --- !u!1 &1788512137
 GameObject:
   m_ObjectHideFlags: 0
