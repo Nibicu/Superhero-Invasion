@@ -19122,6 +19122,7 @@ MonoBehaviour:
   memberSlot3Text: {fileID: 1490974942}
   memberSlot4Text: {fileID: 2044538270}
   sendSquadButton: {fileID: 1006015469}
+  upgradeBaseButton: {fileID: 594951435}
   squadSlot1: {fileID: 1702686258}
   squadSlot2: {fileID: 1677126023}
   squadSlot3: {fileID: 2009998665}

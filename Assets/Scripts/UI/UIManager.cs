@@ -24,6 +24,7 @@ public class UIManager : MonoBehaviour
     public GameObject sendSquadButton;
     private MapObject selectedMapObject;
     private Squad squadToAssign;
+    public GameObject upgradeBaseButton;
 
     private Squad[] squadSlots =
     new Squad[5];
@@ -264,6 +265,8 @@ public class UIManager : MonoBehaviour
             incomeText.gameObject.SetActive(true);
             levelText.gameObject.SetActive(true);
 
+            upgradeBaseButton.SetActive(true);
+
             incomeText.text =
                 "Income: " +
                 currentBase.income;
@@ -278,6 +281,8 @@ public class UIManager : MonoBehaviour
         {
             incomeText.gameObject.SetActive(false);
             levelText.gameObject.SetActive(false);
+
+            upgradeBaseButton.SetActive(false);
 
             HideBuildingSlots();
         }

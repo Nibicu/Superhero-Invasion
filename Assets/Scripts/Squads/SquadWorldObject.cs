@@ -33,9 +33,15 @@ public class SquadWorldObject : MonoBehaviour
     private void OnArrived()
     {
         squad.status = SquadStatus.Arrived;
+
+        if (!(squad.targetObject is Base))
+        {
+            squad.targetObject.ownerFaction =
+                FactionType.Good;
+        }
+
         UIManager.Instance.RefreshSquadDetails(squad);
 
-        // Открываем панель командира только если это не база
         if (!(squad.targetObject is Base))
         {
             UIManager.Instance.OpenCommanderPanel(squad);
