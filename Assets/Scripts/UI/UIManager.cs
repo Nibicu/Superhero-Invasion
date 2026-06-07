@@ -184,8 +184,8 @@ public class UIManager : MonoBehaviour
             members;
 
         squadStatusText.text =
-    "Status: " +
-    squad.status.ToString();
+            "Status: " +
+            squad.status.ToString();
 
         if (squad.targetObject != null)
         {
@@ -987,6 +987,12 @@ public class UIManager : MonoBehaviour
 
         squad.status =
             SquadStatus.Traveling;
+
+        if (squad.worldObject == null)
+        {
+            SquadManager.Instance
+                .SpawnSquadWorldObject(squad);
+        }
 
         CloseSelectSquadPanel();
 

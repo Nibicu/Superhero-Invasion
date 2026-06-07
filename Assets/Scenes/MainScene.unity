@@ -1256,6 +1256,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b8bad711bb12acc4aa7b2d4e679520e0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  squadWorldPrefab: {fileID: 99396048829837455, guid: cfd7687274b6141429d674f5d3240567, type: 3}
   activeSquads: []
 --- !u!1 &129364574
 GameObject:
