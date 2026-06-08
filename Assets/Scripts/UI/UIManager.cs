@@ -22,6 +22,7 @@ public class UIManager : MonoBehaviour
     public TMP_Text memberSlot4Text;
     private Squad selectedSquad;
     public GameObject sendSquadButton;
+    public GameObject garrisonButton;
     private MapObject selectedMapObject;
     private Squad squadToAssign;
     public GameObject upgradeBaseButton;
@@ -287,13 +288,24 @@ public class UIManager : MonoBehaviour
             HideBuildingSlots();
         }
 
+        garrisonButton.SetActive(false);
+        sendSquadButton.SetActive(false);
+
         if (selectedObject == playerBase)
         {
-            sendSquadButton.SetActive(false);
+            garrisonButton.SetActive(true);
         }
         else
         {
-            sendSquadButton.SetActive(true);
+            if (selectedObject.ownerFaction ==
+                FactionType.Good)
+            {
+                garrisonButton.SetActive(true);
+            }
+            else
+            {
+                sendSquadButton.SetActive(true);
+            }
         }
     }
 
