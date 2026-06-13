@@ -13,6 +13,9 @@ public class MapObject : MonoBehaviour, ISelectable
     [Header("Ownership")]
     public FactionType ownerFaction;
 
+    [Header("Garrison")]
+    public Squad garrisonSquad;
+
     protected virtual void Start()
     {
         currentHealth = maxHealth;

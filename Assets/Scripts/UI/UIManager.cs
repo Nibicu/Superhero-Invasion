@@ -26,6 +26,7 @@ public class UIManager : MonoBehaviour
     private MapObject selectedMapObject;
     private Squad squadToAssign;
     public GameObject upgradeBaseButton;
+    public TMP_Text garrisonText;
 
     private Squad[] squadSlots =
     new Squad[5];
@@ -306,6 +307,46 @@ public class UIManager : MonoBehaviour
             {
                 sendSquadButton.SetActive(true);
             }
+        }
+
+        if (selectedObject.garrisonSquad != null)
+        {
+            Debug.Log(
+                "Garrison squad found on: " +
+                selectedObject.objectName
+            );
+        }
+        Debug.Log(
+    "Selected object: " +
+    selectedObject.objectName
+);
+
+        if (selectedObject.garrisonSquad != null)
+        {
+            Debug.Log(
+                "Garrison squad: " +
+                selectedObject.garrisonSquad.commander.heroData.heroName
+            );
+        }
+        else
+        {
+            Debug.Log("No garrison");
+        }
+        if (selectedObject.garrisonSquad != null &&
+    selectedObject.garrisonSquad.commander != null)
+        {
+            garrisonText.text =
+                "Garrison: " +
+                selectedObject.garrisonSquad.commander.heroData.heroName;
+        }
+        else
+        {
+            Debug.Log(
+    "Object: " +
+    selectedObject.objectName
+);
+            garrisonText.text =
+                "Garrison: Empty";
         }
     }
 
@@ -1149,7 +1190,21 @@ public class UIManager : MonoBehaviour
     private void GuardObject(Squad squad)
     {
         squad.status = SquadStatus.Occupying;
+
+        if (squad.targetObject != null)
+        {
+            squad.targetObject.garrisonSquad = squad;
+
+            Debug.Log(
+                squad.commander.heroData.heroName +
+                " is now guarding " +
+                squad.targetObject.objectName
+            );
+        }
+
         CloseCommanderPanel();
+
         RefreshSquadDetails(squad);
     }
+
 }
