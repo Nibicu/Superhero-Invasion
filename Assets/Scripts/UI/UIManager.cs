@@ -315,13 +315,20 @@ public class UIManager : MonoBehaviour
                 "Garrison squad found on: " +
                 selectedObject.objectName
             );
+
+            Debug.Log(
+                "Commander is null = " +
+                (selectedObject.garrisonSquad.commander == null)
+            );
         }
         Debug.Log(
     "Selected object: " +
     selectedObject.objectName
 );
 
-        if (selectedObject.garrisonSquad != null)
+        if (selectedObject.garrisonSquad != null &&
+    selectedObject.garrisonSquad.commander != null &&
+    selectedObject.garrisonSquad.commander.heroData != null)
         {
             Debug.Log(
                 "Garrison squad: " +
@@ -333,7 +340,8 @@ public class UIManager : MonoBehaviour
             Debug.Log("No garrison");
         }
         if (selectedObject.garrisonSquad != null &&
-    selectedObject.garrisonSquad.commander != null)
+    selectedObject.garrisonSquad.commander != null &&
+    selectedObject.garrisonSquad.commander.heroData != null)
         {
             garrisonText.text =
                 "Garrison: " +
@@ -342,11 +350,30 @@ public class UIManager : MonoBehaviour
         else
         {
             Debug.Log(
-    "Object: " +
-    selectedObject.objectName
-);
+                "Object: " +
+                selectedObject.objectName
+            );
+
             garrisonText.text =
                 "Garrison: Empty";
+        }
+        Debug.Log(
+    "Object = " +
+    selectedObject.objectName
+);
+
+        Debug.Log(
+            "Garrison = " +
+            (selectedObject.garrisonSquad == null
+                ? "NULL"
+                : "NOT NULL")
+        );
+        if (selectedObject.garrisonSquad != null)
+        {
+            Debug.Log(
+                "Commander HeroData NULL = " +
+                (selectedObject.garrisonSquad.commander.heroData == null)
+            );
         }
     }
 
