@@ -30,10 +30,11 @@ public class SquadManager : MonoBehaviour
     Squad squad)
     {
         Debug.Log("SpawnSquadWorldObject called");
+
         GameObject squadObject =
             Instantiate(
                 squadWorldPrefab,
-                Vector3.zero,
+                UIManager.Instance.playerBase.transform.position,
                 Quaternion.identity
             );
 
