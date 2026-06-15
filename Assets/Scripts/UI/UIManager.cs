@@ -1208,9 +1208,16 @@ public class UIManager : MonoBehaviour
 
     private void ReturnToBase(Squad squad)
     {
-        squad.targetObject = playerBase; // ссылка на базу игрока
+        squad.targetObject = playerBase;
         squad.status = SquadStatus.Traveling;
+
+        if (squad.worldObject != null)
+        {
+            squad.worldObject.gameObject.SetActive(true);
+        }
+
         CloseCommanderPanel();
+
         RefreshSquadDetails(squad);
     }
 

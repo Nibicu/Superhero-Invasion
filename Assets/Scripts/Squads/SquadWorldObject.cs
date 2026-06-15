@@ -40,6 +40,8 @@ public class SquadWorldObject : MonoBehaviour
                 FactionType.Good;
         }
 
+        gameObject.SetActive(false);
+
         UIManager.Instance.RefreshSquadDetails(squad);
 
         if (!(squad.targetObject is Base))
