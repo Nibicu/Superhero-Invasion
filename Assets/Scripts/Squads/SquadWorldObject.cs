@@ -10,7 +10,17 @@ public class SquadWorldObject : MonoBehaviour
 
     private void Update()
     {
-        if (squad.targetObject != null && squad.status == SquadStatus.Traveling)
+        if (squad != null)
+        {
+            Debug.Log(
+                squad.commander.heroData.heroName +
+                " status = " +
+                squad.status
+            );
+        }
+
+        if (squad.targetObject != null &&
+            squad.status == SquadStatus.Traveling)
         {
             MoveTowardsTarget();
         }
@@ -32,10 +42,14 @@ public class SquadWorldObject : MonoBehaviour
 
     private void OnArrived()
     {
-        squad.status = SquadStatus.Arrived;
-
-        if (!(squad.targetObject is Base))
+        if (squad.targetObject is Base)
         {
+            squad.status = SquadStatus.Ready;
+        }
+        else
+        {
+            squad.status = SquadStatus.Arrived;
+
             squad.targetObject.ownerFaction =
                 FactionType.Good;
         }

@@ -1089,6 +1089,13 @@ public class UIManager : MonoBehaviour
         foreach (Squad squad
             in SquadManager.Instance.activeSquads)
         {
+
+            Debug.Log(
+    squad.commander.heroData.heroName +
+    " | Status = " +
+    squad.status
+);
+
             GameObject buttonObject =
                 Instantiate(
                     squadSelectButtonTemplate,
@@ -1124,6 +1131,17 @@ public class UIManager : MonoBehaviour
         {
             SquadManager.Instance
                 .SpawnSquadWorldObject(squad);
+        }
+        else
+        {
+            squad.worldObject.transform.position =
+                playerBase.transform.position;
+
+            squad.worldObject.gameObject.SetActive(true);
+            Debug.Log(
+    "WorldObject active = " +
+    squad.worldObject.gameObject.activeSelf
+);
         }
 
         CloseSelectSquadPanel();
@@ -1214,6 +1232,10 @@ public class UIManager : MonoBehaviour
         if (squad.worldObject != null)
         {
             squad.worldObject.gameObject.SetActive(true);
+            Debug.Log(
+    "Returning to base. WorldObject active = " +
+    squad.worldObject.gameObject.activeSelf
+);
         }
 
         CloseCommanderPanel();
