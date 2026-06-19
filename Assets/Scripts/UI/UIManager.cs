@@ -174,30 +174,22 @@ public class UIManager : MonoBehaviour
     public void OpenSquadDetails(Squad squad)
     {
         selectedSquad = squad;
-
         squadDetailsPanel.SetActive(true);
-
         squadCommanderText.text =
             "Commander: " +
             squad.commander.heroData.heroName;
-
         string members = "";
-
-        foreach (HeroInstance hero
-            in squad.members)
+        foreach (HeroInstance hero in squad.members)
         {
             members +=
                 hero.heroData.heroName +
                 "\n";
         }
-
         squadMembersText.text =
             members;
-
         squadStatusText.text =
             "Status: " +
             squad.status.ToString();
-
         if (squad.targetObject != null)
         {
             squadTargetText.text =
@@ -213,10 +205,7 @@ public class UIManager : MonoBehaviour
 
     public void RefreshSquadDetails(Squad squad)
     {
-        if (
-            squadDetailsPanel.activeSelf &&
-            selectedSquad == squad
-        )
+        if (squadDetailsPanel.activeSelf && selectedSquad == squad)
         {
             squadStatusText.text =
                 "Status: " +
@@ -239,53 +228,38 @@ public class UIManager : MonoBehaviour
     public void OpenMapObjectPanel(MapObject selectedObject)
     {
         selectedMapObject = selectedObject;
-
         heroRecruitPanel.SetActive(false);
-
         squadFormationPanel.SetActive(false);
-
         heroRosterPanel.SetActive(false);
-
         basePanel.SetActive(true);
-
         titleText.text = selectedObject.objectName;
-
         healthText.text =
             "Health: " +
             selectedObject.GetCurrentHealth();
-
         factionText.text =
             "Faction: " +
             selectedObject.ownerFaction.ToString();
-
         currentBase = selectedObject as Base;
 
         if (currentBase != null)
         {
             ShowBuildingSlots();
-
             incomeText.gameObject.SetActive(true);
             levelText.gameObject.SetActive(true);
-
             upgradeBaseButton.SetActive(true);
-
             incomeText.text =
                 "Income: " +
                 currentBase.income;
-
             levelText.text =
                 "Level: " +
                 currentBase.currentLevel;
-
             RefreshSlotUI();
         }
         else
         {
             incomeText.gameObject.SetActive(false);
             levelText.gameObject.SetActive(false);
-
             upgradeBaseButton.SetActive(false);
-
             HideBuildingSlots();
         }
 
@@ -311,76 +285,41 @@ public class UIManager : MonoBehaviour
 
         if (selectedObject.garrisonSquad != null)
         {
-            Debug.Log(
-                "Garrison squad found on: " +
-                selectedObject.objectName
-            );
+            Debug.Log("Garrison squad found on: " + selectedObject.objectName);
 
-            Debug.Log(
-                "Commander is null = " +
-                (selectedObject.garrisonSquad.commander == null)
-            );
+            Debug.Log("Commander is null = " + (selectedObject.garrisonSquad.commander == null));
         }
-        Debug.Log(
-    "Selected object: " +
-    selectedObject.objectName
-);
+        Debug.Log("Selected object: " + selectedObject.objectName);
 
-        if (selectedObject.garrisonSquad != null &&
-    selectedObject.garrisonSquad.commander != null &&
-    selectedObject.garrisonSquad.commander.heroData != null)
+        if (selectedObject.garrisonSquad != null && selectedObject.garrisonSquad.commander != null && selectedObject.garrisonSquad.commander.heroData != null)
         {
-            Debug.Log(
-                "Garrison squad: " +
-                selectedObject.garrisonSquad.commander.heroData.heroName
-            );
+            Debug.Log("Garrison squad: " + selectedObject.garrisonSquad.commander.heroData.heroName);
         }
         else
         {
             Debug.Log("No garrison");
         }
-        if (selectedObject.garrisonSquad != null &&
-    selectedObject.garrisonSquad.commander != null &&
-    selectedObject.garrisonSquad.commander.heroData != null)
+        if (selectedObject.garrisonSquad != null && selectedObject.garrisonSquad.commander != null && selectedObject.garrisonSquad.commander.heroData != null)
         {
-            garrisonText.text =
-                "Garrison: " +
-                selectedObject.garrisonSquad.commander.heroData.heroName;
+            garrisonText.text = "Garrison: " + selectedObject.garrisonSquad.commander.heroData.heroName;
         }
         else
         {
-            Debug.Log(
-                "Object: " +
-                selectedObject.objectName
-            );
-
-            garrisonText.text =
-                "Garrison: Empty";
+            Debug.Log("Object: " + selectedObject.objectName);
+            garrisonText.text = "Garrison: Empty";
         }
-        Debug.Log(
-    "Object = " +
-    selectedObject.objectName
-);
+        Debug.Log("Object = " + selectedObject.objectName);
 
-        Debug.Log(
-            "Garrison = " +
-            (selectedObject.garrisonSquad == null
-                ? "NULL"
-                : "NOT NULL")
-        );
+        Debug.Log("Garrison = " + (selectedObject.garrisonSquad == null ? "NULL" : "NOT NULL"));
         if (selectedObject.garrisonSquad != null)
         {
-            Debug.Log(
-                "Commander HeroData NULL = " +
-                (selectedObject.garrisonSquad.commander.heroData == null)
-            );
+            Debug.Log("Commander HeroData NULL = " + (selectedObject.garrisonSquad.commander.heroData == null));
         }
     }
 
     private void ShowBuildingSlots()
     {
-        foreach (BuildingSlotUI slotUI
-            in slotUIElements)
+        foreach (BuildingSlotUI slotUI in slotUIElements)
         {
             slotUI.gameObject.SetActive(true);
         }
@@ -397,22 +336,16 @@ public class UIManager : MonoBehaviour
     public void OpenBuildMenu(BuildingSlot slot)
     {
         selectedSlot = slot;
-
         GenerateBuildMenu();
-
         buildMenuPanel.SetActive(true);
     }
 
     public void CloseBuildMenu()
     {
         buildMenuPanel.SetActive(false);
-
         buildConfirmButton.SetActive(false);
-
         errorText.SetActive(false);
-
         selectedBuildingData = null;
-
         if (selectedButton != null)
         {
             selectedButton.SetSelected(false);
@@ -425,41 +358,29 @@ public class UIManager : MonoBehaviour
         squadDetailsPanel.SetActive(false);
     }
 
-    public void SelectBuilding(
-    BuildingData buildingData,
-    UniversalBuildButton button
-)
+    public void SelectBuilding(BuildingData buildingData, UniversalBuildButton button)
     {
         selectedBuildingData = buildingData;
 
-        // RESET OLD
         if (selectedButton != null)
         {
             selectedButton.SetSelected(false);
         }
 
-        // NEW
         selectedButton = button;
-
         selectedButton.SetSelected(true);
-
         previewIcon.sprite = buildingData.icon;
-
         previewName.text =
             buildingData.buildingName;
-
         previewCost.text =
             "Cost: " +
             buildingData.cost;
-
         previewDescription.text =
             buildingData.description;
-
         buildConfirmButton.SetActive(true);
     }
 
-    public void AddHeroToSquad(
-    HeroInstance hero)
+    public void AddHeroToSquad(HeroInstance hero)
     {
         if (currentSquad.commander == null)
         {
@@ -467,24 +388,20 @@ public class UIManager : MonoBehaviour
 
             return;
         }
-
         if (hero == currentSquad.commander)
         {
             return;
         }
-
         if (currentSquad.members.Contains(hero))
         {
             return;
         }
-
         if (currentSquad.members.Count >= 4)
         {
             return;
         }
 
         currentSquad.members.Add(hero);
-
         RefreshSquadSlots();
     }
 
@@ -508,33 +425,28 @@ public class UIManager : MonoBehaviour
         squadSlot5Text
     };
 
-        // Очищаем массив отрядов
         for (int i = 0; i < squadSlots.Length; i++)
         {
             squadSlots[i] = null;
         }
 
-        // Скрываем все кнопки
         for (int i = 0; i < buttons.Length; i++)
         {
             buttons[i].gameObject.SetActive(false);
         }
 
-        // Показываем существующие отряды
         for (
             int i = 0;
             i < SquadManager.Instance.activeSquads.Count &&
             i < buttons.Length;
             i++
         )
+
         {
-            Squad squad =
-                SquadManager.Instance.activeSquads[i];
+            Squad squad = SquadManager.Instance.activeSquads[i];
 
             squadSlots[i] = squad;
-
             buttons[i].gameObject.SetActive(true);
-
             texts[i].text =
                 squad.commander.heroData.heroName;
         }
@@ -581,42 +493,25 @@ public class UIManager : MonoBehaviour
         {
             return;
         }
-
         if (selectedSlot == null)
         {
             return;
         }
-
         if (selectedBuildingData == null)
         {
             return;
         }
-
-        // NOT ENOUGH MONEY
-        if (PlayerData.Instance.currentMoney <
-            selectedBuildingData.cost)
+        if (PlayerData.Instance.currentMoney < selectedBuildingData.cost)
         {
             errorText.SetActive(true);
-
             return;
-        }
+        }  
 
-        // HIDE ERROR
         errorText.SetActive(false);
-
-        currentBase.BuildInSlot(
-            selectedBuildingData,
-            selectedSlot
-        );
-
-        incomeText.text =
-            "Income: " +
-            currentBase.income;
-
+        currentBase.BuildInSlot(selectedBuildingData, selectedSlot);
+        incomeText.text ="Income: " + currentBase.income;
         RefreshSlotUI();
-
         CloseBuildMenu();
-
         buildConfirmButton.SetActive(false);
     }
     public void UpgradeBase()
@@ -624,48 +519,32 @@ public class UIManager : MonoBehaviour
         if (currentBase != null)
         {
             currentBase.UpgradeBase();
-
-            // Обновляем UI
             levelText.text =
                 "Level: " +
                 currentBase.currentLevel;
-
             incomeText.text =
                 "Income: " +
                 currentBase.income;
-
             RefreshSlotUI();
         }
     }
 
     private void GenerateBuildMenu()
     {
-        // Удаляем старые кнопки
         foreach (Transform child in buttonsContainer)
         {
             Destroy(child.gameObject);
         }
 
-        // Создаем новые
-        foreach (BuildingData buildingData
-            in currentBase.availableBuildings)
+        foreach (BuildingData buildingData in currentBase.availableBuildings)
         {
-            GameObject buttonObject =
-                Instantiate(
-                    buildButtonTemplate,
-                    buttonsContainer
-                );
-
+            GameObject buttonObject = Instantiate(buildButtonTemplate, buttonsContainer);
             buttonObject.SetActive(true);
-
             UniversalBuildButton buildButton =
                 buttonObject.GetComponent<UniversalBuildButton>();
-
             buildButton.buildingData = buildingData;
-
             TMPro.TMP_Text buttonText =
                 buttonObject.GetComponentInChildren<TMPro.TMP_Text>();
-
             buttonText.text =
                 buildingData.buildingName;
         }
@@ -674,42 +553,28 @@ public class UIManager : MonoBehaviour
     public void OpenSquadFormationPanel()
     {
         basePanel.SetActive(false);
-
         heroRecruitPanel.SetActive(false);
-
         heroRosterPanel.SetActive(false);
-
         squadFormationPanel.SetActive(true);
-
         GenerateAvailableHeroes();
     }
     public void GenerateAvailableHeroes()
     {
-        foreach (Transform child
-            in availableHeroesContent)
+        foreach (Transform child in availableHeroesContent)
         {
             Destroy(child.gameObject);
         }
 
-        foreach (HeroInstance hero
-     in HeroManager.Instance.ownedHeroes)
+        foreach (HeroInstance hero in HeroManager.Instance.ownedHeroes)
         {
             if (hero.status != HeroStatus.Idle)
             {
                 continue;
             }
 
-            GameObject buttonObject =
-                Instantiate(
-                    squadHeroButtonTemplate,
-                    availableHeroesContent
-                );
-
+            GameObject buttonObject = Instantiate(squadHeroButtonTemplate, availableHeroesContent);
             buttonObject.SetActive(true);
-
-            SquadHeroButton heroButton =
-    buttonObject.GetComponent<SquadHeroButton>();
-
+            SquadHeroButton heroButton = buttonObject.GetComponent<SquadHeroButton>();
             heroButton.Setup(hero);
         }
     }
@@ -721,55 +586,31 @@ public class UIManager : MonoBehaviour
             Destroy(child.gameObject);
         }
 
-        foreach (HeroInstance hero
-    in HeroManager.Instance.ownedHeroes)
+        foreach (HeroInstance hero in HeroManager.Instance.ownedHeroes)
         {
-            GameObject newButton =
-                Instantiate(
-                    heroRosterButtonTemplate,
-                    heroRosterContent
-                );
-
+            GameObject newButton = Instantiate(heroRosterButtonTemplate, heroRosterContent);
             newButton.SetActive(true);
-
-            HeroRosterButton heroButton =
-                newButton.GetComponent<HeroRosterButton>();
+            HeroRosterButton heroButton = newButton.GetComponent<HeroRosterButton>();
             heroButton.Setup(hero);
         }
     }
 
     public void RecruitHero(HeroData heroData)
     {
-        // CHECK MONEY
-        if (PlayerData.Instance.currentMoney <
-            heroData.cost)
+        if (PlayerData.Instance.currentMoney < heroData.cost)
         {
             Debug.Log("Not enough money");
-
             return;
         }
-
-        // PAY
-        PlayerData.Instance.currentMoney -=
-            heroData.cost;
-
-        // ADD HERO
-        HeroManager.Instance.RecruitHero(
-            heroData
-        );
-
+        PlayerData.Instance.currentMoney -= heroData.cost;
+        HeroManager.Instance.RecruitHero(heroData);
         GenerateHeroRecruitList();
-
-        Debug.Log(
-            "Money left: " +
-            PlayerData.Instance.currentMoney
-        );
+        Debug.Log("Money left: " + PlayerData.Instance.currentMoney);
     }
 
     public void OpenSelectSquadPanel()
     {
         selectSquadPanel.SetActive(true);
-
         GenerateSquadSelection();
     }
 
@@ -816,26 +657,18 @@ public class UIManager : MonoBehaviour
     public void OpenRecruitPanel()
     {
         basePanel.SetActive(false);
-
         heroRosterPanel.SetActive(false);
-
         squadFormationPanel.SetActive(false);
-
         heroRecruitPanel.SetActive(true);
-
         GenerateHeroRecruitList();
     }
 
     public void OpenHeroRosterPanel()
     {
         basePanel.SetActive(false);
-
         squadFormationPanel.SetActive(false);
-
         heroRecruitPanel.SetActive(false);
-
         heroRosterPanel.SetActive(true);
-
         GenerateHeroRoster();
     }
 
@@ -843,21 +676,15 @@ public class UIManager : MonoBehaviour
     HeroData heroData)
     {
         selectedHeroData = heroData;
-
         recruitHeroDetailsPanel.SetActive(true);
-
         recruitHeroPortrait.sprite =
             heroData.portrait;
-
         recruitHeroName.text =
             heroData.heroName;
-
         recruitHeroTier.text =
             "Tier: " + heroData.tier;
-
         recruitHeroCost.text =
             "Cost: " + heroData.cost;
-
         recruitHeroDescription.text =
             heroData.description;
     }
@@ -866,46 +693,33 @@ public class UIManager : MonoBehaviour
     HeroInstance hero)
     {
         selectedHero = hero;
-
         heroDetailsPanel.SetActive(true);
-
         heroDetailsPortrait.sprite =
             hero.heroData.portrait;
-
         heroDetailsName.text =
             hero.heroData.heroName;
-
         heroDetailsLevel.text =
             "Level: " + hero.level;
-
         heroDetailsStatus.text =
             "Status: " + hero.status;
-
         heroDetailsTier.text =
             "Tier: " + hero.heroData.tier;
-
         heroDetailsDescription.text =
             hero.heroData.description;
     }
 
-    public void RemoveMember(
-    int index)
+    public void RemoveMember(int index)
     {
         if (index < 0)
         {
             return;
         }
-
         if (index >=
             currentSquad.members.Count)
         {
             return;
         }
-
-        currentSquad.members.RemoveAt(
-            index
-        );
-
+        currentSquad.members.RemoveAt(index);
         RefreshSquadSlots();
     }
 
@@ -929,13 +743,10 @@ public class UIManager : MonoBehaviour
         RemoveMember(3);
     }
 
-    public void SelectCommander(
-    HeroInstance hero)
+    public void SelectCommander(HeroInstance hero)
     {
         currentSquad.commander = hero;
-
-        commanderSlotText.text =
-            hero.heroData.heroName;
+        commanderSlotText.text = hero.heroData.heroName;
     }
 
     public void DisbandSelectedSquad()
@@ -944,29 +755,17 @@ public class UIManager : MonoBehaviour
         {
             return;
         }
+        selectedSquad.commander.status = HeroStatus.Idle;
 
-        // Командир
-        selectedSquad.commander.status =
-            HeroStatus.Idle;
-
-        // Участники
         foreach (HeroInstance hero
             in selectedSquad.members)
         {
             hero.status =
                 HeroStatus.Idle;
         }
-
-        // Удаляем отряд
-        SquadManager.Instance.activeSquads
-            .Remove(selectedSquad);
-
-        // Обновляем кнопки
+        SquadManager.Instance.activeSquads.Remove(selectedSquad);
         RefreshSquadButtons();
-
-        // Закрываем окно
         CloseSquadDetails();
-
         Debug.Log("Squad disbanded!");
     }
     public void CloseSquadFormationPanel()
@@ -989,7 +788,6 @@ public class UIManager : MonoBehaviour
     public void CloseSelectSquadPanel()
     {
         selectSquadPanel.SetActive(false);
-
         selectedSquad = null;
     }
 
@@ -999,34 +797,22 @@ public class UIManager : MonoBehaviour
         {
             return;
         }
-
-        // 1. меняем статус командира
         currentSquad.commander.status = HeroStatus.InSquad;
-
-        // 2. меняем статус членов
         foreach (HeroInstance hero in currentSquad.members)
         {
             hero.status = HeroStatus.InSquad;
         }
-
-        // 3. сохраняем отряд
         SquadManager.Instance.CreateSquad(currentSquad);
         RefreshSquadButtons();
-
-        // 4. очищаем текущий отряд (ВАЖНО)
         currentSquad = new Squad();
 
-        // 5. очищаем UI
         commanderSlotText.text = "Commander";
-
         memberSlot1Text.text = "Empty";
         memberSlot2Text.text = "Empty";
         memberSlot3Text.text = "Empty";
         memberSlot4Text.text = "Empty";
 
-        // 6. закрываем панель
         CloseSquadFormationPanel();
-
         Debug.Log("Squad sent and reset!");
     }
 
@@ -1041,8 +827,7 @@ public class UIManager : MonoBehaviour
         {
             bool alreadyOwned = false;
 
-            foreach (HeroInstance hero
-                in HeroManager.Instance.ownedHeroes)
+            foreach (HeroInstance hero in HeroManager.Instance.ownedHeroes)
             {
                 if (hero.heroData == heroData)
                 {
@@ -1051,131 +836,67 @@ public class UIManager : MonoBehaviour
                     break;
                 }
             }
-
             if (alreadyOwned)
             {
                 continue;
             }
-
-            GameObject newButton =
-                Instantiate(
-                    heroButtonTemplate,
-                    heroRecruitContent
-                );
-
+            GameObject newButton = Instantiate(heroButtonTemplate, heroRecruitContent);
             newButton.SetActive(true);
-
-            HeroRecruitButton heroButton =
-                newButton.GetComponent<HeroRecruitButton>();
-
+            HeroRecruitButton heroButton = newButton.GetComponent<HeroRecruitButton>();
             heroButton.Setup(heroData);
         }
     }
 
     private void GenerateSquadSelection()
     {
-        foreach (Transform child
-            in squadSelectContent)
+        foreach (Transform child in squadSelectContent)
         {
-            if (child.gameObject ==
-                squadSelectButtonTemplate)
+            if (child.gameObject == squadSelectButtonTemplate)
             {
                 continue;
             }
-
             Destroy(child.gameObject);
         }
 
-        foreach (Squad squad
-    in SquadManager.Instance.activeSquads)
+        foreach (Squad squad in SquadManager.Instance.activeSquads)
         {
-            Debug.Log(
-                squad.commander.heroData.heroName +
-                " | Status = " +
-                squad.status
-            );
-
             if (squad.status == SquadStatus.Occupying)
             {
                 continue;
             }
-
-            GameObject buttonObject =
-                Instantiate(
-                    squadSelectButtonTemplate,
-                    squadSelectContent
-                );
-
+            GameObject buttonObject = Instantiate(squadSelectButtonTemplate, squadSelectContent);
             buttonObject.SetActive(true);
-
-            SquadSelectButton squadButton =
-                buttonObject.GetComponent<SquadSelectButton>();
-
+            SquadSelectButton squadButton = buttonObject.GetComponent<SquadSelectButton>();
             squadButton.Setup(squad);
         }
     }
 
-    public void AssignSquadToSelectedObject(
-    Squad squad)
+    public void AssignSquadToSelectedObject(Squad squad)
     {
-        if (squad.targetObject == selectedMapObject &&
-        squad.status == SquadStatus.Occupying)
+        if (squad.targetObject == selectedMapObject && squad.status == SquadStatus.Occupying)
         {
             Debug.Log("Squad already guarding this object");
             return;
         }
-        if (squad.targetObject != null &&
-       squad.targetObject.garrisonSquad == squad)
+        if (squad.targetObject != null && squad.targetObject.garrisonSquad == squad)
         {
-            squad.targetObject.garrisonSquad = null;
-
-            Debug.Log("Removed from old garrison");
+            squad.targetObject.garrisonSquad = null;       
         }
-        Debug.Log(
-     "Current squad status = " +
-     squad.status
- );
-
-        Debug.Log(
-            "WorldObject NULL = " +
-            (squad.worldObject == null)
-        );
-        squad.targetObject =
-            selectedMapObject;
-
-        squad.status =
-            SquadStatus.Traveling;
-
-        Debug.Log(
-    "NEW STATUS = " +
-    squad.status
-);
+        squad.targetObject = selectedMapObject;
+        squad.status = SquadStatus.Traveling;
 
         if (squad.worldObject == null)
         {
-            SquadManager.Instance
-                .SpawnSquadWorldObject(squad);
+            SquadManager.Instance.SpawnSquadWorldObject(squad);
         }
         else
         {
-            squad.worldObject.transform.position =
-                playerBase.transform.position;
-
+            squad.worldObject.transform.position = playerBase.transform.position;
             squad.worldObject.gameObject.SetActive(true);
-            Debug.Log(
-    "WorldObject active = " +
-    squad.worldObject.gameObject.activeSelf
-);
         }
-
         CloseSelectSquadPanel();
         CloseMapObjectPanel();
-
-        Debug.Log(
-            squad.commander.heroData.heroName +
-            " sent to " +
-            selectedMapObject.objectName
-        );
+        Debug.Log(squad.commander.heroData.heroName + " sent to " + selectedMapObject.objectName);
     }
 
     private void RefreshSlotUI()
@@ -1202,9 +923,7 @@ public class UIManager : MonoBehaviour
         {
             return;
         }
-
         RecruitHero(selectedHeroData);
-
         recruitHeroDetailsPanel.SetActive(false);
     }
 
@@ -1214,20 +933,11 @@ public class UIManager : MonoBehaviour
         {
             return;
         }
-
-        selectedHero.status =
-            HeroStatus.Defending;
-
-        heroDetailsStatus.text =
-            "Status: " +
-            selectedHero.status;
+        selectedHero.status = HeroStatus.Defending;
+        heroDetailsStatus.text = "Status: " + selectedHero.status;
 
         GenerateHeroRoster();
-
-        Debug.Log(
-            selectedHero.heroData.heroName +
-            " is now defending."
-        );
+        Debug.Log(selectedHero.heroData.heroName + " is now defending.");
     }
 
     public void OpenCommanderPanel(Squad squad)
@@ -1235,7 +945,6 @@ public class UIManager : MonoBehaviour
         commanderPanel.SetActive(true);
         commanderDialogText.text = squad.commander.heroData.heroName + " захватил объект!";
 
-        // Убираем старые слушатели, чтобы не дублировались
         returnButton.onClick.RemoveAllListeners();
         guardButton.onClick.RemoveAllListeners();
 
@@ -1256,14 +965,8 @@ public class UIManager : MonoBehaviour
         if (squad.worldObject != null)
         {
             squad.worldObject.gameObject.SetActive(true);
-            Debug.Log(
-    "Returning to base. WorldObject active = " +
-    squad.worldObject.gameObject.activeSelf
-);
         }
-
         CloseCommanderPanel();
-
         RefreshSquadDetails(squad);
     }
 
@@ -1271,14 +974,11 @@ public class UIManager : MonoBehaviour
     {
         squad.status = SquadStatus.Occupying;
 
-        if (squad.targetObject != null &&
-    squad.targetObject.garrisonSquad == squad)
+        if (squad.targetObject != null && squad.targetObject.garrisonSquad == squad)
         {
             squad.targetObject.garrisonSquad = null;
         }
-
         CloseCommanderPanel();
-
         RefreshSquadDetails(squad);
     }
 
