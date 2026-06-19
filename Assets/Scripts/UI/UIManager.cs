@@ -1087,14 +1087,18 @@ public class UIManager : MonoBehaviour
         }
 
         foreach (Squad squad
-            in SquadManager.Instance.activeSquads)
+    in SquadManager.Instance.activeSquads)
         {
-
             Debug.Log(
-    squad.commander.heroData.heroName +
-    " | Status = " +
-    squad.status
-);
+                squad.commander.heroData.heroName +
+                " | Status = " +
+                squad.status
+            );
+
+            if (squad.status == SquadStatus.Occupying)
+            {
+                continue;
+            }
 
             GameObject buttonObject =
                 Instantiate(
@@ -1105,7 +1109,7 @@ public class UIManager : MonoBehaviour
             buttonObject.SetActive(true);
 
             SquadSelectButton squadButton =
-    buttonObject.GetComponent<SquadSelectButton>();
+                buttonObject.GetComponent<SquadSelectButton>();
 
             squadButton.Setup(squad);
         }
@@ -1114,18 +1118,38 @@ public class UIManager : MonoBehaviour
     public void AssignSquadToSelectedObject(
     Squad squad)
     {
-       /* if (selectedMapObject.ownerFaction ==
-    FactionType.Player)
+        if (squad.targetObject == selectedMapObject &&
+        squad.status == SquadStatus.Occupying)
         {
-            Debug.Log("Object already belongs to player");
-
+            Debug.Log("Squad already guarding this object");
             return;
-        } */
+        }
+        if (squad.targetObject != null &&
+       squad.targetObject.garrisonSquad == squad)
+        {
+            squad.targetObject.garrisonSquad = null;
+
+            Debug.Log("Removed from old garrison");
+        }
+        Debug.Log(
+     "Current squad status = " +
+     squad.status
+ );
+
+        Debug.Log(
+            "WorldObject NULL = " +
+            (squad.worldObject == null)
+        );
         squad.targetObject =
             selectedMapObject;
 
         squad.status =
             SquadStatus.Traveling;
+
+        Debug.Log(
+    "NEW STATUS = " +
+    squad.status
+);
 
         if (squad.worldObject == null)
         {
@@ -1247,15 +1271,10 @@ public class UIManager : MonoBehaviour
     {
         squad.status = SquadStatus.Occupying;
 
-        if (squad.targetObject != null)
+        if (squad.targetObject != null &&
+    squad.targetObject.garrisonSquad == squad)
         {
-            squad.targetObject.garrisonSquad = squad;
-
-            Debug.Log(
-                squad.commander.heroData.heroName +
-                " is now guarding " +
-                squad.targetObject.objectName
-            );
+            squad.targetObject.garrisonSquad = null;
         }
 
         CloseCommanderPanel();

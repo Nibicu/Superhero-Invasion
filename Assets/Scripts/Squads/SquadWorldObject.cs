@@ -45,6 +45,8 @@ public class SquadWorldObject : MonoBehaviour
         if (squad.targetObject is Base)
         {
             squad.status = SquadStatus.Ready;
+
+            squad.targetObject.garrisonSquad = squad;
         }
         else
         {
