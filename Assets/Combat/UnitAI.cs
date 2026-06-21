@@ -1,0 +1,115 @@
+using UnityEngine;
+
+public class UnitAI : MonoBehaviour
+{
+    private UnitCombat combat;
+
+    private UnitCombat target;
+
+    private float attackTimer;
+
+    private void Start()
+    {
+        combat = GetComponent<UnitCombat>();
+    }
+
+    private void Update()
+    {
+        FindTarget();
+
+        if (target == null)
+        {
+            return;
+        }
+
+        float distance =
+            Vector3.Distance(
+                transform.position,
+                target.transform.position
+            );
+
+        if (distance > combat.attackRange)
+        {
+            MoveToTarget();
+        }
+        else
+        {
+            AttackTarget();
+        }
+    }
+
+    private void FindTarget()
+    {
+        if (target != null)
+        {
+            return;
+        }
+
+        UnitCombat[] allUnits =
+            FindObjectsOfType<UnitCombat>();
+
+        float closestDistance =
+            Mathf.Infinity;
+
+        UnitCombat closestTarget =
+            null;
+
+        foreach (UnitCombat unit in allUnits)
+        {
+            if (unit == combat)
+            {
+                continue;
+            }
+
+            if (unit.faction ==
+                combat.faction)
+            {
+                continue;
+            }
+
+            float distance =
+                Vector3.Distance(
+                    transform.position,
+                    unit.transform.position
+                );
+
+            if (distance < closestDistance)
+            {
+                closestDistance =
+                    distance;
+
+                closestTarget =
+                    unit;
+            }
+        }
+
+        target = closestTarget;
+    }
+
+    private void MoveToTarget()
+    {
+        transform.position =
+            Vector3.MoveTowards(
+                transform.position,
+                target.transform.position,
+                3f * Time.deltaTime
+            );
+    }
+
+    private void AttackTarget()
+    {
+        attackTimer += Time.deltaTime;
+
+        if (attackTimer <
+            combat.attackCooldown)
+        {
+            return;
+        }
+
+        attackTimer = 0f;
+
+        target.TakeDamage(
+            combat.damage
+        );
+    }
+}
