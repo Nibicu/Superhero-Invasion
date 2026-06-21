@@ -15,7 +15,10 @@ public class UnitAI : MonoBehaviour
 
     private void Update()
     {
-        FindTarget();
+        if (target == null)
+        {
+            FindTarget();
+        }
 
         if (target == null)
         {
@@ -111,5 +114,10 @@ public class UnitAI : MonoBehaviour
         target.TakeDamage(
             combat.damage
         );
+
+        if (target.currentHP <= 0)
+        {
+            target = null;
+        }
     }
 }
