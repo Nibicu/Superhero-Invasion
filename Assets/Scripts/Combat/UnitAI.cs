@@ -15,6 +15,16 @@ public class UnitAI : MonoBehaviour
 
     private void Update()
     {
+        if (combat.isStunned)
+        {
+            return;
+        }
+
+        if (target == null)
+        {
+            FindTarget();
+        }
+
         if (target == null)
         {
             FindTarget();
@@ -111,9 +121,26 @@ public class UnitAI : MonoBehaviour
 
         attackTimer = 0f;
 
-        target.TakeDamage(
-            combat.damage
-        );
+        combat.comboStep++;
+
+        if (combat.comboStep < 3)
+        {
+            target.TakeDamage(
+                combat.damage
+            );
+
+            target.Stun(0.4f);
+        }
+        else
+        {
+            target.TakeDamage(
+                combat.damage * 2
+            );
+
+            combat.comboStep = 0;
+
+            attackTimer = -1f;
+        }
 
         if (target.currentHP <= 0)
         {
