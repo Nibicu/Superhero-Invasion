@@ -130,12 +130,32 @@ public class UnitAI : MonoBehaviour
             );
 
             target.Stun(0.4f);
+
+            Vector3 direction =
+                (target.transform.position -
+                 transform.position).normalized;
+
+            transform.position +=
+                direction * 0.1f;
+
+            target.transform.position +=
+                direction * 0.1f;
         }
         else
         {
             target.TakeDamage(
                 combat.damage * 2
             );
+
+            Vector3 direction =
+                (target.transform.position -
+                 transform.position).normalized;
+
+            transform.position +=
+                direction * 0.2f;
+
+            target.transform.position +=
+                direction * 0.5f;
 
             combat.comboStep = 0;
 

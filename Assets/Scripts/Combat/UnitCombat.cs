@@ -18,9 +18,17 @@ public class UnitCombat : MonoBehaviour
     public float stunTimer;
     public int comboStep;
 
+
+    private bool isDead;
+    private Renderer spriteRenderer;
+
+
     private void Start()
     {
         currentHP = maxHP;
+
+        spriteRenderer =
+            GetComponent<Renderer>();
     }
 
     private void Update()
@@ -43,16 +51,44 @@ public class UnitCombat : MonoBehaviour
     }
     public void TakeDamage(int amount)
     {
+        if (isDead)
+        {
+            return;
+        }
+
+
         currentHP -= amount;
+
 
         if (currentHP <= 0)
         {
-            Die();
+            StartCoroutine(DeathDelay());
         }
     }
 
     private void Die()
     {
+        Destroy(gameObject);
+    }
+
+    private System.Collections.IEnumerator DeathDelay()
+    {
+        isDead = true;
+
+
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.material.color =
+                new Color(0.8f, 0.3f, 0.05f);
+        }
+
+
+        isStunned = true;
+
+
+        yield return new WaitForSeconds(0.5f);
+
+
         Destroy(gameObject);
     }
 }
