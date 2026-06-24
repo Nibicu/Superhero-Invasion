@@ -98,15 +98,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8aa4ce4f4447e5347a015fd649abc543, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHP: 50
+  maxHP: 80
   currentHP: 0
   damage: 10
   attackRange: 0.3
-  attackCooldown: 1
+  attackCooldown: 0.5
   faction: 0
   isStunned: 0
   stunTimer: 0
   comboStep: 0
+  isKnockedDown: 0
+  knockdownTimer: 0
 --- !u!114 &7274183211244177715
 MonoBehaviour:
   m_ObjectHideFlags: 0

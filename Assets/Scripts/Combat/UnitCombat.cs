@@ -10,6 +10,7 @@ public class UnitCombat : MonoBehaviour
     public float attackRange = 1.5f;
     public float attackCooldown = 1f;
     public FactionType faction;
+    public bool isAttacking;
 
 
     [Header("Combat")]
@@ -17,6 +18,9 @@ public class UnitCombat : MonoBehaviour
     public bool isStunned;
     public float stunTimer;
     public int comboStep;
+
+    public bool isKnockedDown;
+    public float knockdownTimer;
 
 
     private bool isDead;
@@ -33,6 +37,21 @@ public class UnitCombat : MonoBehaviour
 
     private void Update()
     {
+        if (isKnockedDown)
+        {
+            knockdownTimer -= Time.deltaTime;
+
+            if (knockdownTimer <= 0)
+            {
+                isKnockedDown = false;
+
+                transform.rotation =
+                    Quaternion.identity;
+            }
+
+            return;
+        }
+
         if (isStunned)
         {
             stunTimer -= Time.deltaTime;
@@ -49,6 +68,18 @@ public class UnitCombat : MonoBehaviour
 
         stunTimer = duration;
     }
+    public void KnockDown(float duration)
+    {
+        isKnockedDown = true;
+        knockdownTimer = duration;
+
+        transform.rotation =
+            Quaternion.Euler(
+                70,
+                0,
+                0
+            );
+    }
     public void TakeDamage(int amount)
     {
         if (isDead)
@@ -56,9 +87,9 @@ public class UnitCombat : MonoBehaviour
             return;
         }
 
-
         currentHP -= amount;
 
+        comboStep = 0;
 
         if (currentHP <= 0)
         {

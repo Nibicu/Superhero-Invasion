@@ -15,6 +15,18 @@ public class UnitAI : MonoBehaviour
 
     private void Update()
     {
+
+        if (combat.isKnockedDown)
+        {
+            target = null;
+            return;
+        }
+
+        if (target == null)
+        {
+            FindTarget();
+        }
+
         if (combat.isStunned)
         {
             return;
@@ -79,6 +91,10 @@ public class UnitAI : MonoBehaviour
             {
                 continue;
             }
+            if (unit.isKnockedDown)
+            {
+                continue;
+            }
 
             float distance =
                 Vector3.Distance(
@@ -101,61 +117,51 @@ public class UnitAI : MonoBehaviour
 
     private void MoveToTarget()
     {
+        if (combat.isKnockedDown || combat.isStunned || combat.isAttacking)
+            return;
+
         transform.position =
             Vector3.MoveTowards(
                 transform.position,
                 target.transform.position,
-                3f * Time.deltaTime
+                1.5f * Time.deltaTime
             );
     }
 
     private void AttackTarget()
     {
+        if (combat.isKnockedDown || combat.isStunned)
+            return;
+
         attackTimer += Time.deltaTime;
 
-        if (attackTimer <
-            combat.attackCooldown)
+        if (attackTimer < combat.attackCooldown)
         {
             return;
         }
 
         attackTimer = 0f;
 
+        combat.isAttacking = true;
+        StartCoroutine(UnlockAttack());
+
+
         combat.comboStep++;
+
+        Vector3 direction =
+            (target.transform.position - transform.position).normalized;
 
         if (combat.comboStep < 3)
         {
-            target.TakeDamage(
-                combat.damage
-            );
+            target.TakeDamage(combat.damage);
 
             target.Stun(0.4f);
-
-            Vector3 direction =
-                (target.transform.position -
-                 transform.position).normalized;
-
-            transform.position +=
-                direction * 0.1f;
-
-            target.transform.position +=
-                direction * 0.1f;
         }
         else
         {
-            target.TakeDamage(
-                combat.damage * 2
-            );
+            target.TakeDamage(combat.damage * 2);
 
-            Vector3 direction =
-                (target.transform.position -
-                 transform.position).normalized;
-
-            transform.position +=
-                direction * 0.2f;
-
-            target.transform.position +=
-                direction * 0.5f;
+            target.KnockDown(0.5f);
 
             combat.comboStep = 0;
 
@@ -166,5 +172,11 @@ public class UnitAI : MonoBehaviour
         {
             target = null;
         }
+    }
+    private System.Collections.IEnumerator UnlockAttack()
+    {
+        yield return new WaitForSeconds(0.2f);
+
+        combat.isAttacking = false;
     }
 }

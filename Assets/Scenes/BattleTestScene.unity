@@ -226,6 +226,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: NeutralGuard
       objectReference: {fileID: 0}
+    - target: {fileID: 4411119817040788681, guid: f56e481f6e60d0a498cf70d6aabb9e66, type: 3}
+      propertyPath: attackCooldown
+      value: 0.5
+      objectReference: {fileID: 0}
     - target: {fileID: 7352287774753274284, guid: f56e481f6e60d0a498cf70d6aabb9e66, type: 3}
       propertyPath: m_LocalPosition.x
       value: 2
