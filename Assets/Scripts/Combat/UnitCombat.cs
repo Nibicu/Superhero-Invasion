@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 public class UnitCombat : MonoBehaviour
 {
@@ -11,6 +11,7 @@ public class UnitCombat : MonoBehaviour
     public float attackCooldown = 1f;
     public FactionType faction;
     public bool isAttacking;
+    public UnitCombat lockedTarget;
 
 
     [Header("Combat")]
@@ -22,9 +23,13 @@ public class UnitCombat : MonoBehaviour
     public bool isKnockedDown;
     public float knockdownTimer;
 
+    public bool isRecoiling;
+    public float recoilTimer;
+
 
     private bool isDead;
     private Renderer spriteRenderer;
+
 
 
     private void Start()
@@ -61,6 +66,16 @@ public class UnitCombat : MonoBehaviour
                 isStunned = false;
             }
         }
+
+        if (isRecoiling)
+        {
+            recoilTimer -= Time.deltaTime;
+
+            if (recoilTimer <= 0)
+            {
+                isRecoiling = false;
+            }
+        }
     }
     public void Stun(float duration)
     {
@@ -72,6 +87,8 @@ public class UnitCombat : MonoBehaviour
     {
         isKnockedDown = true;
         knockdownTimer = duration;
+
+        lockedTarget = null; // ❗ важно
 
         transform.rotation =
             Quaternion.Euler(
@@ -97,11 +114,6 @@ public class UnitCombat : MonoBehaviour
         }
     }
 
-    private void Die()
-    {
-        Destroy(gameObject);
-    }
-
     private System.Collections.IEnumerator DeathDelay()
     {
         isDead = true;
@@ -120,6 +132,10 @@ public class UnitCombat : MonoBehaviour
         yield return new WaitForSeconds(0.5f);
 
 
+        Destroy(gameObject);
+    }
+    private void Die()
+    {
         Destroy(gameObject);
     }
 }

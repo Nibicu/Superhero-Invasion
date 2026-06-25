@@ -101,9 +101,10 @@ MonoBehaviour:
   maxHP: 200
   currentHP: 0
   damage: 15
-  attackRange: 0.2
+  attackRange: 0.3
   attackCooldown: 0.4
   faction: 1
+  isAttacking: 0
   isStunned: 0
   stunTimer: 0
   comboStep: 0
