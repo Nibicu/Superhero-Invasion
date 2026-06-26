@@ -2,33 +2,30 @@
 
 public class UnitCombat : MonoBehaviour
 {
-    [Header("Stats")]
+    [Header("Stats")] // Это постоянные характеристики бойца.
 
-    public int maxHP = 100;
-    public int currentHP;
-    public int damage = 10;
-    public float attackRange = 1.5f;
-    public float attackCooldown = 1f;
-    public FactionType faction;
-    public bool isAttacking;
-    public UnitCombat lockedTarget;
-
-
-    [Header("Combat")]
-
-    public bool isStunned;
-    public float stunTimer;
-    public int comboStep;
-
-    public bool isKnockedDown;
-    public float knockdownTimer;
-
-    public bool isRecoiling;
-    public float recoilTimer;
+    public int maxHP = 100; // Максимальное здоровье.
+    public int currentHP; // Текущее здоровье.
+    public int damage = 10; // Базовый урон одной обычной атаки.
+    public float attackRange = 1.5f; // На каком расстоянии можно начать атаку.
+    public float attackCooldown = 1f; // Минимальное время между двумя атаками. Не между комбо. Именно между ударами.
+    public FactionType faction; // К какой стороне принадлежит юнит.
+    public UnitState currentState = UnitState.Idle; // Что сейчас делает персонаж?
+    public bool isAttacking; // временно
+    public UnitCombat lockedTarget; // цель, на которой герой сфокусировался.
 
 
-    private bool isDead;
-    private Renderer spriteRenderer;
+    [Header("Combat")] // Временные состояния
+
+    public bool isStunned; // Стан во время удара.
+    public float stunTimer; // Время стана.
+    public int comboStep; // Какой сейчас удар серии.
+    public bool isKnockedDown; // Лежит на земле.
+    public float knockdownTimer; // Через сколько секунд встанет.
+    public bool isRecoiling; // вроде уже стоит, но ещё не готов идти.
+    public float recoilTimer; // Сколько ещё длится восстановление.
+    private bool isDead; // Чтобы нельзя было убить одного и того же персонажа десять раз подряд.
+    private Renderer spriteRenderer; // временно
 
 
 
@@ -96,7 +93,7 @@ public class UnitCombat : MonoBehaviour
                 0,
                 0
             );
-    }
+    }//Выдать нокдаун.
     public void TakeDamage(int amount)
     {
         if (isDead)
@@ -112,7 +109,7 @@ public class UnitCombat : MonoBehaviour
         {
             StartCoroutine(DeathDelay());
         }
-    }
+    }//Получить урон.
 
     private System.Collections.IEnumerator DeathDelay()
     {
@@ -133,9 +130,9 @@ public class UnitCombat : MonoBehaviour
 
 
         Destroy(gameObject);
-    }
+    }//Унечтожение персонажа.
     private void Die()
     {
         Destroy(gameObject);
-    }
+    }//Ненужен.
 }
