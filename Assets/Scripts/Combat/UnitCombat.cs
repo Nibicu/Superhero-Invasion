@@ -47,6 +47,8 @@ public class UnitCombat : MonoBehaviour
             {
                 isKnockedDown = false;
 
+                currentState = UnitState.GetUp;
+
                 transform.rotation =
                     Quaternion.identity;
             }
@@ -78,11 +80,14 @@ public class UnitCombat : MonoBehaviour
     {
         isStunned = true;
 
+        currentState = UnitState.Hit;
+
         stunTimer = duration;
     }
     public void KnockDown(float duration)
     {
         isKnockedDown = true;
+        currentState = UnitState.KnockDown;
         knockdownTimer = duration;
 
         lockedTarget = null; // ❗ важно
@@ -114,7 +119,7 @@ public class UnitCombat : MonoBehaviour
     private System.Collections.IEnumerator DeathDelay()
     {
         isDead = true;
-
+        currentState = UnitState.Dead;
 
         if (spriteRenderer != null)
         {

@@ -104,6 +104,7 @@ public class UnitAI : MonoBehaviour
         combat.isRecoiling
        )
             return;
+        combat.currentState = UnitState.Moving;
 
         transform.position =
             Vector3.MoveTowards(
@@ -126,6 +127,10 @@ public class UnitAI : MonoBehaviour
         attackTimer = 0f;
 
         combat.isAttacking = true;
+
+        // Новая система состояний
+        combat.currentState = UnitState.Attack;
+
         StartCoroutine(UnlockAttack());
 
         if (combat.lockedTarget == null)
@@ -176,5 +181,13 @@ public class UnitAI : MonoBehaviour
         yield return new WaitForSeconds(0.2f);
 
         combat.isAttacking = false;
+
+        // Если герой не лежит и не оглушён —
+        // возвращаем его в Idle
+        if (!combat.isKnockedDown &&
+            !combat.isStunned)
+        {
+            combat.currentState = UnitState.Idle;
+        }
     }
 }
