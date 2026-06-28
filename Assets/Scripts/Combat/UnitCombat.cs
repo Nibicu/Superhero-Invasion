@@ -9,6 +9,12 @@ public class UnitCombat : MonoBehaviour
     public int damage = 10; // Базовый урон одной обычной атаки.
     public float attackRange = 1.5f; // На каком расстоянии можно начать атаку.
     public float attackCooldown = 1f; // Минимальное время между двумя атаками. Не между комбо. Именно между ударами.
+
+    [Header("HitBox")]
+
+    public float hitRadius = 0.5f; // Ширина удара. Чем больше значение, тем больше противников можно задеть.
+    public float hitDistance = 0.7f; // Насколько далеко вперед бьет герой.
+
     public FactionType faction; // К какой стороне принадлежит юнит.
     public UnitState currentState = UnitState.Idle; // Что сейчас делает персонаж?
     public bool isAttacking; // временно
@@ -27,6 +33,10 @@ public class UnitCombat : MonoBehaviour
     private bool isDead; // Чтобы нельзя было убить одного и того же персонажа десять раз подряд.
     private Renderer spriteRenderer; // временно
 
+    public float attackTimer;
+    public bool damageDealt;
+    public float attackHitTime = 0.10f;
+    public float attackDuration = 0.25f;
 
 
     private void Start()
@@ -75,6 +85,27 @@ public class UnitCombat : MonoBehaviour
                 isRecoiling = false;
             }
         }
+
+        if (currentState == UnitState.Attack)
+        {
+            attackTimer += Time.deltaTime;
+
+            if (!damageDealt && attackTimer >= attackHitTime)
+            {
+                damageDealt = true;
+
+                PerformAttack();
+            }
+
+            if (attackTimer >= attackDuration)
+            {
+                currentState = UnitState.Idle;
+
+                attackTimer = 0f;
+
+                damageDealt = false;
+            }
+        }
     }
     public void Stun(float duration)
     {
@@ -99,6 +130,10 @@ public class UnitCombat : MonoBehaviour
                 0
             );
     }//Выдать нокдаун.
+    private void PerformAttack()
+    {
+
+    }
     public void TakeDamage(int amount)
     {
         if (isDead)

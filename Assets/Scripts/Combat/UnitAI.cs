@@ -15,6 +15,10 @@ public class UnitAI : MonoBehaviour
 
     private void Update()
     {
+        if (combat.currentState == UnitState.Attack)
+        {
+            return;
+        }
 
         if (combat.isKnockedDown)
         {
@@ -22,19 +26,9 @@ public class UnitAI : MonoBehaviour
             return;
         }
 
-        if (target == null)
-        {
-            FindTarget();
-        }
-
         if (combat.isStunned)
         {
             return;
-        }
-
-        if (target == null)
-        {
-            FindTarget();
         }
 
         if (target == null)
@@ -100,7 +94,7 @@ public class UnitAI : MonoBehaviour
         if (
         combat.isKnockedDown ||
         combat.isStunned ||
-        combat.isAttacking ||
+        combat.currentState == UnitState.Attack ||
         combat.isRecoiling
        )
             return;
@@ -126,55 +120,18 @@ public class UnitAI : MonoBehaviour
 
         attackTimer = 0f;
 
-        combat.isAttacking = true;
+        combat.attackTimer = 0f;
+        combat.damageDealt = false;
 
         // Новая система состояний
         combat.currentState = UnitState.Attack;
-
-        StartCoroutine(UnlockAttack());
 
         if (combat.lockedTarget == null)
         {
             combat.lockedTarget = target;
         }
+
         combat.comboStep++;
-
-        Vector3 direction =
-            (target.transform.position - transform.position).normalized;
-
-        float push = 0f;
-
-        // 🟡 УДАР 1–2
-        if (combat.comboStep < 3)
-        {
-            target.TakeDamage(combat.damage);
-            target.Stun(1.0f);
-
-            push = 0.05f;
-        }
-        else
-        {
-            // 🔴 3-й УДАР (финиш)
-            target.TakeDamage(combat.damage * 2);
-            target.KnockDown(1.5f);
-
-            push = 0.8f;
-
-            combat.comboStep = 0;
-        }
-
-        // 💥 ИМПАКТ (ВАЖНО — ТОЛЬКО ОДИН РАЗ)
-        target.transform.position += direction * push;
-        target.isRecoiling = true;
-        target.recoilTimer = 0.3f;
-
-        // 🧠 лёгкий откат атакующего (ощущение удара)
-        transform.position -= -direction * (push * 0.3f);
-
-        if (target.currentHP <= 0)
-        {
-            target = null;
-        }
     }
     private System.Collections.IEnumerator UnlockAttack()
     {
