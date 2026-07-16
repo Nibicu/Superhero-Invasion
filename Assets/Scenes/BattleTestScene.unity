@@ -283,6 +283,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1969224580264863902, guid: 61da9cfd3486a5448a4680e3474ec479, type: 3}
+      propertyPath: lockedTarget
+      value: 
+      objectReference: {fileID: 0}
     - target: {fileID: 5786027203543915134, guid: 61da9cfd3486a5448a4680e3474ec479, type: 3}
       propertyPath: m_Name
       value: UnitCombat
