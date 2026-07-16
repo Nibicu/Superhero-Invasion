@@ -47,7 +47,7 @@ public class UnitAI : MonoBehaviour
                 target.transform.position
             );
 
-        if (distance > combat.attackRange)
+        if (distance > combat.Stats.attackRange)
         {
             MoveToTarget();
         }
@@ -74,7 +74,7 @@ public class UnitAI : MonoBehaviour
         foreach (UnitCombat unit in allUnits)
         {
             if (unit == combat) continue;
-            if (unit.faction == combat.faction) continue;
+            if (unit.Stats.faction == combat.Stats.faction) continue;
             if (unit.isKnockedDown) continue;
 
             float distance = Vector3.Distance(transform.position, unit.transform.position);
@@ -98,7 +98,10 @@ public class UnitAI : MonoBehaviour
         combat.isRecoiling
        )
             return;
-        combat.currentState = UnitState.Moving;
+        if (combat.currentState != UnitState.Moving)
+        {
+            combat.currentState = UnitState.Moving;
+        }
 
         transform.position =
             Vector3.MoveTowards(
@@ -115,7 +118,7 @@ public class UnitAI : MonoBehaviour
 
         attackTimer += Time.deltaTime;
 
-        if (attackTimer < combat.attackCooldown)
+        if (attackTimer < combat.Stats.attackCooldown)
             return;
 
         attackTimer = 0f;
@@ -132,19 +135,5 @@ public class UnitAI : MonoBehaviour
         }
 
         combat.comboStep++;
-    }
-    private System.Collections.IEnumerator UnlockAttack()
-    {
-        yield return new WaitForSeconds(0.2f);
-
-        combat.isAttacking = false;
-
-        // Если герой не лежит и не оглушён —
-        // возвращаем его в Idle
-        if (!combat.isKnockedDown &&
-            !combat.isStunned)
-        {
-            combat.currentState = UnitState.Idle;
-        }
     }
 }

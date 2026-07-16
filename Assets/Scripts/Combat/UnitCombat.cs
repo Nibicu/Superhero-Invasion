@@ -2,22 +2,14 @@
 
 public class UnitCombat : MonoBehaviour
 {
-    [Header("Stats")] // Это постоянные характеристики бойца.
-
-    public int maxHP = 100; // Максимальное здоровье.
-    public int currentHP; // Текущее здоровье.
-    public int damage = 10; // Базовый урон одной обычной атаки.
-    public float attackRange = 1.5f; // На каком расстоянии можно начать атаку.
-    public float attackCooldown = 1f; // Минимальное время между двумя атаками. Не между комбо. Именно между ударами.
+    public UnitStats Stats { get; private set; }
 
     [Header("HitBox")]
 
     public float hitRadius = 0.5f; // Ширина удара. Чем больше значение, тем больше противников можно задеть.
     public float hitDistance = 0.7f; // Насколько далеко вперед бьет герой.
 
-    public FactionType faction; // К какой стороне принадлежит юнит.
     public UnitState currentState = UnitState.Idle; // Что сейчас делает персонаж?
-    public bool isAttacking; // временно
     public UnitCombat lockedTarget; // цель, на которой герой сфокусировался.
 
 
@@ -41,15 +33,17 @@ public class UnitCombat : MonoBehaviour
 
     private void Start()
     {
-        currentHP = maxHP;
+        Stats = GetComponent<UnitStats>();
 
         spriteRenderer =
             GetComponent<Renderer>();
+
+        Stats.currentHP = Stats.maxHP;
     }
 
     private void Update()
     {
-        if (isKnockedDown)
+        if (currentState == UnitState.KnockDown)
         {
             knockdownTimer -= Time.deltaTime;
 
@@ -141,11 +135,11 @@ public class UnitCombat : MonoBehaviour
             return;
         }
 
-        currentHP -= amount;
+        Stats.currentHP -= amount;
 
         comboStep = 0;
 
-        if (currentHP <= 0)
+        if (Stats.currentHP <= 0)
         {
             StartCoroutine(DeathDelay());
         }

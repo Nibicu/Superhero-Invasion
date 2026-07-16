@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 2130846352247085073}
   - component: {fileID: 1969224580264863902}
   - component: {fileID: 752541684585762467}
+  - component: {fileID: 452899331663748232}
   m_Layer: 0
   m_Name: UnitCombat
   m_TagString: Untagged
@@ -103,13 +104,23 @@ MonoBehaviour:
   damage: 15
   attackRange: 0.3
   attackCooldown: 0.4
+  hitRadius: 0.5
+  hitDistance: 0.7
   faction: 1
+  currentState: 0
   isAttacking: 0
+  lockedTarget: {fileID: 0}
   isStunned: 0
   stunTimer: 0
   comboStep: 0
   isKnockedDown: 0
   knockdownTimer: 0
+  isRecoiling: 0
+  recoilTimer: 0
+  attackTimer: 0
+  damageDealt: 0
+  attackHitTime: 0.1
+  attackDuration: 0.25
 --- !u!114 &752541684585762467
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -122,3 +133,25 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6f6b941d3c7303a4aa0f2503bd676571, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &452899331663748232
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5786027203543915134}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 54e94cbf13a411b4689c772d7f001ed1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxHP: 100
+  currentHP: 100
+  damage: 10
+  attackRange: 1.5
+  attackCooldown: 1
+  walkSpeed: 1.5
+  runSpeed: 3
+  weight: 1
+  maxMana: 100
+  currentMana: 100
