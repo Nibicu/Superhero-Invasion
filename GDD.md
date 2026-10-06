@@ -40,6 +40,7 @@
 - Новый код: `Assets/_Game/Scripts`. Старые `Assets/Scripts`, `Assets/Data`, `Assets/Prefabs`, `Fix.cs` удалены (есть в Git, коммит «Перед переписыванием кода»).
 - Временные спрайты: `Assets/_Game/Art/Placeholder` (белые Square, Circle, Diamond, RoundedRect — цвет задаётся в компонентах).
 - **Шаг 1 — сделан:** `ResourceManager` (золото/плутоний обеих сторон, доход раз в 10 с, события, читы G/P), интерфейс `IIncomeSource` (всё, что приносит доход), `IncomeSource` (простой источник, сейчас на базах: +100), `TopBarUI` (верхняя панель).
+- **Шаг 2 — сделан:** `MainBase` (уровни 1–3: 1500/3000 золота; ячейки 3/4/5; доход базы 100/150/200; постройки; бонусы `MaxHeroStars`, `HeroCapacityBonus`, `HasRadar`; флаг `FactoryUpgradesUnlocked` — включит Завод на Шаге 5; `UnlockBuilding` — для особых построек). Постройки — ScriptableObject `BuildingData` в `Assets/_Game/Data/Buildings` (Менеджерский отдел, Радар, Резервные комнаты, Бараки), уровни задаются списком `levels`. UI: `BaseWindowUI` (клик по базе), `BuildingSlotUI`, `BuildMenuUI` + `BuildOptionUI` (шаблон строки), `BuildingIconUI`, `ToastUI.Show("текст")`. Вражескую базу можно смотреть только с Радаром. У врага на старте стоит Менеджерский отдел.
 
 ## Уточнения автора
 
