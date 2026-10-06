@@ -75,6 +75,9 @@ public class BuildingData : ScriptableObject
     [Tooltip("Можно строить с самого начала. Если выключено — нужно открыть (герой, миссия)")]
     public bool availableFromStart = true;
 
+    [Tooltip("Можно построить несколько штук на одной базе (например, 5 Менеджерских отделов)")]
+    public bool allowMultiple = false;
+
     [Header("Уровни (первый элемент = уровень 1)")]
     public BuildingLevel[] levels = { new BuildingLevel() };
 

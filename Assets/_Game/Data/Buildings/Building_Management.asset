@@ -18,6 +18,7 @@ MonoBehaviour:
   color: {r: 0.9098039, g: 0.69803923, b: 0.22745098, a: 1}
   type: 1
   availableFromStart: 1
+  allowMultiple: 1
   levels:
   - goldCost: 400
     plutoniumCost: 0

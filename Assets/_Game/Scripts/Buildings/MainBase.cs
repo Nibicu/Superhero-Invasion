@@ -156,14 +156,24 @@ public class MainBase : MonoBehaviour, IIncomeSource
         if (data != null && unlocked.Add(data)) Changed?.Invoke();
     }
 
-    /// <summary>Список построек, которые можно построить прямо сейчас (ещё не построены и открыты).</summary>
+    /// <summary>
+    /// Можно ли сейчас построить эту постройку: она открыта и либо её ещё нет,
+    /// либо разрешено строить несколько штук (allowMultiple).
+    /// </summary>
+    public bool CanBuildType(BuildingData d)
+    {
+        if (d == null) return false;
+        if (!d.availableFromStart && !unlocked.Contains(d)) return false;
+        return d.allowMultiple || !HasBuilding(d);
+    }
+
+    /// <summary>Список построек, которые можно построить прямо сейчас.</summary>
     public List<BuildingData> GetBuildableList()
     {
         var list = new List<BuildingData>();
         if (availableBuildings == null) return list;
         foreach (BuildingData d in availableBuildings)
-            if (d != null && !HasBuilding(d) && (d.availableFromStart || unlocked.Contains(d)))
-                list.Add(d);
+            if (CanBuildType(d)) list.Add(d);
         return list;
     }
 
@@ -220,7 +230,7 @@ public class MainBase : MonoBehaviour, IIncomeSource
         error = null;
         if (!IsSlotOpen(index)) { error = "Ячейка ещё закрыта"; return false; }
         if (slots[index] != null) { error = "Ячейка занята"; return false; }
-        if (HasBuilding(data)) { error = "Такая постройка уже есть"; return false; }
+        if (!CanBuildType(data)) { error = "Такая постройка уже есть"; return false; }
 
         BuildingLevel l = data.GetLevel(1);
         if (!ResourceManager.Instance.TrySpend(owner, l.goldCost, l.plutoniumCost))
