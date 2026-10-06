@@ -7,6 +7,7 @@ public enum SquadStatus
     AtBase,    // Стоит на базе, готова к заданию
     Moving,    // Едет к объекту или миссии (Шаг 5)
     Capturing, // Захватывает объект (идёт таймер)
+    OnMission, // Выполняет миссию (идёт таймер)
     Returning  // Возвращается на базу
 }
 
@@ -108,6 +109,7 @@ public class Squad
             {
                 case SquadStatus.Moving: return "<color=#FFB84A>В пути</color>";
                 case SquadStatus.Capturing: return "<color=#C58BFF>Захват</color>";
+                case SquadStatus.OnMission: return "<color=#FFD84A>Миссия</color>";
                 case SquadStatus.Returning: return "<color=#7FB8FF>Возврат</color>";
                 default: return "<color=#6EE07A>На базе</color>";
             }

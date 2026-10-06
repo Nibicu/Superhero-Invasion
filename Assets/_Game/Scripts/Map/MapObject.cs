@@ -130,6 +130,9 @@ public class MapObject : MonoBehaviour, ISquadTarget, IIncomeSource
         return true;
     }
 
+    /// <summary>Команду отправили к объекту — объекту ничего делать не нужно.</summary>
+    public void OnSquadDispatched(Squad squad) { }
+
     /// <summary>Команда приехала: начинаем захват (если можно), иначе отправляем её домой.</summary>
     public void OnSquadArrived(SquadUnit unit)
     {

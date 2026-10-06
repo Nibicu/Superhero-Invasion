@@ -192,6 +192,15 @@ public class HeroManager : MonoBehaviour
         return true;
     }
 
+    /// <summary>Бесплатно поднять уровень героя (награда за миссию). Вернёт false, если уже максимум.</summary>
+    public bool FreeLevelUp(HeroInstance hero)
+    {
+        if (hero.Level >= maxHeroLevel) return false;
+        hero.LevelUp();
+        HeroesChanged?.Invoke(hero.Owner);
+        return true;
+    }
+
     // ---------- Усиление (Институт ядерной физики) ----------
 
     /// <summary>Сколько раз можно усилить героя.</summary>

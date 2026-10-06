@@ -19,6 +19,10 @@ public class SquadManager : MonoBehaviour
     [Tooltip("Сколько героев в команде кроме капитана")]
     [SerializeField] private int maxMembers = 4;
 
+    [Header("Лечение")]
+    [Tooltip("Какую долю здоровья команда восстанавливает за секунду, стоя на базе (0.02 = 2%)")]
+    [SerializeField] private float healPerSecond = 0.02f;
+
     [Header("Фишки команд на карте")]
     [Tooltip("Префаб фишки команды (Assets/_Game/Prefabs/SquadToken)")]
     [SerializeField] private SquadUnit unitPrefab;
@@ -43,6 +47,20 @@ public class SquadManager : MonoBehaviour
     private void OnDestroy()
     {
         if (Instance == this) Instance = null;
+    }
+
+    /// <summary>Команды на базе понемногу лечатся (после проваленной миссии).</summary>
+    private void Update()
+    {
+        Heal(playerSquads);
+        Heal(enemySquads);
+    }
+
+    private void Heal(List<Squad> squads)
+    {
+        foreach (Squad s in squads)
+            if (s.Status == SquadStatus.AtBase && s.HpFraction < 1f)
+                s.HpFraction = Mathf.Min(1f, s.HpFraction + healPerSecond * Time.deltaTime);
     }
 
     /// <summary>Команды стороны (по порядку номеров).</summary>
@@ -129,6 +147,7 @@ public class SquadManager : MonoBehaviour
         unit.name = $"Squad_{squad.Owner}_{squad.Number}";
         unit.Init(squad, home.transform.position, target, squad.Owner == Team.Player ? playerColor : enemyColor);
         SetStatus(squad, SquadStatus.Moving);
+        target.OnSquadDispatched(squad);
         return true;
     }
 

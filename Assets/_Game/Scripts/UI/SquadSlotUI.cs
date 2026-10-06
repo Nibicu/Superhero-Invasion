@@ -23,14 +23,24 @@ public class SquadSlotUI : MonoBehaviour
     private static readonly Color EmptyColor = new Color(1f, 1f, 1f, 0.25f); // Рамка пустой ячейки
 
     private Action onClick; // Что делать при клике
+    private Squad squad;    // Какая команда показана (null — пустая ячейка)
 
     /// <summary>Подписываем кнопку.</summary>
     private void Awake() => button.onClick.AddListener(() => onClick?.Invoke());
+
+    /// <summary>Полоска HP обновляется каждый кадр (команда лечится на базе).</summary>
+    private void Update()
+    {
+        if (squad == null) return;
+        hpFill.fillAmount = squad.HpFraction;
+        hpFill.color = Color.Lerp(new Color(0.9f, 0.25f, 0.25f), new Color(0.35f, 0.85f, 0.4f), squad.HpFraction);
+    }
 
     /// <summary>Показать команду (или пустую ячейку, если squad == null).</summary>
     public void Show(Squad squad, Action click)
     {
         onClick = click;
+        this.squad = squad;
         bool has = squad != null;
         emptyState.SetActive(!has);
         filledState.SetActive(has);

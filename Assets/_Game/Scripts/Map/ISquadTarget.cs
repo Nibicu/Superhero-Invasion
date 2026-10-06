@@ -17,6 +17,9 @@ public interface ISquadTarget
     /// <summary>Можно ли отправить сюда эту команду. Если нет — reason объясняет почему.</summary>
     bool CanAccept(Squad squad, out string reason);
 
+    /// <summary>Команду только что отправили сюда (ещё в пути). Миссия, например, перестаёт исчезать.</summary>
+    void OnSquadDispatched(Squad squad);
+
     /// <summary>Команда приехала.</summary>
     void OnSquadArrived(SquadUnit unit);
 }
