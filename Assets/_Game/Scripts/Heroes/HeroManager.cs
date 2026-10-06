@@ -34,6 +34,12 @@ public class HeroManager : MonoBehaviour
     [Tooltip("Цена прокачки = это число × звёзды × текущий уровень")]
     [SerializeField] private int levelUpCostPerStar = 150;
 
+    [Header("Усиление в Институте (за плутоний)")]
+    [Tooltip("Сколько раз можно усилить одного героя")]
+    [SerializeField] private int maxBoosts = 3;
+    [Tooltip("Цена усиления = это число × (сколько усилений уже было + 1)")]
+    [SerializeField] private int boostPlutoniumCost = 20;
+
     private readonly List<HeroInstance> playerHeroes = new List<HeroInstance>(); // Нанятые герои игрока
     private readonly List<HeroInstance> enemyHeroes = new List<HeroInstance>();  // Нанятые злодеи врага
     private int playerExtraLimit; // Доп. места для героев игрока (Военная база и т.п.)
@@ -182,6 +188,41 @@ public class HeroManager : MonoBehaviour
             return false;
         }
         hero.LevelUp();
+        HeroesChanged?.Invoke(hero.Owner);
+        return true;
+    }
+
+    // ---------- Усиление (Институт ядерной физики) ----------
+
+    /// <summary>Сколько раз можно усилить героя.</summary>
+    public int MaxBoosts => maxBoosts;
+
+    /// <summary>Цена следующего усиления в плутонии.</summary>
+    public int GetBoostCost(HeroInstance hero) => boostPlutoniumCost * (hero.Boosts + 1);
+
+    /// <summary>Можно ли усилить героя (без учёта плутония). reason — почему нельзя.</summary>
+    public bool CanBoost(HeroInstance hero, out string reason)
+    {
+        reason = null;
+        if (!MapObject.TeamCanBoostHeroes(hero.Owner)) { reason = "Нужен Институт"; return false; }
+        if (hero.Boosts >= maxBoosts) { reason = "Макс. усиление"; return false; }
+        return true;
+    }
+
+    /// <summary>Усилить героя за плутоний: +10% ко всем характеристикам.</summary>
+    public bool TryBoost(HeroInstance hero, out string error)
+    {
+        if (!CanBoost(hero, out error))
+        {
+            if (error == "Нужен Институт") error = "Захватите Институт ядерной физики";
+            return false;
+        }
+        if (!ResourceManager.Instance.TrySpend(hero.Owner, 0, GetBoostCost(hero)))
+        {
+            error = "Не хватает плутония";
+            return false;
+        }
+        hero.AddBoost();
         HeroesChanged?.Invoke(hero.Owner);
         return true;
     }

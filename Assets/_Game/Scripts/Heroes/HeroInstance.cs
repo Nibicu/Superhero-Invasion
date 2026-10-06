@@ -36,8 +36,17 @@ public class HeroInstance
         Owner = owner;
     }
 
-    /// <summary>Текущие характеристики с учётом уровня.</summary>
-    public HeroStats Stats => Data.baseStats.Scaled(1f + StatGrowthPerLevel * (Level - 1));
+    /// <summary>На сколько растут характеристики за каждое усиление в Институте (0.1 = +10%).</summary>
+    public const float StatGrowthPerBoost = 0.1f;
+
+    /// <summary>Сколько раз героя усилили плутонием (Институт ядерной физики).</summary>
+    public int Boosts { get; private set; }
+
+    /// <summary>Текущие характеристики с учётом уровня и усилений.</summary>
+    public HeroStats Stats => Data.baseStats.Scaled(1f + StatGrowthPerLevel * (Level - 1) + StatGrowthPerBoost * Boosts);
+
+    /// <summary>Добавить одно усиление (цену и максимум проверяет HeroManager).</summary>
+    public void AddBoost() => Boosts++;
 
     /// <summary>Открыт ли навык на текущем уровне.</summary>
     public bool IsSkillUnlocked(HeroSkill skill) => Level >= skill.unlockLevel;

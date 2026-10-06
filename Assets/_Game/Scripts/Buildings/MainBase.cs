@@ -53,7 +53,17 @@ public class MainBase : MonoBehaviour, IIncomeSource
     /// Захвачен ли Завод: разрешает улучшать доходные постройки до ур.2.
     /// Будет включаться объектом "Завод" на Шаге 5.
     /// </summary>
-    public bool FactoryUpgradesUnlocked { get; set; }
+    public bool FactoryUpgradesUnlocked
+    {
+        get => factoryUpgradesUnlocked;
+        set
+        {
+            if (factoryUpgradesUnlocked == value) return;
+            factoryUpgradesUnlocked = value;
+            Changed?.Invoke(); // окно базы обновит кнопки "Улучшить"
+        }
+    }
+    private bool factoryUpgradesUnlocked;
 
     // ---------- Свойства для других скриптов ----------
 

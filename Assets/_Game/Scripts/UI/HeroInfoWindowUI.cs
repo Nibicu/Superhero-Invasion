@@ -22,14 +22,17 @@ public class HeroInfoWindowUI : WindowUI
     [SerializeField] private TMP_Text captainText;    // Бонус командира
     [SerializeField] private Button actionButton;     // "НАНЯТЬ" / "ПРОКАЧАТЬ"
     [SerializeField] private TMP_Text actionText;     // Текст на кнопке
+    [SerializeField] private Button boostButton;      // "УСИЛИТЬ" за плутоний (нужен Институт)
+    [SerializeField] private TMP_Text boostText;      // Текст на кнопке усиления
 
     private HeroData current; // Какой герой показан
 
-    /// <summary>Подписываем кнопку.</summary>
+    /// <summary>Подписываем кнопки.</summary>
     protected override void Awake()
     {
         base.Awake();
         actionButton.onClick.AddListener(OnActionClicked);
+        if (boostButton != null) boostButton.onClick.AddListener(OnBoostClicked);
     }
 
     /// <summary>Подписываемся на изменения денег и героев.</summary>
@@ -74,8 +77,25 @@ public class HeroInfoWindowUI : WindowUI
 
         // Уровень и статус
         levelText.text = hero != null
-            ? $"Уровень {hero.Level} / {hm.MaxHeroLevel}  •  {hero.StatusText}"
+            ? $"Уровень {hero.Level} / {hm.MaxHeroLevel}  •  {hero.StatusText}" +
+              (hero.Boosts > 0 ? $"\n<size=80%><color=#C58BFF>Усилен: {hero.Boosts} / {hm.MaxBoosts}</color></size>" : "")
             : "<color=#9AA4B5>Не нанят</color>";
+
+        // Кнопка усиления — только для нанятых героев
+        if (boostButton != null)
+        {
+            boostButton.gameObject.SetActive(hero != null);
+            if (hero != null)
+            {
+                bool canBoost = hm.CanBoost(hero, out string boostReason);
+                int cost = hm.GetBoostCost(hero);
+                bool afford = ResourceManager.Instance.CanAfford(Team.Player, 0, cost);
+                boostButton.interactable = canBoost;
+                boostText.text = canBoost
+                    ? $"УСИЛИТЬ +10%  <color={(afford ? "#E2C6FF" : "#FF6B6B")}>{cost} плутония</color>"
+                    : $"УСИЛИТЬ: {boostReason.ToLower()}";
+            }
+        }
 
         // Характеристики (с учётом уровня, если герой нанят)
         int[] values = (hero != null ? hero.Stats : current.baseStats).ToArray();
@@ -117,6 +137,17 @@ public class HeroInfoWindowUI : WindowUI
             actionButton.interactable = true;
             actionText.text = $"ПРОКАЧАТЬ ДО УР. {hero.Level + 1}\n<size=75%><color={(afford ? "#FFD84A" : "#FF6B6B")}>{cost} золота</color> • +10% к статам</size>";
         }
+    }
+
+    /// <summary>Нажата кнопка "УСИЛИТЬ" — усиление за плутоний (нужен Институт).</summary>
+    private void OnBoostClicked()
+    {
+        HeroInstance hero = HeroManager.Instance.FindHero(Team.Player, current);
+        if (hero == null) return;
+        if (HeroManager.Instance.TryBoost(hero, out string error))
+            ToastUI.Show($"{current.displayName} усилен! (+10% ко всем характеристикам)");
+        else
+            ToastUI.Show(error);
     }
 
     /// <summary>Нажата кнопка: нанять или прокачать.</summary>

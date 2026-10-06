@@ -19,6 +19,14 @@ public class SquadManager : MonoBehaviour
     [Tooltip("Сколько героев в команде кроме капитана")]
     [SerializeField] private int maxMembers = 4;
 
+    [Header("Фишки команд на карте")]
+    [Tooltip("Префаб фишки команды (Assets/_Game/Prefabs/SquadToken)")]
+    [SerializeField] private SquadUnit unitPrefab;
+    [Tooltip("Цвет фишек игрока")]
+    [SerializeField] private Color playerColor = new Color(0.18f, 0.48f, 0.88f);
+    [Tooltip("Цвет фишек врага")]
+    [SerializeField] private Color enemyColor = new Color(0.85f, 0.22f, 0.23f);
+
     private readonly List<Squad> playerSquads = new List<Squad>(); // Команды игрока
     private readonly List<Squad> enemySquads = new List<Squad>();  // Команды врага
 
@@ -103,6 +111,33 @@ public class SquadManager : MonoBehaviour
         squad.Status = status;
         SetHeroesStatus(squad, status == SquadStatus.AtBase ? HeroStatus.InTeam : HeroStatus.OnMission);
         NotifyChanged(squad.Owner);
+    }
+
+    /// <summary>
+    /// Отправить команду к цели (объект карты или миссия).
+    /// Команда должна стоять на базе, а цель — принимать её.
+    /// На карте появляется фишка, которая едет от базы к цели.
+    /// </summary>
+    public bool SendSquad(Squad squad, ISquadTarget target, out string error)
+    {
+        if (squad.Status != SquadStatus.AtBase) { error = "Команда сейчас не на базе"; return false; }
+        if (!target.CanAccept(squad, out error)) return false;
+        MainBase home = MainBase.Get(squad.Owner);
+        if (home == null || unitPrefab == null) { error = "Нет базы или префаба фишки"; return false; }
+
+        SquadUnit unit = Instantiate(unitPrefab);
+        unit.name = $"Squad_{squad.Owner}_{squad.Number}";
+        unit.Init(squad, home.transform.position, target, squad.Owner == Team.Player ? playerColor : enemyColor);
+        SetStatus(squad, SquadStatus.Moving);
+        return true;
+    }
+
+    /// <summary>Фишка вернулась на базу — команда снова свободна (вызывает SquadUnit).</summary>
+    public void OnUnitReturned(SquadUnit unit)
+    {
+        SetStatus(unit.Squad, SquadStatus.AtBase);
+        if (unit.Squad.Owner == Team.Player)
+            ToastUI.Show($"Команда {unit.Squad.Number} вернулась на базу");
     }
 
     /// <summary>Сообщить всем, что команды стороны изменились (обновить интерфейс).</summary>
