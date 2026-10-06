@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1eb09ca89b6c4e942acb943b440a973c, type: 3}
+  m_Name: Hero_Lightning
+  m_EditorClassIdentifier: Assembly-CSharp::HeroData
+  displayName: "\u041C\u043E\u043B\u043D\u0438\u044F"
+  portrait: {fileID: 0}
+  color: {r: 0.9490196, g: 0.81960785, b: 0.22745098, a: 1}
+  description: "\u0411\u044B\u0441\u0442\u0440\u0435\u0435 \u0437\u0432\u0443\u043A\u0430. \u041F\u043E\u043A\u0430 \u0432\u0440\u0430\u0433 \u043C\u043E\u0440\u0433\u043D\u0451\u0442 \u2014 \u0431\u043E\u0439 \u0443\u0436\u0435 \u043E\u043A\u043E\u043D\u0447\u0435\u043D."
+  side: 0
+  stars: 2
+  hireCost: 900
+  baseStats:
+    hp: 1200
+    hpRegen: 20
+    attack: 170
+    specialAttack: 120
+    defense: 100
+    specialDefense: 90
+    energy: 180
+    energyRegen: 18
+    speed: 140
+  skills:
+  - name: "\u0420\u044B\u0432\u043E\u043A"
+    description: "\u041C\u0433\u043D\u043E\u0432\u0435\u043D\u043D\u044B\u0439 \u0443\u0434\u0430\u0440 \u043F\u0435\u0440\u0432\u044B\u043C"
+    unlockLevel: 1
+  - name: "\u0426\u0435\u043F\u043D\u0430\u044F \u043C\u043E\u043B\u043D\u0438\u044F"
+    description: "\u0411\u044C\u0451\u0442 \u043F\u043E \u043D\u0435\u0441\u043A\u043E\u043B\u044C\u043A\u0438\u043C \u0446\u0435\u043B\u044F\u043C"
+    unlockLevel: 3
+  - name: "\u0413\u0440\u043E\u0437\u0430"
+    description: "\u0428\u043A\u0432\u0430\u043B \u0443\u0434\u0430\u0440\u043E\u0432 \u043C\u043E\u043B\u043D\u0438\u0438"
+    unlockLevel: 5
+  captainBonus: "+15% \u043A \u0441\u043A\u043E\u0440\u043E\u0441\u0442\u0438 \u0438 \u0430\u0442\u0430\u043A\u0435 \u043A\u043E\u043C\u0430\u043D\u0434\u044B"
