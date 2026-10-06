@@ -87,7 +87,7 @@ public class SquadUnit : MonoBehaviour
     {
         if (!moving) return;
         Vector3 target = path[pathIndex];
-        transform.position = Vector3.MoveTowards(transform.position, target, speed * Time.deltaTime);
+        transform.position = Vector3.MoveTowards(transform.position, target, speed * WorldTime.DeltaTime);
         if ((transform.position - target).sqrMagnitude > 0.0001f) return;
 
         pathIndex++;

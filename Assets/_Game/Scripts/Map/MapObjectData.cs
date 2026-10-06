@@ -29,8 +29,9 @@ public class MapObjectData : ScriptableObject
     [Tooltip("Сколько секунд команда захватывает объект")]
     public float captureTime = 15f;
 
-    [Tooltip("Охрана объекта — видна только с Радаром (в битвах будет использоваться позже)")]
-    public string guardDescription = "2 злодея";
+    [Header("Охрана (гарнизон)")]
+    [Tooltip("Волны охраны — по одной на каждую территорию арены (обычно 3)")]
+    public GuardWave[] waves = new GuardWave[0];
 
     [Header("Бонусы владельцу")]
     [Tooltip("Золото за одно начисление (раз в 10 с)")]
@@ -50,6 +51,24 @@ public class MapObjectData : ScriptableObject
 
     [Tooltip("Дополнительный текст бонусов (то, что пока не работает в коде — например, ракеты)")]
     [TextArea(1, 3)] public string extraBonusText = "";
+
+    /// <summary>Сколько всего охранников во всех волнах.</summary>
+    public int GuardCount
+    {
+        get
+        {
+            int n = 0;
+            if (waves != null)
+                foreach (GuardWave w in waves)
+                    foreach (GuardEntry g in w.guards)
+                        if (g != null && g.unit != null) n++;
+            return n;
+        }
+    }
+
+    /// <summary>Краткое описание охраны: "3 территории, 5 бойцов, сила 480".</summary>
+    public string GetGuardText() =>
+        $"{(waves != null ? waves.Length : 0)} территории, {GuardCount} бойцов, сила {BattleCalculator.GarrisonPower(this)}";
 
     /// <summary>Собрать текст всех бонусов для окна объекта.</summary>
     public string GetBonusText()

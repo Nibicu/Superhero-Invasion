@@ -84,7 +84,7 @@ public class ResourceManager : MonoBehaviour
     /// <summary>Каждый кадр двигаем таймер дохода и проверяем читы.</summary>
     private void Update()
     {
-        timer += Time.deltaTime;
+        timer += WorldTime.DeltaTime;
         if (timer >= incomeInterval)
         {
             timer -= incomeInterval;

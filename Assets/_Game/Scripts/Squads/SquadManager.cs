@@ -60,7 +60,7 @@ public class SquadManager : MonoBehaviour
     {
         foreach (Squad s in squads)
             if (s.Status == SquadStatus.AtBase && s.HpFraction < 1f)
-                s.HpFraction = Mathf.Min(1f, s.HpFraction + healPerSecond * Time.deltaTime);
+                s.HpFraction = Mathf.Min(1f, s.HpFraction + healPerSecond * WorldTime.DeltaTime);
     }
 
     /// <summary>Команды стороны (по порядку номеров).</summary>

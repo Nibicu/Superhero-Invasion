@@ -71,7 +71,7 @@ public class MapObjectWindowUI : WindowUI
 
         MainBase myBase = MainBase.Get(Team.Player);
         string guard = myBase != null && myBase.HasRadar
-            ? $"<color=#FFFFFF>{d.guardDescription}</color>"
+            ? $"<color=#FFFFFF>{d.GetGuardText()}</color>"
             : "<color=#8792A6>??? (нужен Радар)</color>";
         infoText.text = $"Время захвата: <color=#FFFFFF>{d.captureTime:0} с</color>\nОхрана: {guard}";
 

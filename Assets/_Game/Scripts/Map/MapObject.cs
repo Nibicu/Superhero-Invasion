@@ -36,6 +36,10 @@ public class MapObject : MonoBehaviour, ISquadTarget, IIncomeSource
     private SquadUnit capturer;  // Команда, которая сейчас захватывает
     private float progress;      // Прогресс захвата 0..1
     private bool incomeRegistered; // Зарегистрирован ли доход в ResourceManager
+    private bool awaitingDecision; // Игрок ещё выбирает в окне перед боем (таймер стоит)
+    private bool inManualBattle;   // Идёт ручной бой на арене
+    private BattleForecast autoForecast; // Прогноз автобоя
+    private bool autoWin;          // Итог автобоя (известен заранее, применяется в конце таймера)
 
     // ---------- Свойства ----------
 
@@ -105,8 +109,8 @@ public class MapObject : MonoBehaviour, ISquadTarget, IIncomeSource
     /// <summary>Идёт таймер захвата.</summary>
     private void Update()
     {
-        if (capturer == null) return;
-        progress += Time.deltaTime / Mathf.Max(0.1f, data.captureTime);
+        if (capturer == null || awaitingDecision || inManualBattle) return;
+        progress += WorldTime.DeltaTime / Mathf.Max(0.1f, data.captureTime);
         UpdateProgressBar();
         if (progress >= 1f) FinishCapture();
     }
@@ -133,13 +137,17 @@ public class MapObject : MonoBehaviour, ISquadTarget, IIncomeSource
     /// <summary>Команду отправили к объекту — объекту ничего делать не нужно.</summary>
     public void OnSquadDispatched(Squad squad) { }
 
-    /// <summary>Команда приехала: начинаем захват (если можно), иначе отправляем её домой.</summary>
+    /// <summary>
+    /// Команда приехала. Объект уже наш или занят — едет домой.
+    /// Игрок: открывается окно перед боем (автобой или ручной бой).
+    /// Враг (ИИ): сразу автобой с таймером захвата.
+    /// </summary>
     public void OnSquadArrived(SquadUnit unit)
     {
         Team team = unit.Squad.Owner;
         if (IsOwnedBy(team) || capturer != null)
         {
-            // Пока ехали — объект уже стал нашим или его кто-то захватывает (битв пока нет)
+            // Пока ехали — объект уже стал нашим или его кто-то захватывает
             if (team == Team.Player) ToastUI.Show($"{data.displayName}: захват невозможен, команда возвращается");
             unit.ReturnHome();
             return;
@@ -148,13 +156,37 @@ public class MapObject : MonoBehaviour, ISquadTarget, IIncomeSource
         capturer = unit;
         progress = 0f;
         SquadManager.Instance.SetStatus(unit.Squad, SquadStatus.Capturing);
-        if (progressRoot != null) progressRoot.SetActive(true);
-        UpdateProgressBar();
-        if (team == Team.Player) ToastUI.Show($"Команда {unit.Squad.Number} начала захват: {data.displayName}");
-        else if (IsOwnedBy(Team.Player)) ToastUI.Show($"Враг пытается захватить наш объект: {data.displayName}!");
+
+        if (team == Team.Player && BattlePrepWindowUI.Instance != null)
+        {
+            awaitingDecision = true; // таймер стоит, пока игрок выбирает
+            BattlePrepWindowUI.Instance.RequestBattle(this, unit);
+        }
+        else
+        {
+            var forecast = BattleCalculator.Forecast(BattleCalculator.SquadPower(unit.Squad), BattleCalculator.GarrisonPower(data));
+            BeginAutoCapture(unit, forecast);
+            if (IsOwnedBy(Team.Player)) ToastUI.Show($"Враг пытается захватить наш объект: {data.displayName}!");
+        }
     }
 
-    /// <summary>Таймер закончился — объект переходит к захватчику, команда едет домой.</summary>
+    /// <summary>
+    /// Автобой: идёт обычный таймер захвата, итог бросается сразу
+    /// (уверенная победа / 50 на 50 / поражение), а применяется в конце таймера.
+    /// </summary>
+    public void BeginAutoCapture(SquadUnit unit, BattleForecast forecast)
+    {
+        if (capturer != unit) return;
+        awaitingDecision = false;
+        autoForecast = forecast;
+        autoWin = BattleCalculator.RollAutoBattle(forecast);
+        progress = 0f;
+        if (progressRoot != null) progressRoot.SetActive(true);
+        UpdateProgressBar();
+        if (unit.Squad.Owner == Team.Player) ToastUI.Show($"Команда {unit.Squad.Number}: автобой за объект «{data.displayName}»");
+    }
+
+    /// <summary>Таймер автобоя закончился — применяем итог, команда едет домой.</summary>
     private void FinishCapture()
     {
         SquadUnit unit = capturer;
@@ -162,13 +194,46 @@ public class MapObject : MonoBehaviour, ISquadTarget, IIncomeSource
         progress = 0f;
         if (progressRoot != null) progressRoot.SetActive(false);
 
-        Team newOwner = unit.Squad.Owner;
+        Squad squad = unit.Squad;
+        float loss = BattleCalculator.AutoBattleHpLoss(autoForecast, autoWin);
+        squad.HpFraction = Mathf.Max(BattleCalculator.MinHpAfterBattle, squad.HpFraction - loss);
+        int lossPercent = Mathf.RoundToInt(loss * 100);
+
+        if (autoWin) TakeOver(squad.Owner, $"(команда потеряла {lossPercent}% HP)");
+        else if (squad.Owner == Team.Player)
+            ToastUI.Show($"Автобой за «{data.displayName}» проигран! Команда {squad.Number} потеряла {lossPercent}% HP");
+        unit.ReturnHome();
+    }
+
+    /// <summary>Ручной бой на арене закончился (вызывает BattleManager через окно перед боем).</summary>
+    public void OnManualBattleFinished(SquadUnit unit, bool win, float hpFraction)
+    {
+        inManualBattle = false;
+        if (capturer == unit) capturer = null;
+        progress = 0f;
+        if (progressRoot != null) progressRoot.SetActive(false);
+        if (unit == null) return;
+
+        unit.Squad.HpFraction = hpFraction;
+        if (win) TakeOver(unit.Squad.Owner, "");
+        else ToastUI.Show($"Бой за «{data.displayName}» проигран. Команда {unit.Squad.Number} возвращается на базу");
+        unit.ReturnHome();
+    }
+
+    /// <summary>Ручной бой начался — таймер захвата не идёт, объект ждёт итога.</summary>
+    public void OnManualBattleStarted()
+    {
+        awaitingDecision = false;
+        inManualBattle = true;
+    }
+
+    /// <summary>Объект переходит к стороне newOwner + сообщение.</summary>
+    private void TakeOver(Team newOwner, string extra)
+    {
         bool wasOurs = IsOwnedBy(Team.Player);
         SetOwner(newOwner);
-        unit.ReturnHome();
-
         if (newOwner == Team.Player)
-            ToastUI.Show($"{data.displayName} захвачен! {data.GetBonusText().Split('\n')[0]}");
+            ToastUI.Show($"{data.displayName} захвачен! {data.GetBonusText().Split('\n')[0]} {extra}");
         else if (wasOurs)
             ToastUI.Show($"Враг захватил наш объект: {data.displayName}!");
         else

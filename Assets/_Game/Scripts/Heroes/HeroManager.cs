@@ -82,7 +82,7 @@ public class HeroManager : MonoBehaviour
         var list = new List<HeroData>();
         if (heroPool != null)
             foreach (HeroData h in heroPool)
-                if (h != null && h.side == side) list.Add(h);
+                if (h != null && h.side == side && h.hireable) list.Add(h);
         list.Sort((a, b) => a.stars != b.stars ? a.stars.CompareTo(b.stars) : a.hireCost.CompareTo(b.hireCost));
         return list;
     }

@@ -58,7 +58,7 @@ public class MissionManager : MonoBehaviour
     /// <summary>Отсчитываем время до следующей миссии.</summary>
     private void Update()
     {
-        timer -= Time.deltaTime;
+        timer -= WorldTime.DeltaTime;
         if (timer > 0f) return;
         timer = Random.Range(minInterval, maxInterval);
         if (active.Count < maxActive) SpawnMission();

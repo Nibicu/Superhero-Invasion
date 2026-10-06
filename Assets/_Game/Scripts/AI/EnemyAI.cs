@@ -54,7 +54,7 @@ public class EnemyAI : MonoBehaviour
     private void Update()
     {
         if (!aiEnabled || Base == null) return;
-        timer -= Time.deltaTime;
+        timer -= WorldTime.DeltaTime;
         if (timer > 0f) return;
         timer = thinkInterval;
         Think();
@@ -167,6 +167,11 @@ public class EnemyAI : MonoBehaviour
             float value = d.goldIncome * 3f + d.plutoniumIncome * 40f + d.heroLimitBonus * 150f
                           + (d.unlocksFactoryUpgrades ? 400f : 0f) + (d.allowsHeroBoost ? 300f : 0f);
             if (o.HasOwner) value += 200f; // отобрать у противника — вдвойне полезно
+
+            // Охрана объекта: на верное поражение не идём, на равный бой — неохотно
+            var forecast = BattleCalculator.Forecast(BattleCalculator.SquadPower(squad), BattleCalculator.GarrisonPower(d));
+            if (forecast == BattleForecast.Lose) continue;
+            if (forecast == BattleForecast.Equal) value *= 0.5f;
             float score = value / (Vector3.Distance(home, o.ApproachPoint) + 5f);
             if (score > bestScore) { bestScore = score; best = o; }
         }

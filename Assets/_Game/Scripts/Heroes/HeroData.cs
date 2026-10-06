@@ -101,6 +101,9 @@ public class HeroData : ScriptableObject
     [Tooltip("Цена найма в золоте")]
     public int hireCost = 300;
 
+    [Tooltip("Можно ли нанять в РОСТЕРЕ. Выключено — это моб-охранник (только для охраны объектов)")]
+    public bool hireable = true;
+
     [Header("Характеристики (на 1 уровне)")]
     public HeroStats baseStats;
 

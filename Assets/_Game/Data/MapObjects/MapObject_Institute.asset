@@ -18,7 +18,22 @@ MonoBehaviour:
   iconLetter: "\u0418"
   color: {r: 0.5568628, g: 0.30980393, b: 0.8392157, a: 1}
   captureTime: 30
-  guardDescription: "3 \u0437\u043B\u043E\u0434\u0435\u044F (2 \u0437\u0432\u0435\u0437\u0434\u044B)"
+  waves:
+  - guards:
+    - unit: {fileID: 11400000, guid: 69229f06c0946c84bb409c279b571cae, type: 2}
+      level: 1
+    - unit: {fileID: 11400000, guid: 69229f06c0946c84bb409c279b571cae, type: 2}
+      level: 1
+  - guards:
+    - unit: {fileID: 11400000, guid: c8ead20c82ddc27408647de6be1e6682, type: 2}
+      level: 1
+    - unit: {fileID: 11400000, guid: d860d0d741c91e94182a1b452141462a, type: 2}
+      level: 1
+  - guards:
+    - unit: {fileID: 11400000, guid: 7cefe1c2790ee574b9a62678ee5261fb, type: 2}
+      level: 1
+    - unit: {fileID: 11400000, guid: c8ead20c82ddc27408647de6be1e6682, type: 2}
+      level: 1
   goldIncome: 0
   plutoniumIncome: 10
   heroLimitBonus: 0

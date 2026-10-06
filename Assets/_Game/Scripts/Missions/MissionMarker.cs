@@ -73,7 +73,7 @@ public class MissionMarker : MonoBehaviour, ISquadTarget
 
         if (worker != null)
         {
-            progress += Time.deltaTime / Mathf.Max(0.1f, Data.duration);
+            progress += WorldTime.DeltaTime / Mathf.Max(0.1f, Data.duration);
             SetBar(progress, new Color(0.35f, 0.85f, 0.4f));
             if (progress >= 1f) Finish();
             return;
@@ -81,7 +81,7 @@ public class MissionMarker : MonoBehaviour, ISquadTarget
 
         if (assigned != null) return; // команда в пути — миссия ждёт
 
-        lifeLeft -= Time.deltaTime;
+        lifeLeft -= WorldTime.DeltaTime;
         SetBar(lifeLeft / Data.lifetime, Color.white);
         if (lifeLeft <= 0f) manager.RemoveMission(this, false);
     }
