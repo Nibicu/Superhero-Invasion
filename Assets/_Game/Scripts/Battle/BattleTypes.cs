@@ -1,5 +1,54 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
+
+/// <summary>
+/// Один защитник для боя: кто, с какими характеристиками и с каким здоровьем.
+/// Охрана объекта (мобы) и гарнизон базы (герои) превращаются в такие записи.
+/// </summary>
+public struct BattleUnit
+{
+    public HeroData data;     // Кто (имя, цвет, портрет)
+    public HeroStats stats;   // Характеристики с учётом уровня и усилений
+    public float hpFraction;  // С какой долей здоровья выходит (раненая команда)
+    public string info;       // Подпись для окна перед боем
+}
+
+/// <summary>Итог ручного боя.</summary>
+public struct BattleResult
+{
+    public bool win;          // Победили ли атакующие (наши)
+    public float attackerHp;  // Доля HP команды атакующих после боя
+    public float defenderHp;  // Доля HP защитников после боя
+}
+
+/// <summary>
+/// "Место боя" — то, за что можно сражаться: объект карты или главная база.
+/// Окно перед боем и BattleManager работают с любым местом через этот интерфейс.
+/// </summary>
+public interface IBattleSite
+{
+    /// <summary>Название (для заголовков).</summary>
+    string SiteName { get; }
+
+    /// <summary>Цвет арены.</summary>
+    Color SiteColor { get; }
+
+    /// <summary>Защитники по волнам (одна волна = одна территория арены). Пусто — защитников нет.</summary>
+    List<List<BattleUnit>> GetDefenderWaves();
+
+    /// <summary>Общая сила защитников.</summary>
+    int DefenderPower { get; }
+
+    /// <summary>Игрок выбрал автобой.</summary>
+    void BeginAutoBattle(SquadUnit unit, BattleForecast forecast);
+
+    /// <summary>Игрок выбрал ручной бой (он начинается).</summary>
+    void OnManualBattleStarted();
+
+    /// <summary>Ручной бой закончился.</summary>
+    void OnManualBattleFinished(SquadUnit unit, BattleResult result);
+}
 
 /// <summary>Один охранник объекта: кто (HeroData) и какого уровня.</summary>
 [Serializable]

@@ -27,6 +27,8 @@ public class BaseWindowUI : MonoBehaviour
     [Header("Ячейки и меню")]
     [SerializeField] private BuildingSlotUI[] slotViews; // 5 карточек ячеек
     [SerializeField] private BuildMenuUI buildMenu;      // Меню выбора постройки
+    [Tooltip("Окно выбора команды (для атаки на базу врага)")]
+    [SerializeField] private SquadPickerUI picker;
 
     [Header("Цвета сторон")]
     [SerializeField] private Color playerColor = new Color(0.18f, 0.48f, 0.88f);
@@ -69,7 +71,10 @@ public class BaseWindowUI : MonoBehaviour
         else Close();
     }
 
-    /// <summary>Открыть окно базы. Чужая база — только с Радаром и только просмотр.</summary>
+    /// <summary>
+    /// Открыть окно базы. Чужая база — только с Радаром и только просмотр (+ кнопка атаки).
+    /// Без Радара клик по базе врага сразу предлагает выбрать команду для атаки.
+    /// </summary>
     public void Open(MainBase b)
     {
         if (b.Owner != Team.Player)
@@ -77,14 +82,15 @@ public class BaseWindowUI : MonoBehaviour
             MainBase mine = MainBase.Get(Team.Player);
             if (mine == null || !mine.HasRadar)
             {
-                ToastUI.Show("Постройте Радар, чтобы видеть базу врага");
+                ToastUI.Show("Без Радара база врага скрыта. Выберите команду для атаки");
+                if (picker != null) picker.OpenFor(b, null);
                 return;
             }
         }
 
         if (current != null) current.Changed -= Refresh;
         current = b;
-        current.Changed += Refresh;
+        current.Changed += Refresh; // и при уроне базе (TakeDamage вызывает Changed)
         readOnly = b.Owner != Team.Player;
 
         buildMenu.Close();
@@ -123,14 +129,25 @@ public class BaseWindowUI : MonoBehaviour
             if (bi != null) incomeGold += bi.GoldIncome;
         }
         string stars = b.MaxHeroStars == 1 ? "1 звезды" : $"{b.MaxHeroStars} звёзд";
+        Squad garrison = b.FindDefender();
+        string garrisonText = garrison != null
+            ? $"Гарнизон: команда {garrison.Number} (сила {BattleCalculator.SquadPower(garrison)})"
+            : "<color=#FF7A7A>Гарнизона нет</color>";
         subtitleText.text =
+            $"HP: <color=#6EE07A>{b.Hp}/{b.MaxHp}</color>  •  {garrisonText}  •  " +
             $"Доход: <color=#FFD84A>+{incomeGold}</color>  •  " +
-            $"Ячейки: {b.OpenSlots}/{MainBase.MaxSlots}  •  " +
-            $"Найм до {stars}  •  Лимит героев +{b.HeroCapacityBonus}";
+            $"Ячейки: {b.OpenSlots}/{MainBase.MaxSlots}  •  Найм до {stars}";
 
-        // Кнопка улучшения базы
-        upgradeButton.gameObject.SetActive(!readOnly);
-        if (!readOnly)
+        // Своя база — кнопка улучшения; база врага — кнопка атаки
+        upgradeButton.gameObject.SetActive(true);
+        if (readOnly)
+        {
+            upgradeButton.interactable = !b.IsUnderAttack && b.Hp > 0;
+            upgradeText.text = b.IsUnderAttack
+                ? "БАЗУ УЖЕ АТАКУЮТ"
+                : $"АТАКОВАТЬ БАЗУ\n<size=80%>урон {b.DamagePerAttack} • охрана: сила {(garrison != null ? BattleCalculator.SquadPower(garrison) : 0)}</size>";
+        }
+        else
         {
             if (b.IsMaxLevel)
             {
@@ -152,10 +169,15 @@ public class BaseWindowUI : MonoBehaviour
         buildMenu.Refresh();
     }
 
-    /// <summary>Нажата кнопка "Улучшить базу".</summary>
+    /// <summary>Нажата кнопка: "Улучшить базу" (своя) или "Атаковать базу" (враг).</summary>
     private void OnUpgradeClicked()
     {
         if (current == null) return;
+        if (readOnly)
+        {
+            if (picker != null) picker.OpenFor(current, Close);
+            return;
+        }
         if (current.TryUpgradeBase(out string error))
             ToastUI.Show($"База улучшена до уровня {current.Level}!");
         else

@@ -11,7 +11,7 @@ using UnityEngine.EventSystems;
 /// Данные (название, бонусы, время захвата) — в MapObjectData.
 /// На объекте должен быть Collider2D для клика.
 /// </summary>
-public class MapObject : MonoBehaviour, ISquadTarget, IIncomeSource
+public class MapObject : MonoBehaviour, ISquadTarget, IIncomeSource, IBattleSite
 {
     [Header("Данные")]
     [SerializeField] private MapObjectData data;
@@ -71,6 +71,36 @@ public class MapObject : MonoBehaviour, ISquadTarget, IIncomeSource
 
     // ISquadTarget
     public string TargetName => data.displayName;
+
+    // IBattleSite — бой за объект: защитники — охрана из MapObjectData (3 волны)
+    public string SiteName => data.displayName;
+    public Color SiteColor => data.color;
+    public int DefenderPower => BattleCalculator.GarrisonPower(data);
+
+    /// <summary>Охрана объекта по волнам (для боя и окна перед боем).</summary>
+    public List<List<BattleUnit>> GetDefenderWaves()
+    {
+        var waves = new List<List<BattleUnit>>();
+        if (data.waves == null) return waves;
+        for (int w = 0; w < data.waves.Length; w++)
+        {
+            var list = new List<BattleUnit>();
+            foreach (GuardEntry g in data.waves[w].guards)
+            {
+                if (g == null || g.unit == null) continue;
+                HeroStats s = BattleCalculator.GuardStats(g);
+                list.Add(new BattleUnit
+                {
+                    data = g.unit,
+                    stats = s,
+                    hpFraction = 1f,
+                    info = $"Территория {w + 1}  •  Ур. {g.level}  •  сила {BattleCalculator.StatsPower(s)}"
+                });
+            }
+            waves.Add(list);
+        }
+        return waves;
+    }
 
     /// <summary>Точка подъезда — со стороны главной дороги (y = 0), чуть не доезжая до здания.</summary>
     public Vector3 ApproachPoint
@@ -164,8 +194,8 @@ public class MapObject : MonoBehaviour, ISquadTarget, IIncomeSource
         }
         else
         {
-            var forecast = BattleCalculator.Forecast(BattleCalculator.SquadPower(unit.Squad), BattleCalculator.GarrisonPower(data));
-            BeginAutoCapture(unit, forecast);
+            var forecast = BattleCalculator.Forecast(BattleCalculator.SquadPower(unit.Squad), DefenderPower);
+            BeginAutoBattle(unit, forecast);
             if (IsOwnedBy(Team.Player)) ToastUI.Show($"Враг пытается захватить наш объект: {data.displayName}!");
         }
     }
@@ -174,7 +204,7 @@ public class MapObject : MonoBehaviour, ISquadTarget, IIncomeSource
     /// Автобой: идёт обычный таймер захвата, итог бросается сразу
     /// (уверенная победа / 50 на 50 / поражение), а применяется в конце таймера.
     /// </summary>
-    public void BeginAutoCapture(SquadUnit unit, BattleForecast forecast)
+    public void BeginAutoBattle(SquadUnit unit, BattleForecast forecast)
     {
         if (capturer != unit) return;
         awaitingDecision = false;
@@ -206,7 +236,7 @@ public class MapObject : MonoBehaviour, ISquadTarget, IIncomeSource
     }
 
     /// <summary>Ручной бой на арене закончился (вызывает BattleManager через окно перед боем).</summary>
-    public void OnManualBattleFinished(SquadUnit unit, bool win, float hpFraction)
+    public void OnManualBattleFinished(SquadUnit unit, BattleResult result)
     {
         inManualBattle = false;
         if (capturer == unit) capturer = null;
@@ -214,8 +244,8 @@ public class MapObject : MonoBehaviour, ISquadTarget, IIncomeSource
         if (progressRoot != null) progressRoot.SetActive(false);
         if (unit == null) return;
 
-        unit.Squad.HpFraction = hpFraction;
-        if (win) TakeOver(unit.Squad.Owner, "");
+        unit.Squad.HpFraction = result.attackerHp;
+        if (result.win) TakeOver(unit.Squad.Owner, "");
         else ToastUI.Show($"Бой за «{data.displayName}» проигран. Команда {unit.Squad.Number} возвращается на базу");
         unit.ReturnHome();
     }

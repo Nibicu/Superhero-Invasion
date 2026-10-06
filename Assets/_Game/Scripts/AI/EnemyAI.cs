@@ -35,6 +35,10 @@ public class EnemyAI : MonoBehaviour
     [SerializeField, Range(0f, 1f)] private float minHpToSend = 0.7f;
     [Tooltip("ИИ берёт миссию, только если шанс успеха не ниже этого")]
     [SerializeField, Range(0f, 1f)] private float minMissionChance = 0.6f;
+    [Tooltip("Оставлять самую сильную команду дома гарнизоном (если команд 2 и больше)")]
+    [SerializeField] private bool keepGarrison = true;
+    [Tooltip("Насколько ИИ хочет атаковать базу противника (ценность атаки)")]
+    [SerializeField] private float baseAttackValue = 600f;
 
     [Header("Прокачка героев")]
     [Tooltip("Прокачивать героев за золото, только если после покупки останется не меньше этой суммы (запас на базу и найм)")]
@@ -123,11 +127,16 @@ public class EnemyAI : MonoBehaviour
         }
     }
 
-    /// <summary>Отправить все свободные здоровые команды к лучшим целям.</summary>
+    /// <summary>
+    /// Отправить свободные здоровые команды к лучшим целям.
+    /// Если команд хотя бы две — самая сильная остаётся дома гарнизоном.
+    /// </summary>
     private void DispatchSquads()
     {
+        Squad keepHome = SM.GetSquads(team).Count >= 2 && keepGarrison ? Base.FindDefender() : null;
         foreach (Squad s in SM.GetSquads(team))
         {
+            if (s == keepHome) continue;
             if (s.Status != SquadStatus.AtBase || s.HpFraction < minHpToSend || orders.ContainsKey(s)) continue;
             ISquadTarget target = ChooseTarget(s);
             if (target == null) return; // целей нет — остальным тоже некуда
@@ -174,6 +183,22 @@ public class EnemyAI : MonoBehaviour
             if (forecast == BattleForecast.Equal) value *= 0.5f;
             float score = value / (Vector3.Distance(home, o.ApproachPoint) + 5f);
             if (score > bestScore) { bestScore = score; best = o; }
+        }
+
+        // База противника: чем меньше у неё HP, тем заманчивее. На верное поражение не идём.
+        MainBase enemyBase = MainBase.Get(team == Team.Player ? Team.Enemy : Team.Player);
+        if (enemyBase != null && !IsOrdered(enemyBase) && enemyBase.CanAccept(squad, out _))
+        {
+            Squad guard = enemyBase.FindDefender();
+            int guardPower = guard != null ? BattleCalculator.SquadPower(guard) : 0;
+            var f = BattleCalculator.Forecast(BattleCalculator.SquadPower(squad), guardPower);
+            if (f != BattleForecast.Lose)
+            {
+                float value = baseAttackValue * (2f - (float)enemyBase.Hp / enemyBase.MaxHp);
+                if (f == BattleForecast.Equal) value *= 0.5f;
+                float score = value / (Vector3.Distance(home, enemyBase.ApproachPoint) + 5f);
+                if (score > bestScore) { bestScore = score; best = enemyBase; }
+            }
         }
         return best;
     }

@@ -35,10 +35,10 @@ public class BattlePrepWindowUI : MonoBehaviour
     [Tooltip("Сколько секунд даётся на выбор")]
     [SerializeField] private float decisionTime = 10f;
 
-    /// <summary>Запрос на бой: какой объект и какая команда.</summary>
+    /// <summary>Запрос на бой: за что (объект или база) и какая команда.</summary>
     private class Request
     {
-        public MapObject target;
+        public IBattleSite site;
         public SquadUnit unit;
     }
 
@@ -60,10 +60,10 @@ public class BattlePrepWindowUI : MonoBehaviour
     private void OnEnable() => BattleManager.BattleEnded += ShowNextIfIdle;
     private void OnDisable() => BattleManager.BattleEnded -= ShowNextIfIdle;
 
-    /// <summary>Команда приехала к объекту — поставить бой в очередь.</summary>
-    public void RequestBattle(MapObject target, SquadUnit unit)
+    /// <summary>Команда приехала к объекту или базе — поставить бой в очередь.</summary>
+    public void RequestBattle(IBattleSite site, SquadUnit unit)
     {
-        queue.Enqueue(new Request { target = target, unit = unit });
+        queue.Enqueue(new Request { site = site, unit = unit });
         ShowNextIfIdle();
     }
 
@@ -84,7 +84,7 @@ public class BattlePrepWindowUI : MonoBehaviour
         while (queue.Count > 0)
         {
             Request r = queue.Dequeue();
-            if (r.target == null || r.unit == null) continue;
+            if (r.site == null || r.unit == null) continue;
             Show(r);
             return;
         }
@@ -97,13 +97,12 @@ public class BattlePrepWindowUI : MonoBehaviour
         current = r;
         timer = decisionTime;
         Squad squad = r.unit.Squad;
-        MapObjectData data = r.target.Data;
 
         int our = BattleCalculator.SquadPower(squad);
-        int their = BattleCalculator.GarrisonPower(data);
+        int their = r.site.DefenderPower;
         forecast = BattleCalculator.Forecast(our, their);
 
-        titleText.text = $"БИТВА ЗА ОБЪЕКТ: {data.displayName.ToUpper()}";
+        titleText.text = $"БИТВА: {r.site.SiteName.ToUpper()}";
         ourPowerText.text = $"Сила: <color=#7FB8FF>{our}</color>";
         enemyPowerText.text = $"Сила: <color=#FF7A7A>{their}</color>";
         verdictText.text = BattleCalculator.ForecastTitle(forecast);
@@ -114,11 +113,9 @@ public class BattlePrepWindowUI : MonoBehaviour
         int hpPercent = Mathf.RoundToInt(squad.HpFraction * 100);
         foreach (HeroInstance h in squad.AllHeroes)
             AddRow(ourList, h.Data, $"Ур. {h.Level}  •  HP {hpPercent}%  •  сила {BattleCalculator.StatsPower(h.Stats)}");
-        if (data.waves != null)
-            for (int w = 0; w < data.waves.Length; w++)
-                foreach (GuardEntry g in data.waves[w].guards)
-                    if (g != null && g.unit != null)
-                        AddRow(enemyList, g.unit, $"Территория {w + 1}  •  Ур. {g.level}  •  сила {BattleCalculator.StatsPower(BattleCalculator.GuardStats(g))}");
+        foreach (List<BattleUnit> wave in r.site.GetDefenderWaves())
+            foreach (BattleUnit u in wave)
+                AddRow(enemyList, u.data, u.info);
 
         root.SetActive(true);
         transform.SetAsLastSibling();
@@ -138,7 +135,7 @@ public class BattlePrepWindowUI : MonoBehaviour
         if (current == null) return;
         Request r = current;
         Close();
-        r.target.BeginAutoCapture(r.unit, forecast);
+        r.site.BeginAutoBattle(r.unit, forecast);
         ShowNextIfIdle();
     }
 
@@ -148,9 +145,9 @@ public class BattlePrepWindowUI : MonoBehaviour
         if (current == null) return;
         Request r = current;
         Close();
-        r.target.OnManualBattleStarted();
-        BattleManager.Instance.StartBattle(r.target.Data, r.unit.Squad,
-            (win, hp) => r.target.OnManualBattleFinished(r.unit, win, hp));
+        r.site.OnManualBattleStarted();
+        BattleManager.Instance.StartBattle(r.site, r.unit.Squad,
+            result => r.site.OnManualBattleFinished(r.unit, result));
     }
 
     private void Close()

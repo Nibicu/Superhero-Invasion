@@ -67,8 +67,9 @@ public class BattleManager : MonoBehaviour
     private readonly List<Fighter> players = new List<Fighter>(); // Наши бойцы
     private readonly List<Fighter> enemies = new List<Fighter>(); // Охрана (все волны, включая павших)
     private ArenaTint[] tints;          // Детали арены, которые красятся в цвет объекта
-    private MapObjectData objectData;   // За что бьёмся
-    private Action<bool, float> onFinished; // Кого известить об итоге: (победа, доля HP команды)
+    private List<List<BattleUnit>> waves; // Защитники по территориям
+    private string siteName;            // За что бьёмся (название)
+    private Action<BattleResult> onFinished; // Кого известить об итоге
     private int territory;              // Текущая территория (с 0)
     private int totalTerritories;
     private float unlockedMaxX;         // До какого X (локально) могут дойти наши
@@ -113,20 +114,21 @@ public class BattleManager : MonoBehaviour
     // ---------- Начало боя ----------
 
     /// <summary>
-    /// Начать бой: data — объект (его охрана и цвет), squad — наша команда,
-    /// finished(победа, доля HP) — вызовется после возврата на карту.
+    /// Начать бой: site — за что бьёмся (объект или база: защитники, цвет, название),
+    /// squad — наша команда, finished — вызовется после возврата на карту.
     /// </summary>
-    public void StartBattle(MapObjectData data, Squad squad, Action<bool, float> finished)
+    public void StartBattle(IBattleSite site, Squad squad, Action<BattleResult> finished)
     {
         if (IsRunning) return;
-        objectData = data;
+        waves = site.GetDefenderWaves();
+        siteName = site.SiteName;
         onFinished = finished;
         IsRunning = true;
         finishing = false;
         WorldTime.Paused = true;
 
-        totalTerritories = Mathf.Clamp(data.waves != null ? data.waves.Length : 1, 1, (barriers?.Length ?? 0) + 1);
-        foreach (ArenaTint t in tints) t.Apply(data.color);
+        totalTerritories = Mathf.Clamp(waves.Count, 1, (barriers?.Length ?? 0) + 1);
+        foreach (ArenaTint t in tints) t.Apply(site.SiteColor);
         if (barriers != null) foreach (GameObject b in barriers) if (b != null) b.SetActive(true);
 
         territory = 0;
@@ -150,8 +152,8 @@ public class BattleManager : MonoBehaviour
         cam.orthographicSize = cameraSize;
         cam.transform.position = new Vector3(arenaRoot.position.x + HalfViewWidth(), arenaRoot.position.y + cameraYOffset, savedCamPos.z);
         SetMapUI(false);
-        hud.Show(this, data.displayName, players);
-        hud.ShowMessage($"{data.displayName.ToUpper()}\n<size=60%>Территория 1 / {totalTerritories}</size>");
+        hud.Show(this, siteName, players);
+        hud.ShowMessage($"{siteName.ToUpper()}\n<size=60%>Территория 1 / {totalTerritories}</size>");
     }
 
     /// <summary>Создать бойца в точке localPos (координаты арены).</summary>
@@ -168,18 +170,13 @@ public class BattleManager : MonoBehaviour
     /// <summary>Выпустить охрану территории index.</summary>
     private void SpawnWave(int index)
     {
-        if (objectData.waves == null || index >= objectData.waves.Length) return;
-        GuardEntry[] guards = objectData.waves[index].guards;
-        int count = 0;
-        foreach (GuardEntry g in guards) if (g != null && g.unit != null) count++;
-        int j = 0;
-        foreach (GuardEntry g in guards)
+        if (waves == null || index >= waves.Count) return;
+        List<BattleUnit> wave = waves[index];
+        for (int j = 0; j < wave.Count; j++)
         {
-            if (g == null || g.unit == null) continue;
             float x = index * territoryWidth + enemySpawnOffset + (j % 2) * 1.5f + j * 0.6f;
-            float y = Mathf.Lerp(floorMinY + 0.5f, floorMaxY - 0.5f, (j + 0.5f) / count);
-            Spawn(g.unit, BattleCalculator.GuardStats(g), Team.Enemy, 1f, new Vector2(x, y));
-            j++;
+            float y = Mathf.Lerp(floorMinY + 0.5f, floorMaxY - 0.5f, (j + 0.5f) / wave.Count);
+            Spawn(wave[j].data, wave[j].stats, Team.Enemy, wave[j].hpFraction, new Vector2(x, y));
         }
     }
 
@@ -199,7 +196,7 @@ public class BattleManager : MonoBehaviour
         else if (enemiesAlive == 0)
         {
             territory++;
-            if (territory >= totalTerritories) Finish(true, $"{objectData.displayName} захвачен!");
+            if (territory >= totalTerritories) Finish(true, $"{siteName}: победа!");
             else OpenTerritory(territory);
         }
         hud.SetProgress(Mathf.Min(territory + 1, totalTerritories), totalTerritories, AliveCount(enemies));
@@ -254,16 +251,26 @@ public class BattleManager : MonoBehaviour
     {
         yield return new WaitForSeconds(resultDelay);
 
-        // Сколько здоровья осталось у команды (выбывшие — 0)
-        float cur = 0f, max = 0f;
-        foreach (Fighter f in players) { max += f.Health.Max; cur += f.IsAlive ? f.Health.Current : 0f; }
-        float hpFraction = Mathf.Max(BattleCalculator.MinHpAfterBattle, max > 0 ? cur / max : 0f);
+        var result = new BattleResult
+        {
+            win = win,
+            attackerHp = RemainingHp(players),
+            defenderHp = RemainingHp(enemies)
+        };
 
         Cleanup();
-        Action<bool, float> callback = onFinished;
+        Action<BattleResult> callback = onFinished;
         onFinished = null;
-        callback?.Invoke(win, hpFraction);
+        callback?.Invoke(result);
         BattleEnded?.Invoke();
+    }
+
+    /// <summary>Сколько здоровья (доля) осталось у бойцов (выбывшие — 0), не меньше минимума.</summary>
+    private static float RemainingHp(List<Fighter> list)
+    {
+        float cur = 0f, max = 0f;
+        foreach (Fighter f in list) { max += f.Health.Max; cur += f.IsAlive ? f.Health.Current : 0f; }
+        return Mathf.Max(BattleCalculator.MinHpAfterBattle, max > 0 ? cur / max : 0f);
     }
 
     /// <summary>Убрать бойцов и снаряды, вернуть камеру и интерфейс карты, снять паузу.</summary>

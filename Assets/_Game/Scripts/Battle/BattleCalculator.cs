@@ -91,9 +91,9 @@ public static class BattleCalculator
     {
         switch (f)
         {
-            case BattleForecast.Win: return "Смело жмите «Автобой»: захват гарантирован, команда потеряет 30% HP.";
+            case BattleForecast.Win: return "Смело жмите «Автобой»: победа гарантирована, команда потеряет 30% HP.";
             case BattleForecast.Equal: return "Автобой — 50 на 50: победа (−50% HP) или провал (−80% HP). Лучше сразиться самому!";
-            default: return "Автобой проигран: −80% HP, объект не захвачен. Можно рискнуть и сразиться самому.";
+            default: return "Автобой будет проигран: −80% HP и никакой награды. Можно рискнуть и сразиться самому.";
         }
     }
 }
