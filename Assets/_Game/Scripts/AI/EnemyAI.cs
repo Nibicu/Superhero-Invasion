@@ -1,0 +1,337 @@
+using System.Collections.Generic;
+using UnityEngine;
+
+/// <summary>
+/// Искусственный интеллект врага. Раз в thinkInterval секунд "думает":
+///  1) собирает команды из свободных злодеев;
+///  2) отправляет свободные здоровые команды к самой выгодной цели
+///     (свободная миссия с хорошим шансом успеха или незахваченный объект);
+///  3) тратит золото на одно действие: найм, постройку по плану, улучшение построек или базы.
+/// ИИ пользуется теми же правилами, что и игрок (ResourceManager, MainBase,
+/// HeroManager, SquadManager) — никаких читов.
+/// </summary>
+public class EnemyAI : MonoBehaviour
+{
+    [Header("Общее")]
+    [Tooltip("Включить ИИ врага")]
+    [SerializeField] private bool aiEnabled = true;
+    [Tooltip("За какую сторону играет ИИ")]
+    [SerializeField] private Team team = Team.Enemy;
+    [Tooltip("Через сколько секунд после старта ИИ начинает действовать")]
+    [SerializeField] private float startDelay = 5f;
+    [Tooltip("Как часто ИИ принимает решения (сек). Меньше — враг активнее")]
+    [SerializeField] private float thinkInterval = 3f;
+    [Tooltip("Писать действия ИИ в консоль (для отладки)")]
+    [SerializeField] private bool logActions = true;
+
+    [Header("Стройка")]
+    [Tooltip("План стройки по порядку. Одна постройка может встречаться несколько раз (если её можно строить много)")]
+    [SerializeField] private BuildingData[] buildOrder;
+
+    [Header("Команды")]
+    [Tooltip("Сколько героев ИИ ставит в новую команду (вместе с капитаном)")]
+    [SerializeField] private int preferredSquadSize = 2;
+    [Tooltip("Команда с здоровьем ниже этой доли сначала лечится на базе")]
+    [SerializeField, Range(0f, 1f)] private float minHpToSend = 0.7f;
+    [Tooltip("ИИ берёт миссию, только если шанс успеха не ниже этого")]
+    [SerializeField, Range(0f, 1f)] private float minMissionChance = 0.6f;
+
+    [Header("Прокачка героев")]
+    [Tooltip("Прокачивать героев за золото, только если после покупки останется не меньше этой суммы (запас на базу и найм)")]
+    [SerializeField] private int levelUpGoldReserve = 1500;
+
+    private float timer;                                                        // До следующего решения
+    private readonly Dictionary<Squad, ISquadTarget> orders = new Dictionary<Squad, ISquadTarget>(); // Куда уже отправлены команды
+
+    private ResourceManager RM => ResourceManager.Instance;
+    private HeroManager HM => HeroManager.Instance;
+    private SquadManager SM => SquadManager.Instance;
+    private MainBase Base => MainBase.Get(team);
+
+    private void Start() => timer = startDelay;
+
+    /// <summary>Отсчитываем время до следующего решения.</summary>
+    private void Update()
+    {
+        if (!aiEnabled || Base == null) return;
+        timer -= Time.deltaTime;
+        if (timer > 0f) return;
+        timer = thinkInterval;
+        Think();
+    }
+
+    /// <summary>Один "ход мысли" ИИ.</summary>
+    private void Think()
+    {
+        CleanupOrders();
+        FormSquads();
+        DispatchSquads();
+
+        // Плутоний тратится отдельно — на усиление героев (если есть Институт)
+        TryBoostHero();
+
+        // Одно "денежное" действие за раз — по приоритету
+        if (HM.GetHeroes(team).Count < 2 && TryHire()) return;
+        if (TryBuild()) return;
+        if (TryHire()) return;
+        if (TryUpgradeBuildings()) return;
+        if (TryUpgradeBase()) return;
+        TryLevelUpHero();
+    }
+
+    // ---------- Команды ----------
+
+    /// <summary>Убрать приказы команд, которые уже вернулись или распущены.</summary>
+    private void CleanupOrders()
+    {
+        var done = new List<Squad>();
+        IReadOnlyList<Squad> squads = SM.GetSquads(team);
+        foreach (var pair in orders)
+            if (pair.Key.Status == SquadStatus.AtBase || !Contains(squads, pair.Key)) done.Add(pair.Key);
+        foreach (Squad s in done) orders.Remove(s);
+    }
+
+    /// <summary>Собрать новую команду из свободных героев или добавить их в неполную команду на базе.</summary>
+    private void FormSquads()
+    {
+        List<HeroInstance> free = SM.GetFreeHeroes(team);
+        if (free.Count == 0) return;
+        free.Sort((a, b) => HeroPower(b).CompareTo(HeroPower(a))); // сильные первыми
+
+        if (SM.CanCreateSquad(team))
+        {
+            HeroInstance captain = free[0];
+            var members = new List<HeroInstance>();
+            for (int i = 1; i < free.Count && members.Count < preferredSquadSize - 1; i++) members.Add(free[i]);
+            if (SM.TryCreateSquad(team, captain, members, out Squad squad, out _))
+                Log($"создал команду {squad.Number}, капитан {captain.Data.displayName}");
+            return;
+        }
+
+        // Команд уже максимум — добавляем свободных в неполные команды на базе
+        foreach (Squad s in SM.GetSquads(team))
+        {
+            if (s.Status != SquadStatus.AtBase || s.Size >= SM.MaxMembers + 1 || free.Count == 0) continue;
+            var members = new List<HeroInstance>(s.Members);
+            while (members.Count < SM.MaxMembers && free.Count > 0)
+            {
+                members.Add(free[0]);
+                free.RemoveAt(0);
+            }
+            if (SM.TryEditSquad(s, s.Captain, members, out _))
+                Log($"усилил команду {s.Number} (героев: {s.Size})");
+        }
+    }
+
+    /// <summary>Отправить все свободные здоровые команды к лучшим целям.</summary>
+    private void DispatchSquads()
+    {
+        foreach (Squad s in SM.GetSquads(team))
+        {
+            if (s.Status != SquadStatus.AtBase || s.HpFraction < minHpToSend || orders.ContainsKey(s)) continue;
+            ISquadTarget target = ChooseTarget(s);
+            if (target == null) return; // целей нет — остальным тоже некуда
+            if (SM.SendSquad(s, target, out _))
+            {
+                orders[s] = target;
+                Log($"отправил команду {s.Number} → {target.TargetName}");
+            }
+        }
+    }
+
+    /// <summary>Выбрать самую выгодную цель для команды (ценность / расстояние).</summary>
+    private ISquadTarget ChooseTarget(Squad squad)
+    {
+        Vector3 home = Base.transform.position;
+        ISquadTarget best = null;
+        float bestScore = 0f;
+
+        // Миссии: только свободные и с хорошим шансом
+        if (MissionManager.Instance != null)
+            foreach (MissionMarker m in MissionManager.Instance.Active)
+            {
+                if (m == null || m.AssignedSquad != null || IsOrdered(m)) continue;
+                if (m.Data.GetSuccessChance(squad.Power) < minMissionChance) continue;
+                if (!m.CanAccept(squad, out _)) continue;
+                float value = m.Data.rewardGold + m.Data.rewardPlutonium * 15f
+                              + (m.Data.levelUpTeam ? 300f : 0f) + (m.Data.unlockBuilding != null ? 500f : 0f);
+                float score = value / (Vector3.Distance(home, m.ApproachPoint) + 5f);
+                if (score > bestScore) { bestScore = score; best = m; }
+            }
+
+        // Объекты: не наши, никто из наших туда не едет
+        foreach (MapObject o in MapObject.All)
+        {
+            if (o.IsOwnedBy(team) || IsOrdered(o) || !o.CanAccept(squad, out _)) continue;
+            MapObjectData d = o.Data;
+            float value = d.goldIncome * 3f + d.plutoniumIncome * 40f + d.heroLimitBonus * 150f
+                          + (d.unlocksFactoryUpgrades ? 400f : 0f) + (d.allowsHeroBoost ? 300f : 0f);
+            if (o.HasOwner) value += 200f; // отобрать у противника — вдвойне полезно
+            float score = value / (Vector3.Distance(home, o.ApproachPoint) + 5f);
+            if (score > bestScore) { bestScore = score; best = o; }
+        }
+        return best;
+    }
+
+    /// <summary>Едет ли уже к этой цели одна из наших команд.</summary>
+    private bool IsOrdered(ISquadTarget target)
+    {
+        foreach (ISquadTarget t in orders.Values)
+            if (ReferenceEquals(t, target)) return true;
+        return false;
+    }
+
+    // ---------- Деньги ----------
+
+    /// <summary>Нанять самого сильного доступного героя, на которого хватает денег.</summary>
+    private bool TryHire()
+    {
+        HeroData best = null;
+        foreach (HeroData h in HM.GetRoster(team))
+        {
+            if (!HM.CanHire(team, h, out _) || !RM.CanAfford(team, h.hireCost)) continue;
+            if (best == null || h.stars > best.stars || (h.stars == best.stars && h.hireCost > best.hireCost)) best = h;
+        }
+        if (best == null || !HM.TryHire(team, best, out _)) return false;
+        Log($"нанял {best.displayName} ({best.stars}★)");
+        return true;
+    }
+
+    /// <summary>Построить следующее здание из плана (если есть свободная ячейка и деньги).</summary>
+    private bool TryBuild()
+    {
+        if (buildOrder == null) return false;
+        int slot = FreeSlot();
+        if (slot < 0) return false;
+
+        var planned = new Dictionary<BuildingData, int>(); // сколько штук каждой постройки план требует "к этому моменту"
+        foreach (BuildingData b in buildOrder)
+        {
+            if (b == null) continue;
+            planned.TryGetValue(b, out int need);
+            planned[b] = ++need;
+            if (CountBuilt(b) >= need) continue;      // этот пункт плана уже выполнен
+            if (!Base.CanBuildType(b)) continue;      // пока нельзя (не открыта / уже есть)
+            BuildingLevel l = b.GetLevel(1);
+            if (!RM.CanAfford(team, l.goldCost, l.plutoniumCost)) return false; // копим на этот пункт
+            if (Base.TryBuild(slot, b, out _)) { Log($"построил {b.displayName}"); return true; }
+            return false;
+        }
+
+        // План выполнен — строим открытые постройки, которых ещё нет (например, Лабораторию)
+        foreach (BuildingData b in Base.GetBuildableList())
+        {
+            if (b.allowMultiple && CountBuilt(b) > 0) continue;
+            BuildingLevel l = b.GetLevel(1);
+            if (RM.CanAfford(team, l.goldCost, l.plutoniumCost) && Base.TryBuild(slot, b, out _))
+            {
+                Log($"построил {b.displayName}");
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /// <summary>Улучшить одну постройку (Бараки — в первую очередь).</summary>
+    private bool TryUpgradeBuildings()
+    {
+        int bestSlot = -1;
+        for (int i = 0; i < MainBase.MaxSlots; i++)
+        {
+            BuildingInstance b = Base.GetBuilding(i);
+            if (b == null || !Base.CanUpgradeBuilding(i, out _)) continue;
+            BuildingLevel next = b.Data.GetLevel(b.Level + 1);
+            if (!RM.CanAfford(team, next.goldCost, next.plutoniumCost)) continue;
+            bestSlot = i;
+            if (b.Data.type == BuildingType.Barracks) break;
+        }
+        if (bestSlot < 0 || !Base.TryUpgradeBuilding(bestSlot, out _)) return false;
+        Log($"улучшил {Base.GetBuilding(bestSlot).Data.displayName} до ур. {Base.GetBuilding(bestSlot).Level}");
+        return true;
+    }
+
+    /// <summary>Улучшить базу, когда все открытые ячейки заняты.</summary>
+    private bool TryUpgradeBase()
+    {
+        if (Base.IsMaxLevel || FreeSlot() >= 0 || !RM.CanAfford(team, Base.UpgradeCost)) return false;
+        if (!Base.TryUpgradeBase(out _)) return false;
+        Log($"улучшил базу до ур. {Base.Level}");
+        return true;
+    }
+
+    /// <summary>Усилить самого сильного героя за плутоний (нужен захваченный Институт).</summary>
+    private bool TryBoostHero()
+    {
+        HeroInstance best = null;
+        foreach (HeroInstance h in HM.GetHeroes(team))
+        {
+            if (!HM.CanBoost(h, out _) || !RM.CanAfford(team, 0, HM.GetBoostCost(h))) continue;
+            if (best == null || HeroPower(h) > HeroPower(best)) best = h;
+        }
+        if (best == null || !HM.TryBoost(best, out _)) return false;
+        Log($"усилил {best.Data.displayName} (усилений: {best.Boosts})");
+        return true;
+    }
+
+    /// <summary>Прокачать самого дешёвого для прокачки героя, если золота с запасом.</summary>
+    private bool TryLevelUpHero()
+    {
+        HeroInstance best = null;
+        int bestCost = int.MaxValue;
+        foreach (HeroInstance h in HM.GetHeroes(team))
+        {
+            int cost = HM.GetLevelUpCost(h);
+            if (cost <= 0 || cost >= bestCost) continue;
+            best = h;
+            bestCost = cost;
+        }
+        // Если ячейки заняты, а базу можно улучшить — сначала копим на базу
+        int reserve = levelUpGoldReserve;
+        if (FreeSlot() < 0 && !Base.IsMaxLevel) reserve = Mathf.Max(reserve, Base.UpgradeCost);
+        if (best == null || RM.GetGold(team) - bestCost < reserve) return false;
+        if (!HM.TryLevelUp(best, out _)) return false;
+        Log($"прокачал {best.Data.displayName} до ур. {best.Level}");
+        return true;
+    }
+
+    // ---------- Помощники ----------
+
+    /// <summary>Первая свободная открытая ячейка базы (или -1).</summary>
+    private int FreeSlot()
+    {
+        for (int i = 0; i < Base.OpenSlots; i++)
+            if (Base.GetBuilding(i) == null) return i;
+        return -1;
+    }
+
+    /// <summary>Сколько штук такой постройки уже стоит на базе.</summary>
+    private int CountBuilt(BuildingData data)
+    {
+        int n = 0;
+        for (int i = 0; i < MainBase.MaxSlots; i++)
+        {
+            BuildingInstance b = Base.GetBuilding(i);
+            if (b != null && b.Data == data) n++;
+        }
+        return n;
+    }
+
+    /// <summary>Сила одного героя (для выбора капитана).</summary>
+    private static int HeroPower(HeroInstance h)
+    {
+        HeroStats s = h.Stats;
+        return s.attack + s.specialAttack + s.defense + s.specialDefense;
+    }
+
+    private static bool Contains(IReadOnlyList<Squad> list, Squad s)
+    {
+        foreach (Squad x in list) if (x == s) return true;
+        return false;
+    }
+
+    /// <summary>Сообщение в консоль (если включено).</summary>
+    private void Log(string text)
+    {
+        if (logActions) Debug.Log($"<color=#FF7A7A>[ИИ врага]</color> {text}");
+    }
+}

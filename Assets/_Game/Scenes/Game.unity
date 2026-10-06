@@ -25614,6 +25614,7 @@ GameObject:
   - component: {fileID: 714901165}
   - component: {fileID: 714901166}
   - component: {fileID: 714901167}
+  - component: {fileID: 714901168}
   m_Layer: 0
   m_Name: Managers
   m_TagString: Untagged
@@ -25681,6 +25682,16 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 3f4a57209083c9845b4a7b6b6e5a62be, type: 2}
   - {fileID: 11400000, guid: 4ed9813e8a9727a4797b3687ec4b6ce9, type: 2}
   - {fileID: 11400000, guid: c01406d9d44cbb64c9342bc398b7ca2f, type: 2}
+  - {fileID: 11400000, guid: 3456da8199e3d6842a6ba4e5cceac0f2, type: 2}
+  - {fileID: 11400000, guid: 8e74f619b92967f45a5d7ff5c7b72447, type: 2}
+  - {fileID: 11400000, guid: d860d0d741c91e94182a1b452141462a, type: 2}
+  - {fileID: 11400000, guid: cebd0f66ede6d4e4abe0d6088f478c48, type: 2}
+  - {fileID: 11400000, guid: 3460cbeecdd196444ab3be0b21f3ae63, type: 2}
+  - {fileID: 11400000, guid: 7cefe1c2790ee574b9a62678ee5261fb, type: 2}
+  - {fileID: 11400000, guid: 041a6f9ef3740724b9f9ce980a404ff3, type: 2}
+  - {fileID: 11400000, guid: 87fb6e2b38e296a438f17d48625a8ba0, type: 2}
+  - {fileID: 11400000, guid: 264bc6474eaeab243b0da424776cf360, type: 2}
+  - {fileID: 11400000, guid: d2a799daa80541b4c8e22a0afd9e545e, type: 2}
   playerSide: 0
   baseHeroLimit: 4
   maxHeroLevel: 5
@@ -25734,6 +25745,33 @@ MonoBehaviour:
   areaMax: {x: 11.5, y: 7.6}
   minDistanceFromRoad: 1.8
   minDistanceFromObjects: 3
+--- !u!114 &714901168
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 714901162}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 71ee8bb0779b5d548b883cc818ffeca6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyAI
+  aiEnabled: 1
+  team: 1
+  startDelay: 5
+  thinkInterval: 3
+  logActions: 1
+  buildOrder:
+  - {fileID: 11400000, guid: 7c923ffd6807d3047a233b2856116486, type: 2}
+  - {fileID: 11400000, guid: 782c646738d32ad4089d3779e9c5a63f, type: 2}
+  - {fileID: 11400000, guid: 73e38296375015649bd3ae7f44af1913, type: 2}
+  - {fileID: 11400000, guid: 7c923ffd6807d3047a233b2856116486, type: 2}
+  - {fileID: 11400000, guid: 932e47faa20403b489869a5667b413e5, type: 2}
+  - {fileID: 11400000, guid: 7c923ffd6807d3047a233b2856116486, type: 2}
+  preferredSquadSize: 2
+  minHpToSend: 0.7
+  minMissionChance: 0.6
 --- !u!1 &716132035
 GameObject:
   m_ObjectHideFlags: 0

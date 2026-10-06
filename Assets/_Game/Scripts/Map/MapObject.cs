@@ -171,6 +171,8 @@ public class MapObject : MonoBehaviour, ISquadTarget, IIncomeSource
             ToastUI.Show($"{data.displayName} захвачен! {data.GetBonusText().Split('\n')[0]}");
         else if (wasOurs)
             ToastUI.Show($"Враг захватил наш объект: {data.displayName}!");
+        else
+            ToastUI.Show($"Враг захватил объект: {data.displayName}");
     }
 
     /// <summary>Сменить владельца: снять бонусы со старого, выдать новому.</summary>
