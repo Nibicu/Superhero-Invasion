@@ -4,13 +4,16 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Окно перед боем. Открывается, когда наша команда приезжает захватывать объект.
-/// Слева — наша команда и её сила, справа — охрана объекта и её сила,
-/// по центру — прогноз ("Победа с небольшими потерями" / "Силы равны" / "Вы точно проиграете")
-/// и отсчёт 10 секунд. Не выбрали — запускается автобой.
-/// "АВТОБОЙ" — идёт таймер захвата, итог по прогнозу.
+/// Окно перед боем. Открывается, когда закончилась подготовка к бою (20 с) за объект или базу,
+/// если в бою участвует игрок:
+/// - НАПАДЕНИЕ (наша команда напала): слева — наша команда, справа — защитники;
+/// - ЗАЩИТА (враг напал на наш объект или базу): слева — наши защитники
+///   (охрана объекта или гарнизон базы), справа — нападающая команда врага.
+/// По центру — прогноз ("Победа с небольшими потерями" / "Силы равны" / "Вы точно проиграете")
+/// и отсчёт 10 секунд. Не выбрали — автобой.
+/// "АВТОБОЙ" — итог сразу, по прогнозу.
 /// "НАЧАТЬ БОЙ" — переход на арену (BattleManager).
-/// Если команды приехали одновременно, окна показываются по очереди.
+/// Если бои начались одновременно, окна показываются по очереди.
 /// </summary>
 public class BattlePrepWindowUI : MonoBehaviour
 {
@@ -19,10 +22,14 @@ public class BattlePrepWindowUI : MonoBehaviour
 
     [SerializeField] private GameObject root;
     [SerializeField] private TMP_Text titleText;
-    [Header("Наша команда")]
+    [Header("Наша сторона")]
+    [Tooltip("Подпись над левым списком (\"ВАША КОМАНДА\" / \"ВАШИ ЗАЩИТНИКИ\")")]
+    [SerializeField] private TMP_Text ourLabelText;
     [SerializeField] private TMP_Text ourPowerText;
     [SerializeField] private Transform ourList;
-    [Header("Защитники")]
+    [Header("Противник")]
+    [Tooltip("Подпись над правым списком (\"ЗАЩИТНИКИ\" / \"НАПАДАЮЩИЕ\")")]
+    [SerializeField] private TMP_Text enemyLabelText;
     [SerializeField] private TMP_Text enemyPowerText;
     [SerializeField] private Transform enemyList;
     [SerializeField] private BattleUnitRowUI rowTemplate;
@@ -35,18 +42,10 @@ public class BattlePrepWindowUI : MonoBehaviour
     [Tooltip("Сколько секунд даётся на выбор")]
     [SerializeField] private float decisionTime = 10f;
 
-    /// <summary>Запрос на бой: за что (объект или база) и какая команда.</summary>
-    private class Request
-    {
-        public IBattleSite site;
-        public SquadUnit unit;
-    }
-
-    private readonly Queue<Request> queue = new Queue<Request>();
-    private readonly List<GameObject> rows = new List<GameObject>();
-    private Request current;
-    private BattleForecast forecast;
-    private float timer;
+    private readonly Queue<AttackableSite> queue = new Queue<AttackableSite>(); // Места, где ждут решения игрока
+    private readonly List<GameObject> rows = new List<GameObject>(); // Созданные строки бойцов
+    private AttackableSite current; // Какой бой сейчас показан
+    private float timer;            // Сколько секунд осталось на выбор
 
     private void Awake()
     {
@@ -60,10 +59,10 @@ public class BattlePrepWindowUI : MonoBehaviour
     private void OnEnable() => BattleManager.BattleEnded += ShowNextIfIdle;
     private void OnDisable() => BattleManager.BattleEnded -= ShowNextIfIdle;
 
-    /// <summary>Команда приехала к объекту или базе — поставить бой в очередь.</summary>
-    public void RequestBattle(IBattleSite site, SquadUnit unit)
+    /// <summary>Подготовка к бою закончилась — поставить бой в очередь.</summary>
+    public void RequestBattle(AttackableSite site)
     {
-        queue.Enqueue(new Request { site = site, unit = unit });
+        queue.Enqueue(site);
         ShowNextIfIdle();
     }
 
@@ -83,42 +82,60 @@ public class BattlePrepWindowUI : MonoBehaviour
         if (BattleManager.Instance != null && BattleManager.Instance.IsRunning) return;
         while (queue.Count > 0)
         {
-            Request r = queue.Dequeue();
-            if (r.site == null || r.unit == null) continue;
-            Show(r);
+            AttackableSite s = queue.Dequeue();
+            if (s == null || s.Phase != AttackPhase.Deciding) continue; // нападение уже закончилось
+            Show(s);
             return;
         }
         root.SetActive(false);
     }
 
     /// <summary>Заполнить окно.</summary>
-    private void Show(Request r)
+    private void Show(AttackableSite site)
     {
-        current = r;
+        current = site;
         timer = decisionTime;
-        Squad squad = r.unit.Squad;
+        bool defending = site.PlayerDefends;
 
-        int our = BattleCalculator.SquadPower(squad);
-        int their = r.site.DefenderPower;
-        forecast = BattleCalculator.Forecast(our, their);
+        // "Наши" — нападающая команда или защитники, в зависимости от того, кто напал
+        int attackerPower = BattleCalculator.SquadPower(site.Attacker.Squad);
+        int our = defending ? site.DefenderPower : attackerPower;
+        int their = defending ? attackerPower : site.DefenderPower;
+        BattleForecast forecast = BattleCalculator.Forecast(our, their);
 
-        titleText.text = $"БИТВА: {r.site.SiteName.ToUpper()}";
+        titleText.text = defending ? $"ЗАЩИТА: {site.SiteName.ToUpper()}" : $"БИТВА: {site.SiteName.ToUpper()}";
+        if (ourLabelText != null) ourLabelText.text = defending ? "ВАШИ ЗАЩИТНИКИ" : "ВАША КОМАНДА";
+        if (enemyLabelText != null) enemyLabelText.text = defending ? "НАПАДАЮЩИЕ" : "ЗАЩИТНИКИ";
         ourPowerText.text = $"Сила: <color=#7FB8FF>{our}</color>";
         enemyPowerText.text = $"Сила: <color=#FF7A7A>{their}</color>";
         verdictText.text = BattleCalculator.ForecastTitle(forecast);
-        hintText.text = BattleCalculator.ForecastHint(forecast);
+        hintText.text = defending ? BattleCalculator.DefenseHint(forecast) : BattleCalculator.ForecastHint(forecast);
 
         foreach (GameObject g in rows) Destroy(g);
         rows.Clear();
-        int hpPercent = Mathf.RoundToInt(squad.HpFraction * 100);
-        foreach (HeroInstance h in squad.AllHeroes)
-            AddRow(ourList, h.Data, $"Ур. {h.Level}  •  HP {hpPercent}%  •  сила {BattleCalculator.StatsPower(h.Stats)}");
-        foreach (List<BattleUnit> wave in r.site.GetDefenderWaves())
+        foreach (BattleUnit u in OurUnits(site)) AddRow(ourList, u.data, u.info);
+        foreach (List<BattleUnit> wave in TheirWaves(site))
             foreach (BattleUnit u in wave)
                 AddRow(enemyList, u.data, u.info);
 
         root.SetActive(true);
         transform.SetAsLastSibling();
+    }
+
+    /// <summary>Наши бойцы: своя команда или (при защите) все защитники одним списком.</summary>
+    private static List<BattleUnit> OurUnits(AttackableSite site)
+    {
+        if (!site.PlayerDefends) return site.GetAttackerUnits();
+        var list = new List<BattleUnit>();
+        foreach (List<BattleUnit> wave in site.GetDefenderWaves()) list.AddRange(wave);
+        return list;
+    }
+
+    /// <summary>Противники по территориям: охрана места или (при защите) нападающая команда одной волной.</summary>
+    private static List<List<BattleUnit>> TheirWaves(AttackableSite site)
+    {
+        if (!site.PlayerDefends) return site.GetDefenderWaves();
+        return new List<List<BattleUnit>> { site.GetAttackerUnits() };
     }
 
     private void AddRow(Transform parent, HeroData data, string info)
@@ -129,13 +146,13 @@ public class BattlePrepWindowUI : MonoBehaviour
         rows.Add(row.gameObject);
     }
 
-    /// <summary>Автобой: объект начинает обычный захват по таймеру, итог — по прогнозу.</summary>
+    /// <summary>Автобой: итог сразу, по прогнозу.</summary>
     private void ChooseAuto()
     {
         if (current == null) return;
-        Request r = current;
+        AttackableSite site = current;
         Close();
-        r.site.BeginAutoBattle(r.unit, forecast);
+        site.ResolveAuto();
         ShowNextIfIdle();
     }
 
@@ -143,11 +160,12 @@ public class BattlePrepWindowUI : MonoBehaviour
     private void ChooseFight()
     {
         if (current == null) return;
-        Request r = current;
+        AttackableSite site = current;
         Close();
-        r.site.OnManualBattleStarted();
-        BattleManager.Instance.StartBattle(r.site, r.unit.Squad,
-            result => r.site.OnManualBattleFinished(r.unit, result));
+        List<BattleUnit> ours = OurUnits(site);
+        List<List<BattleUnit>> theirs = TheirWaves(site);
+        site.OnManualBattleStarted();
+        BattleManager.Instance.StartBattle(site.SiteName, site.SiteColor, ours, theirs, site.OnManualBattleFinished);
     }
 
     private void Close()

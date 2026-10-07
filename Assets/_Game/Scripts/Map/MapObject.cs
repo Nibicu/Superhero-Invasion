@@ -6,12 +6,13 @@ using UnityEngine.EventSystems;
 /// <summary>
 /// Объект на карте, который можно захватить (Банк, Завод и т.д.).
 /// - Клик по объекту открывает окно объекта (MapObjectWindowUI).
-/// - Команда приезжает → идёт таймер захвата → объект переходит к её стороне
-///   → бонусы получает новый владелец (и теряет старый) → команда едет домой.
-/// Данные (название, бонусы, время захвата) — в MapObjectData.
+/// - Команда приезжает → подготовка к бою 20 с → бой с охраной (окно перед боем)
+///   → при победе объект переходит к её стороне → бонусы получает новый владелец
+///   (и теряет старый) → команда едет домой. Порядок нападения — в AttackableSite.
+/// Данные (название, бонусы, охрана) — в MapObjectData.
 /// На объекте должен быть Collider2D для клика.
 /// </summary>
-public class MapObject : MonoBehaviour, ISquadTarget, IIncomeSource, IBattleSite
+public class MapObject : AttackableSite, IIncomeSource
 {
     [Header("Данные")]
     [SerializeField] private MapObjectData data;
@@ -20,7 +21,7 @@ public class MapObject : MonoBehaviour, ISquadTarget, IIncomeSource, IBattleSite
     [SerializeField] private SpriteRenderer zone;      // Круг вокруг объекта — цвет владельца
     [SerializeField] private SpriteRenderer flag;      // Флажок — цвет владельца
     [SerializeField] private TMP_Text label;           // Название и владелец над объектом
-    [SerializeField] private GameObject progressRoot;  // Полоска захвата (видна только во время захвата)
+    [SerializeField] private GameObject progressRoot;  // Полоска подготовки к бою (видна только во время нападения)
     [SerializeField] private Transform progressFill;   // Заполнение полоски (растягивается по X)
     [SerializeField] private float progressWidth = 2.4f; // Ширина полоски в единицах мира
 
@@ -31,29 +32,29 @@ public class MapObject : MonoBehaviour, ISquadTarget, IIncomeSource, IBattleSite
 
     private static readonly List<MapObject> all = new List<MapObject>(); // Все объекты в сцене
 
-    private bool hasOwner;       // Захвачен ли кем-нибудь
-    private Team owner;          // Владелец (если hasOwner)
-    private SquadUnit capturer;  // Команда, которая сейчас захватывает
-    private float progress;      // Прогресс захвата 0..1
+    private bool hasOwner;         // Захвачен ли кем-нибудь
+    private Team owner;            // Владелец (если hasOwner)
     private bool incomeRegistered; // Зарегистрирован ли доход в ResourceManager
-    private bool awaitingDecision; // Игрок ещё выбирает в окне перед боем (таймер стоит)
-    private bool inManualBattle;   // Идёт ручной бой на арене
-    private BattleForecast autoForecast; // Прогноз автобоя
-    private bool autoWin;          // Итог автобоя (известен заранее, применяется в конце таймера)
 
     // ---------- Свойства ----------
 
     public MapObjectData Data => data;
     public bool HasOwner => hasOwner;
-    public bool IsCapturing => capturer != null;
-    public Team CapturingTeam => capturer != null ? capturer.Squad.Owner : Team.Player;
-    public float CaptureProgress => progress;
 
     /// <summary>Все объекты на карте.</summary>
     public static IReadOnlyList<MapObject> All => all;
 
     /// <summary>Принадлежит ли объект этой стороне.</summary>
     public bool IsOwnedBy(Team team) => hasOwner && owner == team;
+
+    /// <summary>Сколько объектов на карте у стороны.</summary>
+    public static int CountOwnedBy(Team team)
+    {
+        int n = 0;
+        foreach (MapObject o in all)
+            if (o.IsOwnedBy(team)) n++;
+        return n;
+    }
 
     /// <summary>Владеет ли сторона хоть одним объектом, разрешающим усиление героев (Институт).</summary>
     public static bool TeamCanBoostHeroes(Team team)
@@ -69,16 +70,24 @@ public class MapObject : MonoBehaviour, ISquadTarget, IIncomeSource, IBattleSite
     public int PlutoniumIncome => hasOwner ? data.plutoniumIncome : 0;
     public string SourceName => data.displayName;
 
-    // ISquadTarget
-    public string TargetName => data.displayName;
+    // ---------- Место нападения (AttackableSite) ----------
 
-    // IBattleSite — бой за объект: защитники — охрана из MapObjectData (3 волны)
-    public string SiteName => data.displayName;
-    public Color SiteColor => data.color;
-    public int DefenderPower => BattleCalculator.GarrisonPower(data);
+    public override string TargetName => data.displayName;
+    public override string SiteName => data.displayName;
+    public override Color SiteColor => data.color;
+
+    /// <summary>Защитники объекта — его охрана из MapObjectData (3 волны).</summary>
+    public override int DefenderPower => BattleCalculator.GarrisonPower(data);
+
+    /// <summary>Объект защищает его владелец (у нейтрального — никто из игроков).</summary>
+    public override bool TryGetDefendingTeam(out Team team)
+    {
+        team = owner;
+        return hasOwner;
+    }
 
     /// <summary>Охрана объекта по волнам (для боя и окна перед боем).</summary>
-    public List<List<BattleUnit>> GetDefenderWaves()
+    public override List<List<BattleUnit>> GetDefenderWaves()
     {
         var waves = new List<List<BattleUnit>>();
         if (data.waves == null) return waves;
@@ -103,7 +112,7 @@ public class MapObject : MonoBehaviour, ISquadTarget, IIncomeSource, IBattleSite
     }
 
     /// <summary>Точка подъезда — со стороны главной дороги (y = 0), чуть не доезжая до здания.</summary>
-    public Vector3 ApproachPoint
+    public override Vector3 ApproachPoint
     {
         get
         {
@@ -112,6 +121,17 @@ public class MapObject : MonoBehaviour, ISquadTarget, IIncomeSource, IBattleSite
             return p;
         }
     }
+
+    /// <summary>Свой объект захватывать не нужно.</summary>
+    protected override bool CanBeAttackedBy(Squad squad, out string reason)
+    {
+        reason = null;
+        if (IsOwnedBy(squad.Owner)) { reason = "Объект уже ваш"; return false; }
+        return true;
+    }
+
+    /// <summary>Нападающие победили охрану — объект переходит к ним.</summary>
+    protected override void OnAttackerWon(Squad squad) => TakeOver(squad.Owner);
 
     // ---------- Жизненный цикл ----------
 
@@ -136,134 +156,24 @@ public class MapObject : MonoBehaviour, ISquadTarget, IIncomeSource, IBattleSite
 
     private void Start() => UpdateVisuals();
 
-    /// <summary>Идёт таймер захвата.</summary>
-    private void Update()
-    {
-        if (capturer == null || awaitingDecision || inManualBattle) return;
-        progress += WorldTime.DeltaTime / Mathf.Max(0.1f, data.captureTime);
-        UpdateProgressBar();
-        if (progress >= 1f) FinishCapture();
-    }
-
-    /// <summary>Клик по объекту — открыть окно объекта.</summary>
+    /// <summary>Клик по объекту — открыть окно объекта (во время нападения — только сообщение).</summary>
     private void OnMouseUpAsButton()
     {
         if (!enabled) return;
         if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) return;
+        if (IsUnderAttack) { ToastUI.Show(AttackStatusText()); return; }
         if (MapObjectWindowUI.Instance != null) MapObjectWindowUI.Instance.Open(this);
     }
 
-    // ---------- Захват ----------
-
-    /// <summary>Можно ли отправить команду на захват.</summary>
-    public bool CanAccept(Squad squad, out string reason)
-    {
-        reason = null;
-        if (IsOwnedBy(squad.Owner)) { reason = "Объект уже ваш"; return false; }
-        if (capturer != null && capturer.Squad.Owner == squad.Owner) { reason = "Объект уже захватывает ваша команда"; return false; }
-        return true;
-    }
-
-    /// <summary>Команду отправили к объекту — объекту ничего делать не нужно.</summary>
-    public void OnSquadDispatched(Squad squad) { }
-
-    /// <summary>
-    /// Команда приехала. Объект уже наш или занят — едет домой.
-    /// Игрок: открывается окно перед боем (автобой или ручной бой).
-    /// Враг (ИИ): сразу автобой с таймером захвата.
-    /// </summary>
-    public void OnSquadArrived(SquadUnit unit)
-    {
-        Team team = unit.Squad.Owner;
-        if (IsOwnedBy(team) || capturer != null)
-        {
-            // Пока ехали — объект уже стал нашим или его кто-то захватывает
-            if (team == Team.Player) ToastUI.Show($"{data.displayName}: захват невозможен, команда возвращается");
-            unit.ReturnHome();
-            return;
-        }
-
-        capturer = unit;
-        progress = 0f;
-        SquadManager.Instance.SetStatus(unit.Squad, SquadStatus.Capturing);
-
-        if (team == Team.Player && BattlePrepWindowUI.Instance != null)
-        {
-            awaitingDecision = true; // таймер стоит, пока игрок выбирает
-            BattlePrepWindowUI.Instance.RequestBattle(this, unit);
-        }
-        else
-        {
-            var forecast = BattleCalculator.Forecast(BattleCalculator.SquadPower(unit.Squad), DefenderPower);
-            BeginAutoBattle(unit, forecast);
-            if (IsOwnedBy(Team.Player)) ToastUI.Show($"Враг пытается захватить наш объект: {data.displayName}!");
-        }
-    }
-
-    /// <summary>
-    /// Автобой: идёт обычный таймер захвата, итог бросается сразу
-    /// (уверенная победа / 50 на 50 / поражение), а применяется в конце таймера.
-    /// </summary>
-    public void BeginAutoBattle(SquadUnit unit, BattleForecast forecast)
-    {
-        if (capturer != unit) return;
-        awaitingDecision = false;
-        autoForecast = forecast;
-        autoWin = BattleCalculator.RollAutoBattle(forecast);
-        progress = 0f;
-        if (progressRoot != null) progressRoot.SetActive(true);
-        UpdateProgressBar();
-        if (unit.Squad.Owner == Team.Player) ToastUI.Show($"Команда {unit.Squad.Number}: автобой за объект «{data.displayName}»");
-    }
-
-    /// <summary>Таймер автобоя закончился — применяем итог, команда едет домой.</summary>
-    private void FinishCapture()
-    {
-        SquadUnit unit = capturer;
-        capturer = null;
-        progress = 0f;
-        if (progressRoot != null) progressRoot.SetActive(false);
-
-        Squad squad = unit.Squad;
-        float loss = BattleCalculator.AutoBattleHpLoss(autoForecast, autoWin);
-        squad.HpFraction = Mathf.Max(BattleCalculator.MinHpAfterBattle, squad.HpFraction - loss);
-        int lossPercent = Mathf.RoundToInt(loss * 100);
-
-        if (autoWin) TakeOver(squad.Owner, $"(команда потеряла {lossPercent}% HP)");
-        else if (squad.Owner == Team.Player)
-            ToastUI.Show($"Автобой за «{data.displayName}» проигран! Команда {squad.Number} потеряла {lossPercent}% HP");
-        unit.ReturnHome();
-    }
-
-    /// <summary>Ручной бой на арене закончился (вызывает BattleManager через окно перед боем).</summary>
-    public void OnManualBattleFinished(SquadUnit unit, BattleResult result)
-    {
-        inManualBattle = false;
-        if (capturer == unit) capturer = null;
-        progress = 0f;
-        if (progressRoot != null) progressRoot.SetActive(false);
-        if (unit == null) return;
-
-        unit.Squad.HpFraction = result.attackerHp;
-        if (result.win) TakeOver(unit.Squad.Owner, "");
-        else ToastUI.Show($"Бой за «{data.displayName}» проигран. Команда {unit.Squad.Number} возвращается на базу");
-        unit.ReturnHome();
-    }
-
-    /// <summary>Ручной бой начался — таймер захвата не идёт, объект ждёт итога.</summary>
-    public void OnManualBattleStarted()
-    {
-        awaitingDecision = false;
-        inManualBattle = true;
-    }
+    // ---------- Владелец ----------
 
     /// <summary>Объект переходит к стороне newOwner + сообщение.</summary>
-    private void TakeOver(Team newOwner, string extra)
+    private void TakeOver(Team newOwner)
     {
         bool wasOurs = IsOwnedBy(Team.Player);
         SetOwner(newOwner);
         if (newOwner == Team.Player)
-            ToastUI.Show($"{data.displayName} захвачен! {data.GetBonusText().Split('\n')[0]} {extra}");
+            ToastUI.Show($"{data.displayName} захвачен! {data.GetBonusText().Split('\n')[0]}");
         else if (wasOurs)
             ToastUI.Show($"Враг захватил наш объект: {data.displayName}!");
         else
@@ -328,17 +238,29 @@ public class MapObject : MonoBehaviour, ISquadTarget, IIncomeSource, IBattleSite
         Color c = OwnerColor;
         if (zone != null) zone.color = new Color(c.r, c.g, c.b, 0.35f);
         if (flag != null) flag.color = c;
-        if (label != null) label.text = $"{data.displayName}\n<size=70%>{OwnerText}</size>";
+        UpdateAttackVisuals();
     }
 
-    /// <summary>Растянуть полоску захвата по прогрессу (и покрасить в цвет захватчика).</summary>
-    private void UpdateProgressBar()
+    /// <summary>Подпись над объектом и полоска подготовки к бою (цвет нападающих).</summary>
+    protected override void UpdateAttackVisuals()
     {
-        if (progressFill == null) return;
-        float w = progressWidth * Mathf.Clamp01(progress);
+        if (data == null) return;
+        string attack = "";
+        if (IsUnderAttack)
+        {
+            string col = AttackingTeam == Team.Player ? "#7FB8FF" : "#FF7A7A";
+            attack = Phase == AttackPhase.Preparing
+                ? $"\n<size=60%><color={col}>Бой через {Mathf.CeilToInt(PrepLeft)} с</color></size>"
+                : $"\n<size=60%><color={col}>Идёт бой!</color></size>";
+        }
+        if (label != null) label.text = $"{data.displayName}\n<size=70%>{OwnerText}</size>{attack}";
+
+        if (progressRoot != null) progressRoot.SetActive(IsUnderAttack);
+        if (progressFill == null || !IsUnderAttack) return;
+        float w = progressWidth * PrepProgress;
         progressFill.localScale = new Vector3(w, progressFill.localScale.y, 1f);
         progressFill.localPosition = new Vector3(-progressWidth / 2f + w / 2f, progressFill.localPosition.y, 0f);
         var sr = progressFill.GetComponent<SpriteRenderer>();
-        if (sr != null && capturer != null) sr.color = capturer.Squad.Owner == Team.Player ? playerColor : enemyColor;
+        if (sr != null) sr.color = AttackingTeam == Team.Player ? playerColor : enemyColor;
     }
 }

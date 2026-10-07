@@ -4,8 +4,9 @@ using UnityEngine.UI;
 
 /// <summary>
 /// Окно объекта карты (Банк, Завод...): название, владелец, описание, бонусы,
-/// время захвата, охрана (видна только с Радаром) и кнопка "ЗАХВАТИТЬ",
+/// время подготовки к бою, охрана (видна только с Радаром) и кнопка "ЗАХВАТИТЬ",
 /// которая открывает список команд для отправки.
+/// Пока на объект нападают, окно закрыто (и не открывается).
 /// </summary>
 public class MapObjectWindowUI : WindowUI
 {
@@ -37,18 +38,30 @@ public class MapObjectWindowUI : WindowUI
         base.Awake();
         Instance = this;
         captureButton.onClick.AddListener(OnCaptureClicked);
+        AttackableSite.AttackChanged += OnAttackChanged;
     }
 
-    /// <summary>Пока окно открыто — обновляем прогресс захвата каждый кадр.</summary>
-    protected override void Update()
+    /// <summary>Отписываемся.</summary>
+    protected override void OnDestroy()
     {
-        base.Update();
-        if (IsOpen && current != null) RefreshStatus();
+        base.OnDestroy();
+        AttackableSite.AttackChanged -= OnAttackChanged;
     }
 
-    /// <summary>Открыть окно объекта.</summary>
+    /// <summary>На объект напали — окно закрывается, пока не закончится нападение.</summary>
+    private void OnAttackChanged(AttackableSite site)
+    {
+        if (!IsOpen || site != current) return;
+        if (!site.IsUnderAttack) { Refresh(); return; }
+        ToastUI.Show($"{site.SiteName}: нападение! Окно закрыто до конца боя");
+        if (picker.IsOpen) picker.Close();
+        Close();
+    }
+
+    /// <summary>Открыть окно объекта (во время нападения — нельзя).</summary>
     public void Open(MapObject obj)
     {
+        if (obj.IsUnderAttack) { ToastUI.Show(obj.AttackStatusText()); return; }
         current = obj;
         Open();
     }
@@ -73,32 +86,14 @@ public class MapObjectWindowUI : WindowUI
         string guard = myBase != null && myBase.HasRadar
             ? $"<color=#FFFFFF>{d.GetGuardText()}</color>"
             : "<color=#8792A6>??? (нужен Радар)</color>";
-        infoText.text = $"Время захвата: <color=#FFFFFF>{d.captureTime:0} с</color>\nОхрана: {guard}";
+        infoText.text = $"Подготовка к бою: <color=#FFFFFF>{current.PrepTime:0} с</color>\nОхрана: {guard}";
 
-        RefreshStatus();
-    }
-
-    /// <summary>Обновить строку владельца, прогресс и кнопку (меняются во время захвата).</summary>
-    private void RefreshStatus()
-    {
         ownerText.text = $"Владелец: {current.OwnerText}";
-
-        if (current.IsCapturing)
-        {
-            string who = current.CapturingTeam == Team.Player ? "<color=#7FB8FF>наша команда</color>" : "<color=#FF7A7A>враг</color>";
-            statusText.text = $"Идёт захват ({who}): {Mathf.FloorToInt(current.CaptureProgress * 100)}%";
-        }
-        else statusText.text = "";
-
+        statusText.text = "";
         if (current.IsOwnedBy(Team.Player))
         {
             captureButton.interactable = false;
             captureText.text = "ОБЪЕКТ НАШ";
-        }
-        else if (current.IsCapturing && current.CapturingTeam == Team.Player)
-        {
-            captureButton.interactable = false;
-            captureText.text = "ИДЁТ ЗАХВАТ";
         }
         else
         {

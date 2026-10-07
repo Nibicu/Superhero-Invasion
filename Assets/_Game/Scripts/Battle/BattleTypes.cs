@@ -14,40 +14,12 @@ public struct BattleUnit
     public string info;       // Подпись для окна перед боем
 }
 
-/// <summary>Итог ручного боя.</summary>
+/// <summary>Итог ручного боя — с точки зрения игрока ("наши" — бойцы слева).</summary>
 public struct BattleResult
 {
-    public bool win;          // Победили ли атакующие (наши)
-    public float attackerHp;  // Доля HP команды атакующих после боя
-    public float defenderHp;  // Доля HP защитников после боя
-}
-
-/// <summary>
-/// "Место боя" — то, за что можно сражаться: объект карты или главная база.
-/// Окно перед боем и BattleManager работают с любым местом через этот интерфейс.
-/// </summary>
-public interface IBattleSite
-{
-    /// <summary>Название (для заголовков).</summary>
-    string SiteName { get; }
-
-    /// <summary>Цвет арены.</summary>
-    Color SiteColor { get; }
-
-    /// <summary>Защитники по волнам (одна волна = одна территория арены). Пусто — защитников нет.</summary>
-    List<List<BattleUnit>> GetDefenderWaves();
-
-    /// <summary>Общая сила защитников.</summary>
-    int DefenderPower { get; }
-
-    /// <summary>Игрок выбрал автобой.</summary>
-    void BeginAutoBattle(SquadUnit unit, BattleForecast forecast);
-
-    /// <summary>Игрок выбрал ручной бой (он начинается).</summary>
-    void OnManualBattleStarted();
-
-    /// <summary>Ручной бой закончился.</summary>
-    void OnManualBattleFinished(SquadUnit unit, BattleResult result);
+    public bool win;       // Победили ли наши
+    public float ourHp;    // Доля HP наших бойцов после боя
+    public float theirHp;  // Доля HP противников после боя
 }
 
 /// <summary>Один охранник объекта: кто (HeroData) и какого уровня.</summary>

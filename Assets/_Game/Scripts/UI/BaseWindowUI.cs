@@ -44,7 +44,20 @@ public class BaseWindowUI : MonoBehaviour
         closeButton.onClick.AddListener(Close);
         backdropButton.onClick.AddListener(Close);
         upgradeButton.onClick.AddListener(OnUpgradeClicked);
+        AttackableSite.AttackChanged += OnAttackChanged;
         root.SetActive(false);
+    }
+
+    /// <summary>
+    /// На базу напали — окно закрывается, пока не закончится нападение
+    /// (покупки во время нападения недоступны).
+    /// </summary>
+    private void OnAttackChanged(AttackableSite site)
+    {
+        if (current == null || !ReferenceEquals(site, current) || !site.IsUnderAttack) return;
+        ToastUI.Show($"{current.BaseName}: нападение! Окно базы закрыто до конца боя");
+        if (picker != null && picker.IsOpen) picker.Close();
+        Close();
     }
 
     /// <summary>Перерисовываем окно, когда меняются деньги (цены краснеют/желтеют).</summary>
@@ -60,6 +73,7 @@ public class BaseWindowUI : MonoBehaviour
         if (ResourceManager.Instance != null)
             ResourceManager.Instance.ResourcesChanged -= OnResourcesChanged;
         if (current != null) current.Changed -= Refresh;
+        AttackableSite.AttackChanged -= OnAttackChanged;
         if (Instance == this) Instance = null;
     }
 
@@ -74,9 +88,11 @@ public class BaseWindowUI : MonoBehaviour
     /// <summary>
     /// Открыть окно базы. Чужая база — только с Радаром и только просмотр (+ кнопка атаки).
     /// Без Радара клик по базе врага сразу предлагает выбрать команду для атаки.
+    /// Во время нападения на базу окно не открывается.
     /// </summary>
     public void Open(MainBase b)
     {
+        if (b.IsUnderAttack) { ToastUI.Show(b.AttackStatusText()); return; }
         if (b.Owner != Team.Player)
         {
             MainBase mine = MainBase.Get(Team.Player);
@@ -142,10 +158,8 @@ public class BaseWindowUI : MonoBehaviour
         upgradeButton.gameObject.SetActive(true);
         if (readOnly)
         {
-            upgradeButton.interactable = !b.IsUnderAttack && b.Hp > 0;
-            upgradeText.text = b.IsUnderAttack
-                ? "БАЗУ УЖЕ АТАКУЮТ"
-                : $"АТАКОВАТЬ БАЗУ\n<size=80%>урон {b.DamagePerAttack} • охрана: сила {(garrison != null ? BattleCalculator.SquadPower(garrison) : 0)}</size>";
+            upgradeButton.interactable = b.Hp > 0;
+            upgradeText.text = $"АТАКОВАТЬ БАЗУ\n<size=80%>урон {b.DamagePerAttack} • охрана: сила {(garrison != null ? BattleCalculator.SquadPower(garrison) : 0)}</size>";
         }
         else
         {

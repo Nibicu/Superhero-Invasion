@@ -114,34 +114,36 @@ public class BattleManager : MonoBehaviour
     // ---------- Начало боя ----------
 
     /// <summary>
-    /// Начать бой: site — за что бьёмся (объект или база: защитники, цвет, название),
-    /// squad — наша команда, finished — вызовется после возврата на карту.
+    /// Начать бой. title и color — название и цвет арены,
+    /// ours — наши бойцы (своя команда, а при защите — защитники объекта или гарнизон),
+    /// theirWaves — противники по территориям (охрана объекта или нападающая команда),
+    /// finished — вызовется после возврата на карту.
     /// </summary>
-    public void StartBattle(IBattleSite site, Squad squad, Action<BattleResult> finished)
+    public void StartBattle(string title, Color color, List<BattleUnit> ours, List<List<BattleUnit>> theirWaves, Action<BattleResult> finished)
     {
         if (IsRunning) return;
-        waves = site.GetDefenderWaves();
-        siteName = site.SiteName;
+        waves = theirWaves;
+        siteName = title;
         onFinished = finished;
         IsRunning = true;
         finishing = false;
         WorldTime.Paused = true;
 
         totalTerritories = Mathf.Clamp(waves.Count, 1, (barriers?.Length ?? 0) + 1);
-        foreach (ArenaTint t in tints) t.Apply(site.SiteColor);
+        foreach (ArenaTint t in tints) t.Apply(color);
         if (barriers != null) foreach (GameObject b in barriers) if (b != null) b.SetActive(true);
 
         territory = 0;
         unlockedMaxX = territoryWidth - 0.5f;
         RallyX = WorldX(enemySpawnOffset - 1f);
 
-        // Наши герои — слева, вразброс по глубине
-        var heroes = new List<HeroInstance>(squad.AllHeroes);
-        for (int i = 0; i < heroes.Count; i++)
+        // Наши бойцы — слева, вразброс по глубине (если их много — в три ряда)
+        int rowsX = ours.Count > 5 ? 3 : 2;
+        for (int i = 0; i < ours.Count; i++)
         {
-            float x = 1.5f + (i % 2) * 1.2f;
-            float y = Mathf.Lerp(floorMinY + 0.4f, floorMaxY - 0.4f, (i + 0.5f) / heroes.Count);
-            Spawn(heroes[i].Data, heroes[i].Stats, Team.Player, squad.HpFraction, new Vector2(x, y));
+            float x = 1.5f + (i % rowsX) * 1.2f;
+            float y = Mathf.Lerp(floorMinY + 0.4f, floorMaxY - 0.4f, (i + 0.5f) / ours.Count);
+            Spawn(ours[i].data, ours[i].stats, Team.Player, ours[i].hpFraction, new Vector2(x, y));
         }
         SpawnWave(0);
 
@@ -254,8 +256,8 @@ public class BattleManager : MonoBehaviour
         var result = new BattleResult
         {
             win = win,
-            attackerHp = RemainingHp(players),
-            defenderHp = RemainingHp(enemies)
+            ourHp = RemainingHp(players),
+            theirHp = RemainingHp(enemies)
         };
 
         Cleanup();

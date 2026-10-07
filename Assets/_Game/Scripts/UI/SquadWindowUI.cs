@@ -30,7 +30,8 @@ public class SquadWindowUI : WindowUI
     [Header("Кнопки")]
     [SerializeField] private Button confirmButton;  // "СОЗДАТЬ КОМАНДУ" / "СОХРАНИТЬ"
     [SerializeField] private TMP_Text confirmText;
-    [SerializeField] private Button disbandButton;  // "РАСПУСТИТЬ" (только для существующей команды)
+    [SerializeField] private Button disbandButton;  // "РАСПУСТИТЬ" на базе / "ОТСТУПИТЬ" на задании (только для существующей команды)
+    [SerializeField] private TMP_Text disbandText;  // Текст на этой кнопке
 
     private HeroInstance captain;                           // Выбранный капитан
     private readonly HeroInstance[] members = new HeroInstance[4]; // Выбранные герои (null = пусто)
@@ -46,7 +47,7 @@ public class SquadWindowUI : WindowUI
         disbandButton.onClick.AddListener(OnDisband);
     }
 
-    /// <summary>Подписываемся на изменения героев (уровень, найм).</summary>
+    /// <summary>Подписываемся на изменения героев (уровень, найм, статус "на задании").</summary>
     private void Start() => HeroManager.Instance.HeroesChanged += OnHeroesChanged;
 
     /// <summary>Отписываемся.</summary>
@@ -122,10 +123,35 @@ public class SquadWindowUI : WindowUI
         // Кнопки
         confirmButton.interactable = canEdit && captain != null;
         confirmText.text = editing == null ? "СОЗДАТЬ\nКОМАНДУ" : "СОХРАНИТЬ";
-        disbandButton.gameObject.SetActive(editing != null);
-        disbandButton.interactable = canEdit;
+        UpdateDisbandButton();
 
         RebuildList(canEdit);
+    }
+
+    /// <summary>Кнопка "Распустить" / "Отступить" (меняется во время задания, поэтому обновляется каждый кадр).</summary>
+    private void UpdateDisbandButton()
+    {
+        bool canEdit = editing == null || editing.Status == SquadStatus.AtBase;
+        disbandButton.gameObject.SetActive(editing != null);
+        if (editing != null && !canEdit)
+        {
+            // Команда на задании — вместо "Распустить" кнопка "Отступить"
+            bool canRetreat = SquadManager.Instance.CanRetreat(editing, out string reason);
+            disbandButton.interactable = canRetreat;
+            if (disbandText != null) disbandText.text = canRetreat ? "ОТСТУПИТЬ" : reason.ToUpper();
+        }
+        else
+        {
+            disbandButton.interactable = canEdit;
+            if (disbandText != null) disbandText.text = "РАСПУСТИТЬ";
+        }
+    }
+
+    /// <summary>Пока окно открыто — обновляем кнопку "Отступить" (бой может начаться в любой момент).</summary>
+    protected override void Update()
+    {
+        base.Update();
+        if (IsOpen) UpdateDisbandButton();
     }
 
     /// <summary>Пересоздать список доступных героев (свободные + свои из редактируемой команды, ещё не в ячейках).</summary>
@@ -207,11 +233,21 @@ public class SquadWindowUI : WindowUI
         ToastUI.Show(error);
     }
 
-    /// <summary>Нажата кнопка "Распустить".</summary>
+    /// <summary>Нажата кнопка "Распустить" (на базе) или "Отступить" (на задании).</summary>
     private void OnDisband()
     {
         if (editing == null) return;
         int number = editing.Number;
+        if (editing.Status != SquadStatus.AtBase)
+        {
+            if (SquadManager.Instance.TryRetreat(editing, out string retreatError))
+            {
+                ToastUI.Show($"Команда {number} отступает и возвращается на базу");
+                Close();
+            }
+            else ToastUI.Show(retreatError);
+            return;
+        }
         if (SquadManager.Instance.TryDisband(editing, out string error))
         {
             ToastUI.Show($"Команда {number} распущена");

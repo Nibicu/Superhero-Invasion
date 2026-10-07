@@ -11,12 +11,13 @@ using UnityEngine.EventSystems;
 /// - Сама база приносит небольшой доход (зависит от уровня).
 /// - Клик по базе на карте открывает окно базы (BaseWindowUI).
 /// - У базы есть здоровье (1000). Базу противника можно атаковать командой:
-///   её защищает гарнизон — ОДНА самая сильная команда, стоящая на базе.
-///   Победа над гарнизоном (или штурм пустой базы) — 200 урона, команда едет домой.
-///   Здоровье 0 — конец игры (GameOverUI).
+///   после подготовки к бою (20 с) её защищает гарнизон — ОДНА самая сильная команда,
+///   стоящая на базе. Победа над гарнизоном (или пустая база) — 200 урона, команда едет домой.
+///   Порядок нападения — в AttackableSite. Здоровье 0 — конец игры (GameOverUI).
+/// - Пока базу атакуют: покупки на ней недоступны, а обе стороны не могут отправлять команды.
 /// На объекте должен быть Collider2D, иначе клик не сработает.
 /// </summary>
-public class MainBase : MonoBehaviour, IIncomeSource, ISquadTarget, IBattleSite
+public class MainBase : AttackableSite, IIncomeSource
 {
     /// <summary>Сколько всего ячеек под постройки.</summary>
     public const int MaxSlots = 5;
@@ -45,8 +46,6 @@ public class MainBase : MonoBehaviour, IIncomeSource, ISquadTarget, IBattleSite
     [SerializeField] private int maxHp = 1000;
     [Tooltip("Сколько урона наносит одна успешная атака")]
     [SerializeField] private int damagePerAttack = 200;
-    [Tooltip("Сколько секунд длится штурм/автобой у базы")]
-    [SerializeField] private float siegeTime = 10f;
     [Tooltip("Цвет базы (арена боя за базу красится в него)")]
     [SerializeField] private Color baseColor = new Color(0.18f, 0.48f, 0.88f);
 
@@ -55,20 +54,15 @@ public class MainBase : MonoBehaviour, IIncomeSource, ISquadTarget, IBattleSite
     [SerializeField] private TMP_Text label;
     [Tooltip("Заполнение полоски здоровья над базой (растягивается по X)")]
     [SerializeField] private Transform hpFill;
-    [Tooltip("Полоска штурма (видна, пока базу атакуют)")]
+    [Tooltip("Полоска подготовки к бою (видна, пока базу атакуют)")]
     [SerializeField] private Transform siegeFill;
     [SerializeField] private GameObject siegeRoot;
     [Tooltip("Ширина полосок в единицах карты")]
     [SerializeField] private float barWidth = 3.4f;
 
-    private int hp;                    // Текущее здоровье
-    private SquadUnit attacker;        // Команда, которая сейчас атакует базу
-    private Squad defender;            // Гарнизон в момент атаки (null — база пустая)
-    private float siegeProgress;       // Прогресс штурма 0..1
-    private bool awaitingDecision;     // Игрок выбирает в окне перед боем
-    private bool inManualBattle;       // Идёт ручной бой
-    private BattleForecast forecast;   // Прогноз автобоя
-    private bool autoWin;              // Итог автобоя
+    private int hp;           // Текущее здоровье
+    private Squad defender;   // Гарнизон, выбранный к началу боя (null — до боя или база пустая)
+    private bool battleStarted; // Подготовка кончилась, гарнизон выбран
 
     private int level = 1;                                                 // Текущий уровень базы
     private readonly BuildingInstance[] slots = new BuildingInstance[MaxSlots]; // Постройки в ячейках (null = пусто)
@@ -154,20 +148,12 @@ public class MainBase : MonoBehaviour, IIncomeSource, ISquadTarget, IBattleSite
         UpdateBars();
     }
 
-    /// <summary>Идёт штурм (таймер автобоя или штурм пустой базы).</summary>
-    private void Update()
-    {
-        if (attacker == null || awaitingDecision || inManualBattle) return;
-        siegeProgress += WorldTime.DeltaTime / Mathf.Max(0.1f, siegeTime);
-        UpdateBars();
-        if (siegeProgress >= 1f) FinishSiege();
-    }
-
-    /// <summary>Клик мышкой по базе на карте — открываем окно базы.</summary>
+    /// <summary>Клик мышкой по базе на карте — открываем окно базы (во время нападения — только сообщение).</summary>
     private void OnMouseUpAsButton()
     {
         // Если курсор над интерфейсом (кнопкой, окном) — клик по карте не считаем
         if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) return;
+        if (IsUnderAttack) { ToastUI.Show(AttackStatusText()); return; }
         if (BaseWindowUI.Instance != null) BaseWindowUI.Instance.Open(this);
     }
 
@@ -182,8 +168,14 @@ public class MainBase : MonoBehaviour, IIncomeSource, ISquadTarget, IBattleSite
     /// <summary>Урон от одной успешной атаки.</summary>
     public int DamagePerAttack => damagePerAttack;
 
-    /// <summary>Атакует ли базу сейчас кто-то.</summary>
-    public bool IsUnderAttack => attacker != null;
+    /// <summary>Атакуют ли сейчас хоть одну главную базу (тогда команды отправлять нельзя).</summary>
+    public static bool AnyUnderAttack(out MainBase attacked)
+    {
+        foreach (MainBase b in all)
+            if (b.IsUnderAttack) { attacked = b; return true; }
+        attacked = null;
+        return false;
+    }
 
     /// <summary>Здоровье базы изменилось (для окна базы).</summary>
     public event Action HpChanged;
@@ -206,139 +198,101 @@ public class MainBase : MonoBehaviour, IIncomeSource, ISquadTarget, IBattleSite
         return best;
     }
 
-    // ISquadTarget — базу противника можно атаковать
-    public string TargetName => baseName;
+    /// <summary>Кто защищает базу: до начала боя — текущий сильнейший, после — выбранный гарнизон.</summary>
+    private Squad CurrentDefender => battleStarted ? defender : FindDefender();
+
+    // ---------- Место нападения (AttackableSite) ----------
+
+    public override string TargetName => baseName;
+    public override string SiteName => baseName;
+    public override Color SiteColor => baseColor;
 
     /// <summary>Атакующие встают перед базой со стороны центра карты.</summary>
-    public Vector3 ApproachPoint => transform.position + new Vector3(transform.position.x > 0 ? -2.6f : 2.6f, 0f, 0f);
+    public override Vector3 ApproachPoint => transform.position + new Vector3(transform.position.x > 0 ? -2.6f : 2.6f, 0f, 0f);
 
-    /// <summary>Можно ли атаковать базу этой командой.</summary>
-    public bool CanAccept(Squad squad, out string reason)
+    /// <summary>Сила гарнизона (0 — база пустая).</summary>
+    public override int DefenderPower
     {
-        reason = null;
-        if (squad.Owner == owner) { reason = "Это своя база"; return false; }
-        if (hp <= 0) { reason = "База уже разрушена"; return false; }
-        if (attacker != null && attacker.Squad.Owner == squad.Owner) { reason = "Базу уже атакует ваша команда"; return false; }
+        get
+        {
+            Squad d = CurrentDefender;
+            return d != null ? BattleCalculator.SquadPower(d) : 0;
+        }
+    }
+
+    /// <summary>Базу всегда защищает её владелец.</summary>
+    public override bool TryGetDefendingTeam(out Team team)
+    {
+        team = owner;
         return true;
     }
 
-    public void OnSquadDispatched(Squad squad) { }
-
-    /// <summary>
-    /// Команда приехала к базе. Нет гарнизона — штурм без боя (200 урона по таймеру).
-    /// Есть гарнизон: игрок — окно перед боем, враг — автобой.
-    /// </summary>
-    public void OnSquadArrived(SquadUnit unit)
-    {
-        Team team = unit.Squad.Owner;
-        if (attacker != null || hp <= 0)
-        {
-            if (team == Team.Player) ToastUI.Show($"{baseName}: атака невозможна, команда возвращается");
-            unit.ReturnHome();
-            return;
-        }
-
-        attacker = unit;
-        siegeProgress = 0f;
-        SquadManager.Instance.SetStatus(unit.Squad, SquadStatus.Capturing);
-        defender = FindDefender();
-
-        if (defender == null)
-        {
-            // База пустая — штурм без боя
-            forecast = BattleForecast.Win;
-            autoWin = true;
-            awaitingDecision = false;
-            if (siegeRoot != null) siegeRoot.SetActive(true);
-            if (team == Team.Player) ToastUI.Show($"{baseName} без охраны! Команда {unit.Squad.Number} идёт на штурм");
-            else ToastUI.Show("Враг штурмует нашу базу! Защитников нет!");
-        }
-        else if (team == Team.Player && BattlePrepWindowUI.Instance != null)
-        {
-            awaitingDecision = true;
-            BattlePrepWindowUI.Instance.RequestBattle(this, unit);
-        }
-        else
-        {
-            BeginAutoBattle(unit, BattleCalculator.Forecast(BattleCalculator.SquadPower(unit.Squad), DefenderPower));
-            ToastUI.Show($"Враг атакует нашу базу! Защищает команда {defender.Number}");
-        }
-    }
-
-    // IBattleSite — бой за базу: защитники — гарнизон (одна волна)
-    public string SiteName => baseName;
-    public Color SiteColor => baseColor;
-    public int DefenderPower => defender != null ? BattleCalculator.SquadPower(defender) : 0;
-
     /// <summary>Гарнизон одной волной (одна территория арены).</summary>
-    public List<List<BattleUnit>> GetDefenderWaves()
+    public override List<List<BattleUnit>> GetDefenderWaves()
     {
         var waves = new List<List<BattleUnit>>();
-        if (defender == null) return waves;
+        Squad d = CurrentDefender;
+        if (d == null) return waves;
         var wave = new List<BattleUnit>();
-        foreach (HeroInstance h in defender.AllHeroes)
+        foreach (HeroInstance h in d.AllHeroes)
             wave.Add(new BattleUnit
             {
                 data = h.Data,
                 stats = h.Stats,
-                hpFraction = defender.HpFraction,
-                info = $"Гарнизон (команда {defender.Number})  •  Ур. {h.Level}  •  сила {BattleCalculator.StatsPower(h.Stats)}"
+                hpFraction = d.HpFraction,
+                info = $"Гарнизон (команда {d.Number})  •  Ур. {h.Level}  •  сила {BattleCalculator.StatsPower(h.Stats)}"
             });
         waves.Add(wave);
         return waves;
     }
 
-    /// <summary>Автобой у базы: идёт таймер штурма, итог применится в конце.</summary>
-    public void BeginAutoBattle(SquadUnit unit, BattleForecast f)
+    /// <summary>Свою или разрушенную базу атаковать нельзя.</summary>
+    protected override bool CanBeAttackedBy(Squad squad, out string reason)
     {
-        if (attacker != unit) return;
-        awaitingDecision = false;
-        forecast = f;
-        autoWin = BattleCalculator.RollAutoBattle(f);
-        siegeProgress = 0f;
-        if (siegeRoot != null) siegeRoot.SetActive(true);
+        reason = null;
+        if (squad.Owner == owner) { reason = "Это своя база"; return false; }
+        if (hp <= 0) { reason = "База уже разрушена"; return false; }
+        return true;
     }
 
-    public void OnManualBattleStarted()
+    /// <summary>Подготовка кончилась — запоминаем гарнизон на этот бой.</summary>
+    protected override void OnBattlePhaseStarting()
     {
-        awaitingDecision = false;
-        inManualBattle = true;
+        defender = FindDefender();
+        battleStarted = true;
+        if (defender == null)
+            ToastUI.Show(owner == Team.Player ? "Нашу базу некому защищать!" : $"{baseName} без охраны!");
     }
 
-    /// <summary>Ручной бой у базы закончился: здоровье обеих команд и урон базе.</summary>
-    public void OnManualBattleFinished(SquadUnit unit, BattleResult result)
+    /// <summary>Гарнизон ранен в автобое: проиграл — −50%, отбился — −20%.</summary>
+    protected override void ApplyDefenderAutoLoss(float loss)
     {
-        inManualBattle = false;
-        attacker = null;
-        if (siegeRoot != null) siegeRoot.SetActive(false);
-        if (unit == null) return;
-
-        unit.Squad.HpFraction = result.attackerHp;
-        if (defender != null) defender.HpFraction = result.defenderHp;
-        if (result.win) TakeDamage(damagePerAttack);
-        else if (unit.Squad.Owner == Team.Player) ToastUI.Show($"Гарнизон отбил атаку на «{baseName}»");
-        unit.ReturnHome();
-    }
-
-    /// <summary>Таймер штурма закончился: потери HP и урон базе (если атакующие победили).</summary>
-    private void FinishSiege()
-    {
-        SquadUnit unit = attacker;
-        attacker = null;
-        siegeProgress = 0f;
-        if (siegeRoot != null) siegeRoot.SetActive(false);
-
         if (defender != null)
-        {
-            Squad atk = unit.Squad;
-            atk.HpFraction = Mathf.Max(BattleCalculator.MinHpAfterBattle, atk.HpFraction - BattleCalculator.AutoBattleHpLoss(forecast, autoWin));
-            defender.HpFraction = Mathf.Max(BattleCalculator.MinHpAfterBattle, defender.HpFraction - (autoWin ? 0.5f : 0.2f));
-        }
+            defender.HpFraction = Mathf.Max(BattleCalculator.MinHpAfterBattle, defender.HpFraction - loss);
+    }
 
-        if (autoWin) TakeDamage(damagePerAttack);
-        else if (owner == Team.Player) ToastUI.Show("Наш гарнизон отбил атаку врага!");
-        else ToastUI.Show($"Атака на «{baseName}» отбита гарнизоном. Команда {unit.Squad.Number} ранена");
-        unit.ReturnHome();
+    /// <summary>После ручного боя у гарнизона столько HP, сколько осталось на арене.</summary>
+    protected override void SetDefenderHp(float hpFraction)
+    {
+        if (defender != null) defender.HpFraction = hpFraction;
+    }
+
+    /// <summary>Атакующие победили — урон базе.</summary>
+    protected override void OnAttackerWon(Squad squad) => TakeDamage(damagePerAttack);
+
+    /// <summary>Нападение закончилось — гарнизон снова выбирается заново.</summary>
+    protected override void OnAttackEnded()
+    {
+        defender = null;
+        battleStarted = false;
+    }
+
+    /// <summary>Полоска подготовки и подпись над базой.</summary>
+    protected override void UpdateAttackVisuals()
+    {
+        if (siegeRoot != null) siegeRoot.SetActive(IsUnderAttack);
+        UpdateLabel();
+        UpdateBars();
     }
 
     /// <summary>Нанести урон базе. 0 — конец игры.</summary>
@@ -357,11 +311,11 @@ public class MainBase : MonoBehaviour, IIncomeSource, ISquadTarget, IBattleSite
         if (hp <= 0) GameOverUI.Show(owner != Team.Player);
     }
 
-    /// <summary>Обновить полоски здоровья и штурма над базой.</summary>
+    /// <summary>Обновить полоски здоровья и подготовки к бою над базой.</summary>
     private void UpdateBars()
     {
         SetBar(hpFill, (float)hp / maxHp);
-        SetBar(siegeFill, siegeProgress);
+        SetBar(siegeFill, IsUnderAttack ? PrepProgress : 0f);
     }
 
     private void SetBar(Transform fill, float fraction)
@@ -466,6 +420,7 @@ public class MainBase : MonoBehaviour, IIncomeSource, ISquadTarget, IBattleSite
     public bool TryUpgradeBase(out string error)
     {
         error = null;
+        if (IsUnderAttack) { error = UnderAttackError; return false; }
         if (IsMaxLevel) { error = "База уже максимального уровня"; return false; }
         if (!ResourceManager.Instance.TrySpend(owner, UpgradeCost))
         {
@@ -482,6 +437,7 @@ public class MainBase : MonoBehaviour, IIncomeSource, ISquadTarget, IBattleSite
     public bool TryBuild(int index, BuildingData data, out string error)
     {
         error = null;
+        if (IsUnderAttack) { error = UnderAttackError; return false; }
         if (!IsSlotOpen(index)) { error = "Ячейка ещё закрыта"; return false; }
         if (slots[index] != null) { error = "Ячейка занята"; return false; }
         if (!CanBuildType(data)) { error = "Такая постройка уже есть"; return false; }
@@ -518,6 +474,7 @@ public class MainBase : MonoBehaviour, IIncomeSource, ISquadTarget, IBattleSite
     public bool TryUpgradeBuilding(int index, out string error)
     {
         if (!CanUpgradeBuilding(index, out error)) return false;
+        if (IsUnderAttack) { error = UnderAttackError; return false; }
         BuildingInstance b = slots[index];
         BuildingLevel next = b.Data.GetLevel(b.Level + 1);
         if (!ResourceManager.Instance.TrySpend(owner, next.goldCost, next.plutoniumCost))
@@ -544,6 +501,15 @@ public class MainBase : MonoBehaviour, IIncomeSource, ISquadTarget, IBattleSite
     /// <summary>Обновить надпись над базой на карте.</summary>
     private void UpdateLabel()
     {
-        if (label != null) label.text = $"{baseName}\n<size=65%>Уровень {level}  •  HP {hp}</size>";
+        if (label == null) return;
+        string attack = "";
+        if (IsUnderAttack)
+            attack = Phase == AttackPhase.Preparing
+                ? $"\n<size=60%><color=#FFB84A>Нападение! Бой через {Mathf.CeilToInt(PrepLeft)} с</color></size>"
+                : "\n<size=60%><color=#FFB84A>Идёт бой!</color></size>";
+        label.text = $"{baseName}\n<size=65%>Уровень {level}  •  HP {hp}</size>{attack}";
     }
+
+    /// <summary>Текст ошибки при покупке во время нападения.</summary>
+    private const string UnderAttackError = "База под атакой — покупки недоступны";
 }

@@ -33,6 +33,7 @@ public class SquadManager : MonoBehaviour
 
     private readonly List<Squad> playerSquads = new List<Squad>(); // Команды игрока
     private readonly List<Squad> enemySquads = new List<Squad>();  // Команды врага
+    private readonly Dictionary<Squad, SquadUnit> units = new Dictionary<Squad, SquadUnit>(); // Фишки команд, которые сейчас на карте
 
     /// <summary>Изменился список команд стороны или состав/статус команды.</summary>
     public event Action<Team> SquadsChanged;
@@ -99,6 +100,7 @@ public class SquadManager : MonoBehaviour
     public bool TryEditSquad(Squad squad, HeroInstance captain, IList<HeroInstance> heroes, out string error)
     {
         if (squad.Status != SquadStatus.AtBase) { error = "Команда сейчас на задании"; return false; }
+        if (IsHomeUnderAttack(squad.Owner)) { error = "База под атакой — менять команды нельзя"; return false; }
         if (!Validate(squad.Owner, captain, heroes, squad, out error)) return false;
 
         SetHeroesStatus(squad, HeroStatus.Free);   // старый состав освобождаем
@@ -113,6 +115,7 @@ public class SquadManager : MonoBehaviour
     {
         error = null;
         if (squad.Status != SquadStatus.AtBase) { error = "Команда сейчас на задании"; return false; }
+        if (IsHomeUnderAttack(squad.Owner)) { error = "База под атакой — распускать команды нельзя"; return false; }
         SetHeroesStatus(squad, HeroStatus.Free);
         List(squad.Owner).Remove(squad);
         Renumber(squad.Owner);
@@ -134,11 +137,17 @@ public class SquadManager : MonoBehaviour
     /// <summary>
     /// Отправить команду к цели (объект карты или миссия).
     /// Команда должна стоять на базе, а цель — принимать её.
+    /// Пока атакуют любую главную базу, команды не отправляет никто (ни игрок, ни враг).
     /// На карте появляется фишка, которая едет от базы к цели.
     /// </summary>
     public bool SendSquad(Squad squad, ISquadTarget target, out string error)
     {
         if (squad.Status != SquadStatus.AtBase) { error = "Команда сейчас не на базе"; return false; }
+        if (MainBase.AnyUnderAttack(out MainBase attacked))
+        {
+            error = $"Идёт нападение на «{attacked.BaseName}» — команды отправлять нельзя, пока не решится бой";
+            return false;
+        }
         if (!target.CanAccept(squad, out error)) return false;
         MainBase home = MainBase.Get(squad.Owner);
         if (home == null || unitPrefab == null) { error = "Нет базы или префаба фишки"; return false; }
@@ -146,6 +155,7 @@ public class SquadManager : MonoBehaviour
         SquadUnit unit = Instantiate(unitPrefab);
         unit.name = $"Squad_{squad.Owner}_{squad.Number}";
         unit.Init(squad, home.transform.position, target, squad.Owner == Team.Player ? playerColor : enemyColor);
+        units[squad] = unit;
         SetStatus(squad, SquadStatus.Moving);
         target.OnSquadDispatched(squad);
         return true;
@@ -154,9 +164,41 @@ public class SquadManager : MonoBehaviour
     /// <summary>Фишка вернулась на базу — команда снова свободна (вызывает SquadUnit).</summary>
     public void OnUnitReturned(SquadUnit unit)
     {
+        units.Remove(unit.Squad);
         SetStatus(unit.Squad, SquadStatus.AtBase);
         if (unit.Squad.Owner == Team.Player)
             ToastUI.Show($"Команда {unit.Squad.Number} вернулась на базу");
+    }
+
+    /// <summary>
+    /// Можно ли команде отступить: она должна быть в пути, на миссии
+    /// или у цели во время подготовки к бою (когда бой начался — уже нельзя).
+    /// </summary>
+    public bool CanRetreat(Squad squad, out string reason)
+    {
+        reason = null;
+        if (squad.Status == SquadStatus.AtBase) { reason = "Команда на базе"; return false; }
+        if (squad.Status == SquadStatus.Returning) { reason = "Команда уже возвращается"; return false; }
+        if (!units.TryGetValue(squad, out SquadUnit unit) || unit == null) { reason = "Команда не найдена на карте"; return false; }
+        if (unit.Target is AttackableSite site && !site.CanRetreat(unit)) { reason = "Бой уже начался"; return false; }
+        return true;
+    }
+
+    /// <summary>Отступить: цель забывает о команде, команда едет домой.</summary>
+    public bool TryRetreat(Squad squad, out string error)
+    {
+        if (!CanRetreat(squad, out error)) return false;
+        SquadUnit unit = units[squad];
+        unit.Target.OnSquadRecalled(unit);
+        unit.ReturnHome();
+        return true;
+    }
+
+    /// <summary>Атакуют ли сейчас главную базу этой стороны.</summary>
+    private static bool IsHomeUnderAttack(Team team)
+    {
+        MainBase b = MainBase.Get(team);
+        return b != null && b.IsUnderAttack;
     }
 
     /// <summary>Сообщить всем, что команды стороны изменились (обновить интерфейс).</summary>

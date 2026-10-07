@@ -4,9 +4,12 @@ using UnityEngine;
 /// <summary>
 /// Искусственный интеллект врага. Раз в thinkInterval секунд "думает":
 ///  1) собирает команды из свободных злодеев;
-///  2) отправляет свободные здоровые команды к самой выгодной цели
-///     (свободная миссия с хорошим шансом успеха или незахваченный объект);
-///  3) тратит золото на одно действие: найм, постройку по плану, улучшение построек или базы.
+///  2) отправляет свободные здоровые команды к самой выгодной цели.
+///     Объекты — главный приоритет (они дают большие бонусы). Миссии — для прокачки.
+///     Базу противника атакует, только если захватил больше половины объектов
+///     или база противника пустая (без гарнизона);
+///  3) отступает, если охрана цели оказалась сильнее (на верное поражение не идёт);
+///  4) тратит золото на одно действие: найм, постройку по плану, улучшение построек или базы.
 /// ИИ пользуется теми же правилами, что и игрок (ResourceManager, MainBase,
 /// HeroManager, SquadManager) — никаких читов.
 /// </summary>
@@ -29,16 +32,20 @@ public class EnemyAI : MonoBehaviour
     [SerializeField] private BuildingData[] buildOrder;
 
     [Header("Команды")]
-    [Tooltip("Сколько героев ИИ ставит в новую команду (вместе с капитаном)")]
-    [SerializeField] private int preferredSquadSize = 2;
+    [Tooltip("Новую команду ИИ создаёт, только когда все команды на базе набрали столько героев (вместе с капитаном). Чем больше — тем сильнее команды")]
+    [SerializeField] private int fullSquadSize = 4;
     [Tooltip("Команда с здоровьем ниже этой доли сначала лечится на базе")]
     [SerializeField, Range(0f, 1f)] private float minHpToSend = 0.7f;
     [Tooltip("ИИ берёт миссию, только если шанс успеха не ниже этого")]
     [SerializeField, Range(0f, 1f)] private float minMissionChance = 0.6f;
-    [Tooltip("Оставлять самую сильную команду дома гарнизоном (если команд 2 и больше)")]
+    [Tooltip("Оставлять одну команду дома гарнизоном (если команд 2 и больше). Сильные команды уходят захватывать объекты")]
     [SerializeField] private bool keepGarrison = true;
     [Tooltip("Насколько ИИ хочет атаковать базу противника (ценность атаки)")]
     [SerializeField] private float baseAttackValue = 600f;
+    [Tooltip("Во сколько раз объекты ценнее остальных целей (объекты — главный приоритет)")]
+    [SerializeField] private float objectPriority = 3f;
+    [Tooltip("Какую долю объектов карты нужно захватить, чтобы атаковать базу с гарнизоном (0.5 = больше половины)")]
+    [SerializeField, Range(0f, 1f)] private float objectsShareForBaseAttack = 0.5f;
 
     [Header("Прокачка героев")]
     [Tooltip("Прокачивать героев за золото, только если после покупки останется не меньше этой суммы (запас на базу и найм)")]
@@ -68,6 +75,7 @@ public class EnemyAI : MonoBehaviour
     private void Think()
     {
         CleanupOrders();
+        RetreatFromLostFights();
         FormSquads();
         DispatchSquads();
 
@@ -95,29 +103,23 @@ public class EnemyAI : MonoBehaviour
         foreach (Squad s in done) orders.Remove(s);
     }
 
-    /// <summary>Собрать новую команду из свободных героев или добавить их в неполную команду на базе.</summary>
+    /// <summary>
+    /// Распределить свободных героев: сначала дополняем команды на базе до fullSquadSize
+    /// (сильные команды могут захватывать объекты), новую команду создаём,
+    /// только когда все команды на базе полные. Если команд максимум — дополняем до предела.
+    /// </summary>
     private void FormSquads()
     {
         List<HeroInstance> free = SM.GetFreeHeroes(team);
         if (free.Count == 0) return;
         free.Sort((a, b) => HeroPower(b).CompareTo(HeroPower(a))); // сильные первыми
 
-        if (SM.CanCreateSquad(team))
-        {
-            HeroInstance captain = free[0];
-            var members = new List<HeroInstance>();
-            for (int i = 1; i < free.Count && members.Count < preferredSquadSize - 1; i++) members.Add(free[i]);
-            if (SM.TryCreateSquad(team, captain, members, out Squad squad, out _))
-                Log($"создал команду {squad.Number}, капитан {captain.Data.displayName}");
-            return;
-        }
-
-        // Команд уже максимум — добавляем свободных в неполные команды на базе
+        int limit = SM.CanCreateSquad(team) ? fullSquadSize : SM.MaxMembers + 1;
         foreach (Squad s in SM.GetSquads(team))
         {
-            if (s.Status != SquadStatus.AtBase || s.Size >= SM.MaxMembers + 1 || free.Count == 0) continue;
+            if (s.Status != SquadStatus.AtBase || s.Size >= limit || free.Count == 0) continue;
             var members = new List<HeroInstance>(s.Members);
-            while (members.Count < SM.MaxMembers && free.Count > 0)
+            while (members.Count + 1 < limit && free.Count > 0)
             {
                 members.Add(free[0]);
                 free.RemoveAt(0);
@@ -125,24 +127,74 @@ public class EnemyAI : MonoBehaviour
             if (SM.TryEditSquad(s, s.Captain, members, out _))
                 Log($"усилил команду {s.Number} (героев: {s.Size})");
         }
+
+        if (free.Count == 0 || !SM.CanCreateSquad(team)) return;
+        HeroInstance captain = free[0];
+        var newMembers = new List<HeroInstance>();
+        for (int i = 1; i < free.Count && newMembers.Count < fullSquadSize - 1; i++) newMembers.Add(free[i]);
+        if (SM.TryCreateSquad(team, captain, newMembers, out Squad squad, out _))
+            Log($"создал команду {squad.Number}, капитан {captain.Data.displayName}");
     }
 
     /// <summary>
-    /// Отправить свободные здоровые команды к лучшим целям.
-    /// Если команд хотя бы две — самая сильная остаётся дома гарнизоном.
+    /// Отступление: если команда едет к цели или готовится к бою, а охрана цели
+    /// оказалась сильнее ("вы точно проиграете") — отзываем команду домой.
+    /// К базе с гарнизоном без большинства объектов тоже не идём.
+    /// </summary>
+    private void RetreatFromLostFights()
+    {
+        foreach (var pair in new List<KeyValuePair<Squad, ISquadTarget>>(orders))
+        {
+            Squad squad = pair.Key;
+            if (!(pair.Value is AttackableSite site)) continue;
+            if (!SM.CanRetreat(squad, out _)) continue; // бой уже начался — поздно
+
+            bool lose = BattleCalculator.Forecast(BattleCalculator.SquadPower(squad), site.DefenderPower) == BattleForecast.Lose;
+            bool badBaseAttack = site is MainBase mb && !MayAttackBase(mb);
+            if (!lose && !badBaseAttack) continue;
+            if (SM.TryRetreat(squad, out _))
+                Log($"команда {squad.Number} отступает от «{site.SiteName}»: охрана слишком сильная");
+        }
+    }
+
+    /// <summary>
+    /// Можно ли атаковать базу противника: у нас больше половины объектов карты
+    /// или база противника пустая (гарнизона нет).
+    /// </summary>
+    private bool MayAttackBase(MainBase enemyBase)
+    {
+        int total = MapObject.All.Count;
+        bool majority = total > 0 && MapObject.CountOwnedBy(team) > total * objectsShareForBaseAttack;
+        return majority || enemyBase.DefenderPower <= 0;
+    }
+
+    /// <summary>
+    /// Отправить свободные здоровые команды к лучшим целям — сильные первыми
+    /// (им по силам охрана объектов). Если команд хотя бы две — последняя
+    /// команда на базе остаётся дома гарнизоном.
     /// </summary>
     private void DispatchSquads()
     {
-        Squad keepHome = SM.GetSquads(team).Count >= 2 && keepGarrison ? Base.FindDefender() : null;
+        var ready = new List<Squad>();
+        int atBase = 0;
         foreach (Squad s in SM.GetSquads(team))
         {
-            if (s == keepHome) continue;
-            if (s.Status != SquadStatus.AtBase || s.HpFraction < minHpToSend || orders.ContainsKey(s)) continue;
+            if (s.Status != SquadStatus.AtBase) continue;
+            atBase++;
+            if (s.HpFraction >= minHpToSend && !orders.ContainsKey(s)) ready.Add(s);
+        }
+        ready.Sort((a, b) => BattleCalculator.SquadPower(b).CompareTo(BattleCalculator.SquadPower(a)));
+        bool needGarrison = keepGarrison && SM.GetSquads(team).Count >= 2;
+
+        foreach (Squad s in ready)
+        {
+            if (needGarrison && atBase <= 1) return; // последняя команда — гарнизон
             ISquadTarget target = ChooseTarget(s);
-            if (target == null) return; // целей нет — остальным тоже некуда
+            if (target == null) continue; // этой команде целей не нашлось — может, найдётся другой
             if (SM.SendSquad(s, target, out _))
             {
                 orders[s] = target;
+                atBase--;
                 Log($"отправил команду {s.Number} → {target.TargetName}");
             }
         }
@@ -171,7 +223,7 @@ public class EnemyAI : MonoBehaviour
         // Объекты: не наши, никто из наших туда не едет
         foreach (MapObject o in MapObject.All)
         {
-            if (o.IsOwnedBy(team) || IsOrdered(o) || !o.CanAccept(squad, out _)) continue;
+            if (o.IsOwnedBy(team) || o.IsUnderAttack || IsOrdered(o) || !o.CanAccept(squad, out _)) continue;
             MapObjectData d = o.Data;
             float value = d.goldIncome * 3f + d.plutoniumIncome * 40f + d.heroLimitBonus * 150f
                           + (d.unlocksFactoryUpgrades ? 400f : 0f) + (d.allowsHeroBoost ? 300f : 0f);
@@ -180,18 +232,18 @@ public class EnemyAI : MonoBehaviour
             // Охрана объекта: на верное поражение не идём, на равный бой — неохотно
             var forecast = BattleCalculator.Forecast(BattleCalculator.SquadPower(squad), BattleCalculator.GarrisonPower(d));
             if (forecast == BattleForecast.Lose) continue;
-            if (forecast == BattleForecast.Equal) value *= 0.5f;
+            if (forecast == BattleForecast.Equal) value *= 0.7f;
+            value *= objectPriority; // объекты — главный приоритет
             float score = value / (Vector3.Distance(home, o.ApproachPoint) + 5f);
             if (score > bestScore) { bestScore = score; best = o; }
         }
 
-        // База противника: чем меньше у неё HP, тем заманчивее. На верное поражение не идём.
+        // База противника: только при большинстве объектов или если она пустая.
+        // Чем меньше у неё HP, тем заманчивее. На верное поражение не идём.
         MainBase enemyBase = MainBase.Get(team == Team.Player ? Team.Enemy : Team.Player);
-        if (enemyBase != null && !IsOrdered(enemyBase) && enemyBase.CanAccept(squad, out _))
+        if (enemyBase != null && !IsOrdered(enemyBase) && MayAttackBase(enemyBase) && enemyBase.CanAccept(squad, out _))
         {
-            Squad guard = enemyBase.FindDefender();
-            int guardPower = guard != null ? BattleCalculator.SquadPower(guard) : 0;
-            var f = BattleCalculator.Forecast(BattleCalculator.SquadPower(squad), guardPower);
+            var f = BattleCalculator.Forecast(BattleCalculator.SquadPower(squad), enemyBase.DefenderPower);
             if (f != BattleForecast.Lose)
             {
                 float value = baseAttackValue * (2f - (float)enemyBase.Hp / enemyBase.MaxHp);

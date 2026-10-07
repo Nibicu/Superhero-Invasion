@@ -116,6 +116,16 @@ public class MissionMarker : MonoBehaviour, ISquadTarget
             ToastUI.Show($"Команда {unit.Squad.Number} приступила к миссии «{Data.title}»");
     }
 
+    /// <summary>Команда отступила — миссия снова свободна (и снова тикает таймер жизни).</summary>
+    public void OnSquadRecalled(SquadUnit unit)
+    {
+        if (assigned != unit.Squad) return;
+        assigned = null;
+        worker = null;
+        progress = 0f;
+        SetBar(lifeLeft / Data.lifetime, Color.white);
+    }
+
     // ---------- Итог ----------
 
     /// <summary>Миссия выполнена: бросаем шанс, выдаём награду или раним команду, команда едет домой.</summary>

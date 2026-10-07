@@ -23978,6 +23978,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d83b6c3e99440084e8cae1ed0b581b15, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MapObject
+  prepTime: 20
   data: {fileID: 11400000, guid: 3a85f49c95740e542b5edf10df5bd724, type: 2}
   zone: {fileID: 756637458}
   flag: {fileID: 813019994}
@@ -25357,7 +25358,7 @@ GameObject:
   - component: {fileID: 427169783}
   - component: {fileID: 427169782}
   m_Layer: 0
-  m_Name: Label
+  m_Name: EnemyLabel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -28398,6 +28399,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d83b6c3e99440084e8cae1ed0b581b15, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MapObject
+  prepTime: 20
   data: {fileID: 11400000, guid: ef243d9eb5a664a43b6050d4cd9a664e, type: 2}
   zone: {fileID: 196199752}
   flag: {fileID: 765932802}
@@ -31264,8 +31266,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BattlePrepWindowUI
   root: {fileID: 1317741117}
   titleText: {fileID: 603775460}
+  ourLabelText: {fileID: 1973722721}
   ourPowerText: {fileID: 1763097711}
   ourList: {fileID: 451098497}
+  enemyLabelText: {fileID: 427169782}
   enemyPowerText: {fileID: 346938160}
   enemyList: {fileID: 1678045843}
   rowTemplate: {fileID: 1714842856}
@@ -41531,11 +41535,13 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 7c923ffd6807d3047a233b2856116486, type: 2}
   - {fileID: 11400000, guid: 932e47faa20403b489869a5667b413e5, type: 2}
   - {fileID: 11400000, guid: 7c923ffd6807d3047a233b2856116486, type: 2}
-  preferredSquadSize: 2
+  fullSquadSize: 4
   minHpToSend: 0.7
   minMissionChance: 0.6
   keepGarrison: 1
   baseAttackValue: 600
+  objectPriority: 3
+  objectsShareForBaseAttack: 0.5
   levelUpGoldReserve: 1500
 --- !u!1 &716132035
 GameObject:
@@ -46099,6 +46105,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 980af9a78866ea5419452b0c1d494cad, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MainBase
+  prepTime: 20
   owner: 1
   baseName: "\u0411\u0410\u0417\u0410 \u0412\u0420\u0410\u0413\u0410"
   upgradeCosts: dc050000b80b0000i
@@ -46114,7 +46121,6 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 7c923ffd6807d3047a233b2856116486, type: 2}
   maxHp: 1000
   damagePerAttack: 200
-  siegeTime: 10
   baseColor: {r: 0.8509804, g: 0.21960784, b: 0.22745098, a: 1}
   label: {fileID: 2815947}
   hpFill: {fileID: 1534117716}
@@ -46648,6 +46654,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d83b6c3e99440084e8cae1ed0b581b15, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MapObject
+  prepTime: 20
   data: {fileID: 11400000, guid: f2a0850096a98d34789453e6a866960e, type: 2}
   zone: {fileID: 2052345899}
   flag: {fileID: 1118163014}
@@ -47537,6 +47544,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 980af9a78866ea5419452b0c1d494cad, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MainBase
+  prepTime: 20
   owner: 0
   baseName: "\u041D\u0410\u0428\u0410 \u0411\u0410\u0417\u0410"
   upgradeCosts: dc050000b80b0000i
@@ -47551,7 +47559,6 @@ MonoBehaviour:
   startBuildings: []
   maxHp: 1000
   damagePerAttack: 200
-  siegeTime: 10
   baseColor: {r: 0.18431373, g: 0.48235294, b: 0.8784314, a: 1}
   label: {fileID: 1720742407}
   hpFill: {fileID: 77174643}
@@ -66962,6 +66969,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d83b6c3e99440084e8cae1ed0b581b15, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MapObject
+  prepTime: 20
   data: {fileID: 11400000, guid: 6a267e001fa4cbc4fa929a67cd6f3bdd, type: 2}
   zone: {fileID: 1408209277}
   flag: {fileID: 1879238591}
@@ -67759,6 +67767,7 @@ MonoBehaviour:
   confirmButton: {fileID: 1389884522}
   confirmText: {fileID: 1965266350}
   disbandButton: {fileID: 1633994284}
+  disbandText: {fileID: 1077275607}
 --- !u!1 &1191370143
 GameObject:
   m_ObjectHideFlags: 0
@@ -106384,7 +106393,7 @@ GameObject:
   - component: {fileID: 1973722722}
   - component: {fileID: 1973722721}
   m_Layer: 0
-  m_Name: Label
+  m_Name: OurLabel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

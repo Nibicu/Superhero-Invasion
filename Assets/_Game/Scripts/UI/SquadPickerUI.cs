@@ -25,14 +25,30 @@ public class SquadPickerUI : WindowUI
         rowTemplate.gameObject.SetActive(false);
     }
 
-    /// <summary>Подписываемся на изменения команд.</summary>
-    private void Start() => SquadManager.Instance.SquadsChanged += OnSquadsChanged;
+    /// <summary>Подписываемся на изменения команд и на нападения.</summary>
+    private void Start()
+    {
+        SquadManager.Instance.SquadsChanged += OnSquadsChanged;
+        AttackableSite.AttackChanged += OnAttackChanged;
+    }
 
     /// <summary>Отписываемся.</summary>
     protected override void OnDestroy()
     {
         base.OnDestroy();
         if (SquadManager.Instance != null) SquadManager.Instance.SquadsChanged -= OnSquadsChanged;
+        AttackableSite.AttackChanged -= OnAttackChanged;
+    }
+
+    /// <summary>
+    /// На цель напали — список закрывается (окна места закрыты до конца боя).
+    /// Нападение на любую базу запрещает отправку — перерисовываем кнопки.
+    /// </summary>
+    private void OnAttackChanged(AttackableSite site)
+    {
+        if (!IsOpen) return;
+        if (site.IsUnderAttack && ReferenceEquals(site, target)) Close();
+        else Refresh();
     }
 
     private void OnSquadsChanged(Team team)
@@ -43,6 +59,11 @@ public class SquadPickerUI : WindowUI
     /// <summary>Открыть список команд для отправки к цели. sent — вызовется после отправки.</summary>
     public void OpenFor(ISquadTarget squadTarget, Action sent)
     {
+        if (squadTarget is AttackableSite site && site.IsUnderAttack)
+        {
+            ToastUI.Show(site.AttackStatusText());
+            return;
+        }
         target = squadTarget;
         onSent = sent;
         Open();
@@ -58,14 +79,16 @@ public class SquadPickerUI : WindowUI
 
         IReadOnlyList<Squad> squads = SquadManager.Instance.GetSquads(Team.Player);
         emptyText.gameObject.SetActive(squads.Count == 0);
+        bool baseFight = MainBase.AnyUnderAttack(out _); // идёт бой за базу — отправлять нельзя никому
 
         foreach (Squad s in squads)
         {
             SquadPickRowUI row = Instantiate(rowTemplate, listParent);
             row.gameObject.SetActive(true);
             string reason = null;
-            bool canSend = s.Status == SquadStatus.AtBase && target.CanAccept(s, out reason);
+            bool canSend = s.Status == SquadStatus.AtBase && !baseFight && target.CanAccept(s, out reason);
             if (s.Status != SquadStatus.AtBase) reason = "НЕ НА БАЗЕ";
+            else if (baseFight) reason = "БОЙ ЗА БАЗУ";
             Squad captured = s; // копия для лямбды
             row.Setup(s, canSend, canSend ? "ОТПРАВИТЬ" : reason.ToUpper(), () => Send(captured));
             rows.Add(row);

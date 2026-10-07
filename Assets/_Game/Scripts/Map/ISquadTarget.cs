@@ -22,4 +22,7 @@ public interface ISquadTarget
 
     /// <summary>Команда приехала.</summary>
     void OnSquadArrived(SquadUnit unit);
+
+    /// <summary>Команда отступила (по кнопке "ОТСТУПИТЬ") — цель должна забыть о ней.</summary>
+    void OnSquadRecalled(SquadUnit unit);
 }

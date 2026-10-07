@@ -25,10 +25,6 @@ public class MapObjectData : ScriptableObject
     [Tooltip("Основной цвет объекта")]
     public Color color = Color.gray;
 
-    [Header("Захват")]
-    [Tooltip("Сколько секунд команда захватывает объект")]
-    public float captureTime = 15f;
-
     [Header("Охрана (гарнизон)")]
     [Tooltip("Волны охраны — по одной на каждую территорию арены (обычно 3)")]
     public GuardWave[] waves = new GuardWave[0];

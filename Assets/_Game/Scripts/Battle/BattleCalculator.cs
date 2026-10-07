@@ -96,4 +96,15 @@ public static class BattleCalculator
             default: return "Автобой будет проигран: −80% HP и никакой награды. Можно рискнуть и сразиться самому.";
         }
     }
+
+    /// <summary>Подсказка под прогнозом, когда враг напал на нас (мы защищаемся).</summary>
+    public static string DefenseHint(BattleForecast f)
+    {
+        switch (f)
+        {
+            case BattleForecast.Win: return "Смело жмите «Автобой»: нападение будет отбито.";
+            case BattleForecast.Equal: return "Автобой — 50 на 50: отобьёмся или потеряем объект (база получит урон). Лучше сразиться самому!";
+            default: return "Автобой будет проигран: объект перейдёт к врагу (база получит урон). Можно рискнуть и сразиться самому.";
+        }
+    }
 }
