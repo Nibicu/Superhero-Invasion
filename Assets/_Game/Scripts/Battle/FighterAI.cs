@@ -95,8 +95,15 @@ public class FighterAI : MonoBehaviour
         healTarget = null;
         ClassProfile profile = self.Profile;
 
-        if (target == null || !target.IsTargetable || Vector2.Distance(target.Position, self.Position) > self.detectionRadius * 1.5f)
-            target = FindTarget(bm);
+        // Цель: старую бросаем, если она недоступна (за барьером), лежит или ушла далеко;
+        // переключаемся на противника, который заметно ближе (кто рядом бьёт — тот и цель)
+        if (target != null && (!target.IsTargetable || !bm.IsReachable(self, target.Position)
+                               || Vector2.Distance(target.Position, self.Position) > self.detectionRadius * 1.5f))
+            target = null;
+        Fighter nearest = FindTarget(bm);
+        if (target == null || (nearest != null && nearest != target
+            && Vector2.Distance(nearest.Position, self.Position) + 2f < Vector2.Distance(target.Position, self.Position)))
+            target = nearest;
 
         // 1) Отступление
         float hp = self.Health.Fraction;
@@ -322,14 +329,17 @@ public class FighterAI : MonoBehaviour
         return false;
     }
 
-    /// <summary>Ближайший противник, которого можно атаковать, в радиусе обнаружения.</summary>
+    /// <summary>
+    /// Ближайший противник в радиусе обнаружения, которого можно атаковать и до которого можно дойти
+    /// (враги за закрытым барьером не считаются — иначе боец стоял бы у барьера и ничего не делал).
+    /// </summary>
     private Fighter FindTarget(BattleManager bm)
     {
         Fighter best = null;
         float bestDist = self.detectionRadius;
         foreach (Fighter f in bm.GetOpponents(self.Faction))
         {
-            if (!f.IsTargetable) continue;
+            if (!f.IsTargetable || !bm.IsReachable(self, f.Position)) continue;
             float dist = Vector2.Distance(f.Position, self.Position);
             if (dist < bestDist) { bestDist = dist; best = f; }
         }

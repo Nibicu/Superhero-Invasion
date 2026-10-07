@@ -139,6 +139,12 @@ public abstract class AttackableSite : MonoBehaviour, ISquadTarget
     /// <summary>Перерисовать полоску/подпись нападения на карте.</summary>
     protected abstract void UpdateAttackVisuals();
 
+    /// <summary>
+    /// Текст для окна итога после победы нападающих (вызывается ПОСЛЕ OnAttackerWon):
+    /// "Объект «Банк» теперь ваш!", "База врага получила 200 урона" и т.п.
+    /// </summary>
+    protected abstract string AttackerWonText(Team winner);
+
     /// <summary>Подготовка закончилась, сейчас начнётся бой (база выбирает гарнизон).</summary>
     protected virtual void OnBattlePhaseStarting() { }
 
@@ -364,6 +370,44 @@ public abstract class AttackableSite : MonoBehaviour, ISquadTarget
         Finish(won, hp);
     }
 
+    /// <summary>
+    /// Игрок нажал "ОТСТУПИТЬ" в окне перед боем:
+    ///  - нападал игрок — его команда уходит домой без боя и без потерь;
+    ///  - битва за флаг — наша команда уходит, команда врага бьётся с охраной сама (автобой);
+    ///  - защищался игрок — бой не начинается, нападающие побеждают без боя
+    ///    (объект переходит к врагу / база получает урон), подкрепление уходит домой.
+    /// </summary>
+    public void PlayerWithdraw()
+    {
+        if (attacker == null || phase != AttackPhase.Deciding) return;
+
+        if (IsContested)
+        {
+            SquadUnit mine = PlayerContestant;
+            if (mine == attacker) attacker = challenger;
+            challenger = null;
+            ToastUI.Show($"Команда {mine.Squad.Number} отступила от «{SiteName}»");
+            mine.ReturnHome();
+            ResolveAuto(); // враг остаётся один против охраны
+            return;
+        }
+
+        if (attacker.Squad.Owner == Team.Player)
+        {
+            SquadUnit u = attacker;
+            EndAttack();
+            ToastUI.Show($"Команда {u.Squad.Number} отступила от «{SiteName}»");
+            u.ReturnHome();
+            return;
+        }
+
+        if (PlayerDefends)
+        {
+            ToastUI.Show($"Мы отступили — «{SiteName}» остаётся без защиты");
+            Finish(true, attacker.Squad.HpFraction);
+        }
+    }
+
     /// <summary>Игрок выбрал ручной бой — ждём итога арены.</summary>
     public void OnManualBattleStarted()
     {
@@ -402,14 +446,24 @@ public abstract class AttackableSite : MonoBehaviour, ISquadTarget
         a.Squad.HpFraction = attackerHp;
         c.Squad.HpFraction = challengerHp;
         Squad winner = attackerWon ? a.Squad : c.Squad;
+        Squad mine = a.Squad.Owner == Team.Player ? a.Squad : c.Squad;
 
         EndAttack();
 
         OnAttackerWon(winner);
-        if (winner.Owner != Team.Player) ToastUI.Show($"Битва за «{SiteName}» проиграна — объект достался врагу");
+        bool playerWon = winner.Owner == Team.Player;
+        if (!playerWon) ToastUI.Show($"Битва за «{SiteName}» проиграна — объект достался врагу");
+        BattleResultWindowUI.Show(playerWon,
+            (playerWon ? $"Битва за флаг выиграна!\n{AttackerWonText(Team.Player)}"
+                       : $"Враг выиграл битву за флаг.\n{AttackerWonText(winner.Owner)}")
+            + SquadHpLine(mine));
         a.ReturnHome();
         c.ReturnHome();
     }
+
+    /// <summary>Строка про здоровье команды игрока для окна итога.</summary>
+    private static string SquadHpLine(Squad s) =>
+        s == null ? "" : $"\n<size=80%><color=#9AA4B5>Команда {s.Number}: здоровье {Mathf.RoundToInt(s.HpFraction * 100)}%, возвращается на базу</color></size>";
 
     /// <summary>Применить итог: здоровье команды, победа/поражение, команда едет домой.</summary>
     private void Finish(bool attackerWon, float attackerHp)
@@ -417,6 +471,7 @@ public abstract class AttackableSite : MonoBehaviour, ISquadTarget
         SquadUnit unit = attacker;
         Squad squad = unit.Squad;
         bool defended = PlayerDefends;
+        Squad myHelper = defended && reinforcement != null ? reinforcement.Squad : null; // наша команда на защите
         int lost = Mathf.Max(0, Mathf.RoundToInt((squad.HpFraction - attackerHp) * 100f));
         squad.HpFraction = attackerHp;
 
@@ -425,14 +480,20 @@ public abstract class AttackableSite : MonoBehaviour, ISquadTarget
         if (attackerWon)
         {
             OnAttackerWon(squad);
+            if (squad.Owner == Team.Player)
+                BattleResultWindowUI.Show(true, AttackerWonText(Team.Player) + SquadHpLine(squad));
+            else if (defended)
+                BattleResultWindowUI.Show(false, $"Не удалось защитить «{SiteName}».\n{AttackerWonText(squad.Owner)}" + SquadHpLine(myHelper));
         }
         else if (defended)
         {
             ToastUI.Show($"Нападение на «{SiteName}» отбито!");
+            BattleResultWindowUI.Show(true, $"Нападение на «{SiteName}» отбито!\nВраг отступает." + SquadHpLine(myHelper));
         }
         else if (squad.Owner == Team.Player)
         {
             ToastUI.Show($"Бой за «{SiteName}» проигран. Команда {squad.Number} потеряла {lost}% HP");
+            BattleResultWindowUI.Show(false, $"Не удалось победить защитников «{SiteName}»." + SquadHpLine(squad));
         }
         unit.ReturnHome();
     }

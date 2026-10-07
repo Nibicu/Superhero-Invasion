@@ -169,6 +169,12 @@ public class MapObject : AttackableSite, IIncomeSource
     /// <summary>Нападающие победили охрану — объект переходит к ним.</summary>
     protected override void OnAttackerWon(Squad squad) => TakeOver(squad.Owner);
 
+    /// <summary>Текст для окна итога: кому теперь принадлежит объект и что он даёт.</summary>
+    protected override string AttackerWonText(Team winner) =>
+        winner == Team.Player
+            ? $"Объект «{data.displayName}» теперь ваш!\n<size=85%><color=#FFD84A>{data.GetBonusText().Replace("\n", "  •  ")}</color></size>"
+            : $"Объект «{data.displayName}» теперь принадлежит врагу.";
+
     /// <summary>Автобой: подкрепление теряет HP (проиграло — −50%, отбилось — −20%).</summary>
     protected override void ApplyDefenderAutoLoss(float loss)
     {

@@ -41,6 +41,8 @@ public class BattlePrepWindowUI : MonoBehaviour
     [SerializeField] private TMP_Text countdownText;
     [SerializeField] private Button autoButton;
     [SerializeField] private Button fightButton;
+    [Tooltip("\"ОТСТУПИТЬ\": нападали — команда уходит домой без боя; защищались — объект/база остаются без защиты")]
+    [SerializeField] private Button retreatButton;
     [Tooltip("Сколько секунд даётся на выбор")]
     [SerializeField] private float decisionTime = 10f;
 
@@ -55,6 +57,7 @@ public class BattlePrepWindowUI : MonoBehaviour
         rowTemplate.gameObject.SetActive(false);
         autoButton.onClick.AddListener(ChooseAuto);
         fightButton.onClick.AddListener(ChooseFight);
+        if (retreatButton != null) retreatButton.onClick.AddListener(ChooseRetreat);
         root.SetActive(false);
     }
 
@@ -238,6 +241,20 @@ public class BattlePrepWindowUI : MonoBehaviour
         List<List<BattleUnit>> theirs = TheirWaves(site);
         site.OnManualBattleStarted();
         BattleManager.Instance.StartBattle(site.SiteName, site.SiteColor, ours, theirs, site.OnManualBattleFinished);
+    }
+
+    /// <summary>
+    /// "ОТСТУПИТЬ": боя не будет. Нападали — команда уходит домой без потерь;
+    /// битва за флаг — наша команда уходит, враг бьётся с охраной сам;
+    /// защищались — нападающие побеждают без боя.
+    /// </summary>
+    private void ChooseRetreat()
+    {
+        if (current == null) return;
+        AttackableSite site = current;
+        Close();
+        site.PlayerWithdraw();
+        ShowNextIfIdle();
     }
 
     private void Close()

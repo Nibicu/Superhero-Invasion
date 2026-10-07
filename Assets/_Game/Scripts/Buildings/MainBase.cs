@@ -280,6 +280,12 @@ public class MainBase : AttackableSite, IIncomeSource
     /// <summary>Атакующие победили — урон базе.</summary>
     protected override void OnAttackerWon(Squad squad) => TakeDamage(damagePerAttack);
 
+    /// <summary>Текст для окна итога: сколько урона получила база.</summary>
+    protected override string AttackerWonText(Team winner) =>
+        owner == Team.Player
+            ? $"Наша база получила {damagePerAttack} урона.\nОсталось HP: {hp} / {maxHp}"
+            : $"«{baseName}» получила {damagePerAttack} урона!\nУ базы врага осталось HP: {hp} / {maxHp}";
+
     /// <summary>Нападение закончилось — гарнизон снова выбирается заново.</summary>
     protected override void OnAttackEnded()
     {

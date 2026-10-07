@@ -289,6 +289,10 @@ public class BattleManager : MonoBehaviour
         SpawnTeam(attackers, BattleFaction.Rivals, true);
         if (hasGuards) SpawnGuardWave(0, BattleFaction.RivalGuards);
 
+        // Камера сразу на нападающих (они начинают справа)
+        Vector3 cp = cam.transform.position;
+        cam.transform.position = new Vector3(arenaRoot.position.x + Mathf.Max(HalfViewWidth(), ArenaLength - HalfViewWidth()), cp.y, cp.z);
+
         hud.Show(this, siteName, heroes);
         hud.ShowMessage(hasGuards
             ? "ЗАЩИТА!\n<size=60%>Враг сначала бьётся с охраной объекта, потом — с вашей командой</size>"
@@ -687,10 +691,14 @@ public class BattleManager : MonoBehaviour
             reinforcementHp = ReinforcementHp()
         };
 
-        Cleanup();
+        // Сначала место боя применяет итог (захват, урон базе) и показывает окно итога,
+        // а на карту возвращаемся, когда игрок нажмёт "ПРОДОЛЖИТЬ"
         Action<BattleResult> callback = onFinished;
         onFinished = null;
         callback?.Invoke(result);
+        yield return new WaitUntil(() => !BattleResultWindowUI.IsShowing);
+
+        Cleanup();
         BattleEnded?.Invoke();
     }
 
@@ -744,19 +752,33 @@ public class BattleManager : MonoBehaviour
         if (flagZone != null) flagZone.gameObject.SetActive(contestedMode);
     }
 
-    /// <summary>Камера следит за нашими героями и не выходит за края арены.</summary>
+    /// <summary>
+    /// Камера следит за нашими героями и не выходит за края арены.
+    /// При защите с подкреплением — пока враг бьётся с охраной объекта, камера следит за нападающими,
+    /// а когда враг прорвался — за всеми сразу.
+    /// </summary>
     private void UpdateCamera()
     {
-        float sum = 0f;
+        float sum = 0f, lead = 2f; // lead — сдвиг камеры вперёд по ходу движения
         int n = 0;
-        foreach (Fighter f in heroes)
-            if (f.IsAlive) { sum += f.transform.position.x; n++; }
+        if (defenseMode)
+        {
+            foreach (Fighter f in rivals)
+                if (f.IsAlive) { sum += f.transform.position.x; n++; }
+            if (rivalWave >= rivalLaneLength)
+                foreach (Fighter f in heroes)
+                    if (f.IsAlive) { sum += f.transform.position.x; n++; }
+            lead = rivalWave >= rivalLaneLength ? 0f : -2f; // враг идёт влево
+        }
+        if (n == 0)
+            foreach (Fighter f in heroes)
+                if (f.IsAlive) { sum += f.transform.position.x; n++; }
         if (n == 0) return;
 
         float half = HalfViewWidth();
         float minX = arenaRoot.position.x + half;
         float maxX = arenaRoot.position.x + ArenaLength - half;
-        float targetX = Mathf.Clamp(sum / n + 2f, minX, Mathf.Max(minX, maxX));
+        float targetX = Mathf.Clamp(sum / n + lead, minX, Mathf.Max(minX, maxX));
         Vector3 p = cam.transform.position;
         p.x = Mathf.Lerp(p.x, targetX, 1f - Mathf.Exp(-cameraFollowSpeed * Time.deltaTime));
         cam.transform.position = p;
