@@ -220,6 +220,20 @@ public class BattlePrepWindowUI : MonoBehaviour
             BattleManager.Instance.StartContestedBattle(site.SiteName, site.SiteColor, mine, rival, guardWaves, site.OnContestedBattleFinished);
             return;
         }
+        if (site.PlayerDefends && site.HasReinforcement)
+        {
+            // Защита с подкреплением: наша команда — на своей территории, охрана объекта — перед ней,
+            // враг сначала прорывается через охрану
+            var squad = new List<BattleUnit>();
+            var guardUnits = new List<BattleUnit>();
+            foreach (List<BattleUnit> wave in site.GetDefenderWaves())
+                foreach (BattleUnit u in wave)
+                    (u.reinforcement ? squad : guardUnits).Add(u);
+            List<BattleUnit> attackers = site.GetAttackerUnits();
+            site.OnManualBattleStarted();
+            BattleManager.Instance.StartDefenseBattle(site.SiteName, site.SiteColor, squad, attackers, guardUnits, site.OnManualBattleFinished);
+            return;
+        }
         List<BattleUnit> ours = OurUnits(site);
         List<List<BattleUnit>> theirs = TheirWaves(site);
         site.OnManualBattleStarted();

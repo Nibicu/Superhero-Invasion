@@ -76,8 +76,12 @@ public class MapObject : AttackableSite, IIncomeSource
     public override string SiteName => data.displayName;
     public override Color SiteColor => data.color;
 
-    /// <summary>Защитники объекта — его охрана из MapObjectData (3 волны).</summary>
-    public override int DefenderPower => BattleCalculator.GarrisonPower(data);
+    /// <summary>Защитники объекта — его охрана из MapObjectData + команда подкрепления (если пришла).</summary>
+    public override int DefenderPower =>
+        BattleCalculator.GarrisonPower(data) + (Reinforcement != null ? BattleCalculator.SquadPower(Reinforcement.Squad) : 0);
+
+    /// <summary>На защиту объекта владелец может прислать команду.</summary>
+    public override bool AllowsReinforcement => true;
 
     /// <summary>Объект защищает его владелец (у нейтрального — никто из игроков).</summary>
     public override bool TryGetDefendingTeam(out Team team)
@@ -86,11 +90,41 @@ public class MapObject : AttackableSite, IIncomeSource
         return hasOwner;
     }
 
-    /// <summary>Охрана объекта по волнам (для боя и окна перед боем).</summary>
+    /// <summary>
+    /// Защитники по территориям (для боя и окна перед боем):
+    ///  - нейтральный объект — охрана по волнам, обычно 3 территории;
+    ///  - захваченный объект — вся охрана на 1 территории (как гарнизон базы),
+    ///    а если пришло подкрепление — оно на 2-й территории.
+    /// </summary>
     public override List<List<BattleUnit>> GetDefenderWaves()
     {
         var waves = new List<List<BattleUnit>>();
+        if (!hasOwner) return GuardWaves();
+
+        var guardsAll = new List<BattleUnit>();
+        foreach (List<BattleUnit> w in GuardWaves()) guardsAll.AddRange(w);
+        waves.Add(guardsAll);
+        if (Reinforcement != null)
+        {
+            List<BattleUnit> squad = GetSquadUnits(Reinforcement);
+            for (int i = 0; i < squad.Count; i++)
+            {
+                BattleUnit u = squad[i];
+                u.reinforcement = true;
+                u.info = "Подкрепление  •  " + u.info;
+                squad[i] = u;
+            }
+            waves.Add(squad);
+        }
+        return waves;
+    }
+
+    /// <summary>Охрана объекта по волнам из MapObjectData.</summary>
+    private List<List<BattleUnit>> GuardWaves()
+    {
+        var waves = new List<List<BattleUnit>>();
         if (data.waves == null) return waves;
+        bool owned = hasOwner;
         for (int w = 0; w < data.waves.Length; w++)
         {
             var list = new List<BattleUnit>();
@@ -103,7 +137,9 @@ public class MapObject : AttackableSite, IIncomeSource
                     data = g.unit,
                     stats = s,
                     hpFraction = 1f,
-                    info = $"{UnitClasses.Name(g.unit.unitClass)}  •  Территория {w + 1}  •  Ур. {g.level}  •  сила {BattleCalculator.UnitPower(g.unit, s)}"
+                    info = owned
+                        ? $"{UnitClasses.Name(g.unit.unitClass)}  •  Охрана объекта  •  Ур. {g.level}  •  сила {BattleCalculator.UnitPower(g.unit, s)}"
+                        : $"{UnitClasses.Name(g.unit.unitClass)}  •  Территория {w + 1}  •  Ур. {g.level}  •  сила {BattleCalculator.UnitPower(g.unit, s)}"
                 });
             }
             waves.Add(list);
@@ -132,6 +168,20 @@ public class MapObject : AttackableSite, IIncomeSource
 
     /// <summary>Нападающие победили охрану — объект переходит к ним.</summary>
     protected override void OnAttackerWon(Squad squad) => TakeOver(squad.Owner);
+
+    /// <summary>Автобой: подкрепление теряет HP (проиграло — −50%, отбилось — −20%).</summary>
+    protected override void ApplyDefenderAutoLoss(float loss)
+    {
+        if (Reinforcement == null) return;
+        Squad s = Reinforcement.Squad;
+        s.HpFraction = Mathf.Max(BattleCalculator.MinHpAfterBattle, s.HpFraction - loss);
+    }
+
+    /// <summary>Ручной бой: у подкрепления остаётся столько HP, сколько было в конце боя.</summary>
+    protected override void SetDefenderHp(float defendersHp, BattleResult result)
+    {
+        if (Reinforcement != null) Reinforcement.Squad.HpFraction = result.reinforcementHp;
+    }
 
     // ---------- Жизненный цикл ----------
 
@@ -165,6 +215,13 @@ public class MapObject : AttackableSite, IIncomeSource
         {
             // Враг готовится к захвату — можно успеть своей командой (будет битва за флаг)
             ToastUI.Show($"Враг захватывает «{data.displayName}»! Успейте за {Mathf.CeilToInt(PrepLeft)} с — будет битва за флаг");
+            if (MapObjectWindowUI.Instance != null) MapObjectWindowUI.Instance.OpenJoinPicker(this);
+            return;
+        }
+        if (IsUnderAttack && CanReinforce(Team.Player))
+        {
+            // Враг напал на наш объект — можно прислать команду на защиту
+            ToastUI.Show($"Враг напал на «{data.displayName}»! Отправьте команду на защиту — успейте за {Mathf.CeilToInt(PrepLeft)} с");
             if (MapObjectWindowUI.Instance != null) MapObjectWindowUI.Instance.OpenJoinPicker(this);
             return;
         }
@@ -257,7 +314,7 @@ public class MapObject : AttackableSite, IIncomeSource
         {
             string col = AttackingTeam == Team.Player ? "#7FB8FF" : "#FF7A7A";
             if (IsContested) col = "#FFD84A";
-            string what = IsContested ? "Битва за флаг" : "Бой";
+            string what = IsContested ? "Битва за флаг" : HasReinforcement ? "Бой (с подкреплением)" : "Бой";
             attack = Phase == AttackPhase.Preparing
                 ? $"\n<size=60%><color={col}>{what} через {Mathf.CeilToInt(PrepLeft)} с</color></size>"
                 : $"\n<size=60%><color={col}>Идёт бой!</color></size>";

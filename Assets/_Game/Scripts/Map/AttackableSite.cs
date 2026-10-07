@@ -16,6 +16,7 @@ public enum AttackPhase
 /// Порядок нападения одинаковый для всех:
 ///  1) команда приезжает → идёт подготовка к бою (prepTime, 20 с). Можно отступить;
 ///     если за это время приезжает команда ДРУГОЙ стороны — она тоже вступает (будет битва за флаг);
+///     если приезжает команда ВЛАДЕЛЬЦА объекта — она становится подкреплением (защищает объект);
 ///  2) подготовка закончилась:
 ///     - две команды → окно перед боем только с "НАЧАТЬ БОЙ" (автобоя нет) → битва за флаг;
 ///     - защитников нет → нападающие сразу побеждают без боя;
@@ -36,6 +37,7 @@ public abstract class AttackableSite : MonoBehaviour, ISquadTarget
 
     private SquadUnit attacker;   // Фишка нападающей команды (null — никто не нападает)
     private SquadUnit challenger; // Вторая команда другой стороны, успевшая к подготовке (битва за флаг)
+    private SquadUnit reinforcement; // Команда владельца, пришедшая на защиту (подкрепление)
     private AttackPhase phase;    // Этап нападения
     private float prepLeft;       // Сколько секунд подготовки осталось
 
@@ -46,6 +48,24 @@ public abstract class AttackableSite : MonoBehaviour, ISquadTarget
 
     /// <summary>Вторая нападающая команда (другой стороны) или null.</summary>
     public SquadUnit Challenger => challenger;
+
+    /// <summary>Команда владельца, пришедшая на защиту объекта (или null).</summary>
+    public SquadUnit Reinforcement => reinforcement;
+
+    /// <summary>Есть ли подкрепление.</summary>
+    public bool HasReinforcement => reinforcement != null;
+
+    /// <summary>Можно ли сюда присылать команды на защиту (объекты — да, база — нет: её защищает гарнизон).</summary>
+    public virtual bool AllowsReinforcement => false;
+
+    /// <summary>
+    /// Может ли сторона team прислать команду на защиту: на её объект напали,
+    /// идёт подготовка к бою и подкрепления ещё нет.
+    /// </summary>
+    public bool CanReinforce(Team team) =>
+        AllowsReinforcement && attacker != null && challenger == null && reinforcement == null
+        && phase == AttackPhase.Preparing && attacker.Squad.Owner != team
+        && TryGetDefendingTeam(out Team def) && def == team;
 
     /// <summary>Будет битва за флаг: на месте команды обеих сторон.</summary>
     public bool IsContested => challenger != null;
@@ -125,8 +145,11 @@ public abstract class AttackableSite : MonoBehaviour, ISquadTarget
     /// <summary>Защитники потеряли долю здоровья в автобое (гарнизон базы).</summary>
     protected virtual void ApplyDefenderAutoLoss(float loss) { }
 
-    /// <summary>Защитникам после ручного боя осталось столько здоровья (гарнизон базы).</summary>
-    protected virtual void SetDefenderHp(float hpFraction) { }
+    /// <summary>
+    /// После ручного боя: защитникам осталось defendersHp здоровья (гарнизон базы).
+    /// result — весь итог боя (объект берёт из него HP команды подкрепления).
+    /// </summary>
+    protected virtual void SetDefenderHp(float defendersHp, BattleResult result) { }
 
     /// <summary>Нападение закончилось (база забывает гарнизон).</summary>
     protected virtual void OnAttackEnded() { }
@@ -147,6 +170,7 @@ public abstract class AttackableSite : MonoBehaviour, ISquadTarget
     /// <summary>Можно ли отправить сюда команду.</summary>
     public bool CanAccept(Squad squad, out string reason)
     {
+        if (CanReinforce(squad.Owner)) { reason = null; return true; } // на защиту своего объекта
         if (!CanBeAttackedBy(squad.Owner, out reason)) return false;
         if (attacker == null) return true;
         if (attacker.Squad.Owner == squad.Owner || (challenger != null && challenger.Squad.Owner == squad.Owner))
@@ -174,6 +198,20 @@ public abstract class AttackableSite : MonoBehaviour, ISquadTarget
     {
         Team team = unit.Squad.Owner;
 
+        // Команда владельца успела на защиту
+        if (CanReinforce(team))
+        {
+            reinforcement = unit;
+            unit.transform.position += new Vector3(-0.7f, 0.35f, 0f); // не стоять на фишке нападающих
+            SquadManager.Instance.SetStatus(unit.Squad, SquadStatus.Defending);
+            ToastUI.Show(team == Team.Player
+                ? $"Команда {unit.Squad.Number} успела на защиту «{SiteName}»! Бой через {Mathf.CeilToInt(prepLeft)} с"
+                : $"Враг прислал подкрепление на защиту «{SiteName}»!");
+            UpdateAttackVisuals();
+            AttackChanged?.Invoke(this);
+            return;
+        }
+
         if (attacker != null && CanJoin(team))
         {
             challenger = unit;
@@ -190,7 +228,10 @@ public abstract class AttackableSite : MonoBehaviour, ISquadTarget
         if (attacker != null || !CanBeAttackedBy(team, out _))
         {
             // Пока ехали — место уже наше, здесь уже идёт бой или ждут две команды
-            if (team == Team.Player) ToastUI.Show($"{SiteName}: нападение невозможно, команда возвращается");
+            if (team == Team.Player)
+                ToastUI.Show(TryGetDefendingTeam(out Team d) && d == team
+                    ? $"{SiteName}: защищать уже не нужно (или поздно), команда возвращается"
+                    : $"{SiteName}: нападение невозможно, команда возвращается");
             unit.ReturnHome();
             return;
         }
@@ -210,7 +251,8 @@ public abstract class AttackableSite : MonoBehaviour, ISquadTarget
     }
 
     /// <summary>Можно ли команде отступить отсюда (только пока идёт подготовка).</summary>
-    public bool CanRetreat(SquadUnit unit) => (unit != attacker && unit != challenger) || phase == AttackPhase.Preparing;
+    public bool CanRetreat(SquadUnit unit) =>
+        (unit != attacker && unit != challenger && unit != reinforcement) || phase == AttackPhase.Preparing;
 
     /// <summary>
     /// Команда отступила (в пути или во время подготовки).
@@ -218,6 +260,14 @@ public abstract class AttackableSite : MonoBehaviour, ISquadTarget
     /// </summary>
     public virtual void OnSquadRecalled(SquadUnit unit)
     {
+        if (unit == reinforcement)
+        {
+            reinforcement = null;
+            if (unit.Squad.Owner != Team.Player) ToastUI.Show($"Подкрепление врага ушло от «{SiteName}»");
+            UpdateAttackVisuals();
+            AttackChanged?.Invoke(this);
+            return;
+        }
         if (unit == challenger)
         {
             challenger = null;
@@ -330,7 +380,7 @@ public abstract class AttackableSite : MonoBehaviour, ISquadTarget
         if (attacker == null) return;
         bool defended = PlayerDefends;
         bool attackerWon = defended ? !result.win : result.win;
-        SetDefenderHp(defended ? result.ourHp : result.theirHp);
+        SetDefenderHp(defended ? result.ourHp : result.theirHp, result);
         Finish(attackerWon, defended ? result.theirHp : result.ourHp);
     }
 
@@ -390,6 +440,13 @@ public abstract class AttackableSite : MonoBehaviour, ISquadTarget
     /// <summary>Сбросить нападение и сообщить окнам.</summary>
     private void EndAttack()
     {
+        // Подкрепление больше не нужно — едет домой
+        if (reinforcement != null)
+        {
+            SquadUnit r = reinforcement;
+            reinforcement = null;
+            r.ReturnHome();
+        }
         attacker = null;
         challenger = null;
         phase = AttackPhase.None;
@@ -407,7 +464,9 @@ public abstract class AttackableSite : MonoBehaviour, ISquadTarget
             case AttackPhase.Preparing:
                 return IsContested
                     ? $"{SiteName}: две команды готовятся к битве за флаг, бой через {Mathf.CeilToInt(prepLeft)} с"
-                    : $"{SiteName}: идёт нападение, бой через {Mathf.CeilToInt(prepLeft)} с";
+                    : CanReinforce(Team.Player)
+                        ? $"{SiteName}: враг нападает! Отправьте команду на защиту — бой через {Mathf.CeilToInt(prepLeft)} с"
+                        : $"{SiteName}: идёт нападение, бой через {Mathf.CeilToInt(prepLeft)} с";
             case AttackPhase.Deciding: return $"{SiteName}: начинается бой";
             case AttackPhase.Fighting: return $"{SiteName}: идёт бой";
             default: return SiteName;

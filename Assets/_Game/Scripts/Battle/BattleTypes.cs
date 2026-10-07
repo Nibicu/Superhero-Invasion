@@ -12,6 +12,7 @@ public struct BattleUnit
     public HeroStats stats;   // Характеристики с учётом уровня и усилений
     public float hpFraction;  // С какой долей здоровья выходит (раненая команда)
     public string info;       // Подпись для окна перед боем
+    public bool reinforcement; // Боец из команды, пришедшей на защиту объекта (её HP запоминается отдельно)
 }
 
 /// <summary>Итог ручного боя — с точки зрения игрока ("наши" — бойцы слева).</summary>
@@ -20,7 +21,8 @@ public struct BattleResult
     public bool win;       // Победили ли наши
     public float ourHp;    // Доля HP наших бойцов после боя
     public float theirHp;  // Доля HP охраны/защитников после боя
-    public float rivalHp;  // Доля HP вражеской команды (только в битве за флаг)
+    public float rivalHp;  // Доля HP вражеской команды (битва за флаг, защита с подкреплением)
+    public float reinforcementHp; // Доля HP команды, пришедшей на защиту объекта (1 — если её не было)
 }
 
 /// <summary>

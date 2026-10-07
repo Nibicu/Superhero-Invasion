@@ -77,6 +77,7 @@ public class EnemyAI : MonoBehaviour
         CleanupOrders();
         RetreatFromLostFights();
         FormSquads();
+        SendDefenders();
         DispatchSquads();
 
         // Плутоний тратится отдельно — на усиление героев (если есть Институт)
@@ -147,6 +148,7 @@ public class EnemyAI : MonoBehaviour
         {
             Squad squad = pair.Key;
             if (!(pair.Value is AttackableSite site)) continue;
+            if (site.TryGetDefendingTeam(out Team owner) && owner == team) continue; // это защита своего объекта
             if (!SM.CanRetreat(squad, out _)) continue; // бой уже начался — поздно
 
             bool lose = BattleCalculator.Forecast(BattleCalculator.SquadPower(squad), site.DefenderPower) == BattleForecast.Lose;
@@ -159,6 +161,39 @@ public class EnemyAI : MonoBehaviour
             if (!lose && !badBaseAttack) continue;
             if (SM.TryRetreat(squad, out _))
                 Log($"команда {squad.Number} отступает от «{site.SiteName}»: охрана слишком сильная");
+        }
+    }
+
+    /// <summary>
+    /// Защита своих объектов: если противник готовится захватить наш объект,
+    /// а охрана одна не справится — отправляем команду, которая успеет доехать
+    /// до конца подготовки и вместе с охраной не даст противнику уверенно победить.
+    /// Из подходящих команд выбираем самую слабую (сильные нужнее для захватов).
+    /// </summary>
+    private void SendDefenders()
+    {
+        foreach (MapObject o in MapObject.All)
+        {
+            if (!o.CanReinforce(team) || IsOrdered(o)) continue;
+            int attackPower = BattleCalculator.SquadPower(o.Attacker.Squad);
+            int guards = BattleCalculator.GarrisonPower(o.Data);
+            if (BattleCalculator.Forecast(attackPower, guards) == BattleForecast.Lose) continue; // охрана справится сама
+
+            Squad best = null;
+            int bestPower = int.MaxValue;
+            foreach (Squad s in SM.GetSquads(team))
+            {
+                if (s.Status != SquadStatus.AtBase || orders.ContainsKey(s) || s.HpFraction < 0.4f) continue; // сильно раненых не шлём
+                int p = BattleCalculator.SquadPower(s);
+                if (BattleCalculator.Forecast(attackPower, guards + p) == BattleForecast.Win) continue; // не удержим
+                if (SM.EstimateTravelTime(s, o) > o.PrepLeft - 1f) continue;                        // не успеем
+                if (p < bestPower) { bestPower = p; best = s; }
+            }
+            if (best != null && SM.SendSquad(best, o, out _))
+            {
+                orders[best] = o;
+                Log($"отправил команду {best.Number} на защиту «{o.Data.displayName}»");
+            }
         }
     }
 

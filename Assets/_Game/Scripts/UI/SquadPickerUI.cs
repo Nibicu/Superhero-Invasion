@@ -42,13 +42,13 @@ public class SquadPickerUI : WindowUI
 
     /// <summary>
     /// На цель напали — список закрывается (окна места закрыты до конца боя),
-    /// кроме случая, когда напал враг и ещё можно успеть вступить (битва за флаг).
+    /// кроме случаев, когда ещё можно успеть вступить (битва за флаг) или прийти на защиту своего объекта.
     /// Нападение на любую базу запрещает отправку — перерисовываем кнопки.
     /// </summary>
     private void OnAttackChanged(AttackableSite site)
     {
         if (!IsOpen) return;
-        if (site.IsUnderAttack && ReferenceEquals(site, target) && !site.CanJoin(Team.Player)) Close();
+        if (site.IsUnderAttack && ReferenceEquals(site, target) && !site.CanJoin(Team.Player) && !site.CanReinforce(Team.Player)) Close();
         else Refresh();
     }
 
@@ -60,7 +60,7 @@ public class SquadPickerUI : WindowUI
     /// <summary>Открыть список команд для отправки к цели. sent — вызовется после отправки.</summary>
     public void OpenFor(ISquadTarget squadTarget, Action sent)
     {
-        if (squadTarget is AttackableSite site && site.IsUnderAttack && !site.CanJoin(Team.Player))
+        if (squadTarget is AttackableSite site && site.IsUnderAttack && !site.CanJoin(Team.Player) && !site.CanReinforce(Team.Player))
         {
             ToastUI.Show(site.AttackStatusText());
             return;
@@ -73,7 +73,10 @@ public class SquadPickerUI : WindowUI
     /// <summary>Пересоздать строки команд.</summary>
     public override void Refresh()
     {
-        titleText.text = $"КОГО ОТПРАВИТЬ: {target.TargetName.ToUpper()}";
+        bool defend = target is AttackableSite ts && ts.CanReinforce(Team.Player);
+        titleText.text = defend
+            ? $"НА ЗАЩИТУ: {target.TargetName.ToUpper()}"
+            : $"КОГО ОТПРАВИТЬ: {target.TargetName.ToUpper()}";
 
         foreach (SquadPickRowUI r in rows) Destroy(r.gameObject);
         rows.Clear();

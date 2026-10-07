@@ -272,7 +272,7 @@ public class MainBase : AttackableSite, IIncomeSource
     }
 
     /// <summary>После ручного боя у гарнизона столько HP, сколько осталось на арене.</summary>
-    protected override void SetDefenderHp(float hpFraction)
+    protected override void SetDefenderHp(float hpFraction, BattleResult result)
     {
         if (defender != null) defender.HpFraction = hpFraction;
     }

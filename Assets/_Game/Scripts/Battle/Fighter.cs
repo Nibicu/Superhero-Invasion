@@ -87,6 +87,9 @@ public class Fighter : MonoBehaviour
     /// <summary>Территория арены, которую стережёт охранник (-1 — не охрана). Охрана не уходит со своей территории.</summary>
     public int Territory { get; set; } = -1;
 
+    /// <summary>Боец из команды, пришедшей на защиту объекта.</summary>
+    public bool IsReinforcement { get; set; }
+
     /// <summary>Действует ли временный бафф.</summary>
     public bool HasBuff => buffTimer > 0f;
 

@@ -119,6 +119,8 @@ public class BattleManager : MonoBehaviour
     private string siteName;              // За что бьёмся (название)
     private Action<BattleResult> onFinished; // Кого известить об итоге
     private bool contested;               // Битва за флаг (две команды)
+    private bool defenseMode;             // Защита объекта с подкреплением (наша команда защищает, враг прорывается)
+    private int rivalLaneLength = LaneTerritories; // Сколько территорий с охраной проходит враг
     private int totalTerritories;         // Сколько территорий на арене
     private int heroWave;                 // Сколько территорий прошли наши (в обычном бою — номер текущей)
     private int rivalWave;                // Сколько территорий прошёл враг
@@ -204,6 +206,7 @@ public class BattleManager : MonoBehaviour
     {
         if (IsRunning) return;
         contested = false;
+        defenseMode = false;
         totalTerritories = Mathf.Clamp(theirWaves.Count, 1, (barriers?.Length ?? 0) + 1);
         BeginBattle(title, color, theirWaves, finished);
 
@@ -227,6 +230,8 @@ public class BattleManager : MonoBehaviour
         if (barriers == null || barriers.Length < LaneTerritories * 2)
             Debug.LogError("BattleManager: для битвы за флаг нужно 6 барьеров на арене");
         contested = true;
+        defenseMode = false;
+        rivalLaneLength = LaneTerritories;
         totalTerritories = LaneTerritories * 2 + 1;
         BeginBattle(title, color, guardWaves, finished);
 
@@ -249,6 +254,45 @@ public class BattleManager : MonoBehaviour
 
         hud.Show(this, siteName, heroes);
         hud.ShowMessage($"БИТВА ЗА ФЛАГ!\n<size=60%>Пройдите 3 территории быстрее врага и удержите флаг {flagHoldTime:0} с</size>", 3.5f);
+    }
+
+    /// <summary>
+    /// Защита нашего объекта с подкреплением: враг напал, а наша команда успела прийти на защиту.
+    /// Арена из 2 территорий: наша команда ours стоит на левой, охрана объекта guardUnits — на правой,
+    /// нападающие attackers начинают справа: сначала бьются с охраной, потом прорываются к нашей команде.
+    /// Охраны нет — всё на одной территории.
+    /// </summary>
+    public void StartDefenseBattle(string title, Color color, List<BattleUnit> ours, List<BattleUnit> attackers,
+                                   List<BattleUnit> guardUnits, Action<BattleResult> finished)
+    {
+        if (IsRunning) return;
+        contested = false;
+        defenseMode = true;
+        bool hasGuards = guardUnits != null && guardUnits.Count > 0;
+        totalTerritories = hasGuards ? 2 : 1;
+        rivalLaneLength = hasGuards ? 1 : 0;
+        BeginBattle(title, color, new List<List<BattleUnit>> { guardUnits ?? new List<BattleUnit>() }, finished);
+
+        heroMaxX = territoryWidth - 0.5f;
+        rivalMinX = (totalTerritories - 1) * territoryWidth + 0.5f;
+        heroRallyX = WorldX(territoryWidth - 5f);                 // наши держат позицию у своей границы
+        rivalRallyX = WorldX(ArenaLength - enemySpawnOffset + 1f); // враг идёт на охрану
+
+        // Наши — у правого края своей территории, лицом к врагу
+        int rowsX = ours.Count > 5 ? 3 : 2;
+        for (int i = 0; i < ours.Count; i++)
+        {
+            float x = territoryWidth - 5f - (i % rowsX) * 1.2f;
+            float y = Mathf.Lerp(floorMinY + 0.4f, floorMaxY - 0.4f, (i + 0.5f) / ours.Count);
+            Spawn(ours[i], BattleFaction.Heroes, false, new Vector2(x, y));
+        }
+        SpawnTeam(attackers, BattleFaction.Rivals, true);
+        if (hasGuards) SpawnGuardWave(0, BattleFaction.RivalGuards);
+
+        hud.Show(this, siteName, heroes);
+        hud.ShowMessage(hasGuards
+            ? "ЗАЩИТА!\n<size=60%>Враг сначала бьётся с охраной объекта, потом — с вашей командой</size>"
+            : "ЗАЩИТА!\n<size=60%>Отбейте нападение</size>", 3.5f);
     }
 
     /// <summary>Общая подготовка арены, камеры и интерфейса.</summary>
@@ -306,7 +350,7 @@ public class BattleManager : MonoBehaviour
             float x = index * territoryWidth + enemySpawnOffset + (j % 2) * 1.5f + j * 0.6f;
             if (mirror) x = ArenaLength - x;
             float y = Mathf.Lerp(floorMinY + 0.5f, floorMaxY - 0.5f, (j + 0.5f) / wave.Count);
-            Spawn(wave[j], faction, contested, new Vector2(x, y), mirror ? totalTerritories - 1 - index : index);
+            Spawn(wave[j], faction, contested || defenseMode, new Vector2(x, y), mirror ? totalTerritories - 1 - index : index);
         }
     }
 
@@ -318,6 +362,7 @@ public class BattleManager : MonoBehaviour
         f.Combat.SetProjectilePrefab(projectilePrefab);
         f.Init(u.data, u.stats, faction, u.hpFraction, neutralLook);
         f.Territory = territory;
+        f.IsReinforcement = u.reinforcement;
         allFighters.Add(f);
 
         switch (faction)
@@ -424,6 +469,7 @@ public class BattleManager : MonoBehaviour
         UpdateCamera();
         if (finishing) return;
         if (contested) UpdateContested();
+        else if (defenseMode) UpdateDefense();
         else UpdateNormal();
     }
 
@@ -443,6 +489,26 @@ public class BattleManager : MonoBehaviour
             hud.ShowMessage($"ВПЕРЁД!\n<size=60%>Территория {heroWave + 1} / {totalTerritories}</size>");
         }
         hud.SetProgress(Mathf.Min(heroWave + 1, totalTerritories), totalTerritories, AliveCount(guards));
+    }
+
+    /// <summary>Защита с подкреплением: враг прорывается через охрану к нашей команде.</summary>
+    private void UpdateDefense()
+    {
+        if (AliveCount(heroes) == 0) { Finish(false, "Защитники выбыли — объект достаётся врагу"); return; }
+        if (AliveCount(rivals) == 0) { Finish(true, "Нападение отбито!"); return; }
+
+        // Враг перебил охрану объекта — барьер открывается, дальше бьётся с нашей командой
+        if (rivalWave < rivalLaneLength && AliveCount(rivalGuards) == 0)
+        {
+            rivalWave++;
+            int barrier = totalTerritories - 1 - rivalWave;
+            if (barriers != null && barrier >= 0 && barrier < barriers.Length && barriers[barrier] != null)
+                barriers[barrier].SetActive(false);
+            rivalMinX = 0.5f;
+            heroMaxX = ArenaLength - 0.5f;
+            hud.ShowMessage("<color=#FF7A7A>ВРАГ ПРОРВАЛСЯ!</color>\n<size=60%>Охрана объекта пала — ваш ход</size>");
+        }
+        hud.SetProgressText($"Охрана объекта: {AliveCount(rivalGuards)}   •   Нападающих: {AliveCount(rivals)}   •   Наших: {AliveCount(heroes)}");
     }
 
     /// <summary>Битва за флаг: продвижение обеих команд и захват флага.</summary>
@@ -550,7 +616,9 @@ public class BattleManager : MonoBehaviour
                 point = contested && heroWave >= LaneTerritories ? flag : new Vector2(heroRallyX, f.Position.y);
                 return true;
             case BattleFaction.Rivals:
-                point = rivalWave >= LaneTerritories ? flag : new Vector2(rivalRallyX, f.Position.y);
+                if (contested && rivalWave >= LaneTerritories) point = flag;
+                else if (defenseMode && rivalWave >= rivalLaneLength) point = new Vector2(WorldX(territoryWidth * 0.5f), f.Position.y); // к нашей команде
+                else point = new Vector2(rivalRallyX, f.Position.y);
                 return true;
             default:
                 point = f.Position;
@@ -614,8 +682,9 @@ public class BattleManager : MonoBehaviour
         {
             win = win,
             ourHp = RemainingHp(heroes),
-            theirHp = RemainingHp(guards),
-            rivalHp = RemainingHp(rivals)
+            theirHp = defenseMode ? RemainingHp(rivals) : RemainingHp(guards),
+            rivalHp = RemainingHp(rivals),
+            reinforcementHp = ReinforcementHp()
         };
 
         Cleanup();
@@ -623,6 +692,14 @@ public class BattleManager : MonoBehaviour
         onFinished = null;
         callback?.Invoke(result);
         BattleEnded?.Invoke();
+    }
+
+    /// <summary>Сколько здоровья (доля) осталось у команды подкрепления (1 — если её не было).</summary>
+    private float ReinforcementHp()
+    {
+        var list = new List<Fighter>();
+        foreach (Fighter f in allFighters) if (f.IsReinforcement) list.Add(f);
+        return list.Count > 0 ? RemainingHp(list) : 1f;
     }
 
     /// <summary>Сколько здоровья (доля) осталось у бойцов (выбывшие — 0), не меньше минимума.</summary>
@@ -642,6 +719,7 @@ public class BattleManager : MonoBehaviour
         heroesFoes.Clear(); guardsFoes.Clear(); rivalsFoes.Clear(); rivalGuardsFoes.Clear();
         allFighters.Clear(); boxes.Clear(); buffs.Clear();
         contested = false;
+        defenseMode = false;
         SetDecor(false);
         cam.transform.position = savedCamPos;
         cam.orthographicSize = savedCamSize;
