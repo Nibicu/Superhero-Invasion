@@ -68,6 +68,48 @@ public enum FighterState
     Dead         // Выбыл из боя
 }
 
+/// <summary>Какой параметр усиливает временный бафф из коробки.</summary>
+public enum BoostStat
+{
+    AutoAttack,
+    Attack,
+    SpecialAttack,
+    Defense,
+    SpecialDefense,
+    Speed
+}
+
+/// <summary>Названия баффов для надписей.</summary>
+public static class BoostNames
+{
+    public static string Get(BoostStat s)
+    {
+        switch (s)
+        {
+            case BoostStat.AutoAttack: return "Авто атака";
+            case BoostStat.Attack: return "Атака";
+            case BoostStat.SpecialAttack: return "Спец. атака";
+            case BoostStat.Defense: return "Защита";
+            case BoostStat.SpecialDefense: return "Спец. защита";
+            default: return "Скорость";
+        }
+    }
+}
+
+/// <summary>Параметры выстрела (авто атака стрелков и магов, скилы-снаряды).</summary>
+public struct ShotInfo
+{
+    public float power;         // Сила (авто атака или атака/спец. атака стрелявшего, уже с множителем скила)
+    public bool vsSpecial;      // true — ослабляется Спец. защитой цели, false — Защитой
+    public float speed;         // Скорость полёта
+    public float range;         // Дальность полёта
+    public float size;          // Размер картинки (1 — обычный снаряд)
+    public int stagger;         // "Очки сбивания" при попадании
+    public float knockback;     // Сила отбрасывания
+    public bool pierce;         // Пробивает насквозь (летит дальше после попадания)
+    public bool hitsBoxes;      // Разбивает коробки (только авто атаки)
+}
+
 /// <summary>Данные одного попадания (удар или снаряд).</summary>
 public struct HitInfo
 {

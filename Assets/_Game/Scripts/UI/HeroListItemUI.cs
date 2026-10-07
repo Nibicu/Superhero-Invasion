@@ -23,7 +23,7 @@ public class HeroListItemUI : MonoBehaviour
         portrait.Show(hero.Data);
         stars.Show(hero.Data.stars);
         nameText.text = hero.Data.displayName;
-        levelText.text = $"Ур. {hero.Level}";
+        levelText.text = $"Ур. {hero.Level} • {UnitClasses.Name(hero.Data.unitClass)}";
         button.onClick.RemoveAllListeners();
         button.onClick.AddListener(() => onClick?.Invoke());
     }

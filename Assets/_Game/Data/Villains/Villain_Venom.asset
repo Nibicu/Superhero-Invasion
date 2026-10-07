@@ -19,16 +19,20 @@ MonoBehaviour:
   side: 1
   stars: 1
   hireCost: 330
+  hireable: 1
+  unitClass: 4
+  skillDamage: 1
   baseStats:
-    hp: 760
-    hpRegen: 12
-    attack: 55
-    specialAttack: 85
-    defense: 40
-    specialDefense: 50
-    energy: 120
-    energyRegen: 12
-    speed: 80
+    hp: 565
+    hpRegen: 18
+    autoAttack: 14
+    attack: 15
+    specialAttack: 77
+    defense: 36
+    specialDefense: 51
+    energy: 163
+    energyRegen: 18
+    speed: 70
   skills:
   - name: "\u042F\u0434\u043E\u0432\u0438\u0442\u043E\u0435 \u043E\u0431\u043B\u0430\u043A\u043E"
     description: "\u042F\u0434 \u0432\u0441\u0435\u043C \u0432\u0440\u0430\u0433\u0430\u043C \u0440\u044F\u0434\u043E\u043C"

@@ -70,6 +70,14 @@ public class BattleManager : MonoBehaviour
     [Header("Префабы")]
     [SerializeField] private Fighter fighterPrefab;
     [SerializeField] private Projectile projectilePrefab;
+    [Tooltip("Коробка, которую можно разбить авто атаками")]
+    [SerializeField] private BattleBox boxPrefab;
+    [Tooltip("Бафф, который выпадает из коробки")]
+    [SerializeField] private BattleBuffItem buffPrefab;
+
+    [Header("Коробки")]
+    [Tooltip("Сколько коробок ставить в обычном бою: от и до (не больше 5)")]
+    [SerializeField] private Vector2Int boxCount = new Vector2Int(3, 5);
 
     [Header("Камера")]
     [Tooltip("Размер камеры на арене (меньше — крупнее бойцы)")]
@@ -102,6 +110,9 @@ public class BattleManager : MonoBehaviour
     private readonly List<Fighter> guardsFoes = new List<Fighter>();
     private readonly List<Fighter> rivalsFoes = new List<Fighter>();
     private readonly List<Fighter> rivalGuardsFoes = new List<Fighter>();
+    private readonly List<Fighter> allFighters = new List<Fighter>();   // Все бойцы
+    private readonly List<BattleBox> boxes = new List<BattleBox>();      // Коробки на арене
+    private readonly List<BattleBuffItem> buffs = new List<BattleBuffItem>(); // Выпавшие баффы
 
     private ArenaTint[] tints;            // Детали арены, которые красятся в цвет объекта
     private List<List<BattleUnit>> waves; // Охрана по территориям
@@ -145,6 +156,15 @@ public class BattleManager : MonoBehaviour
     {
         if (Instance == this) Instance = null;
     }
+
+    /// <summary>Все бойцы на арене (для подбора баффов).</summary>
+    public IReadOnlyList<Fighter> AllFighters => allFighters;
+
+    /// <summary>Коробки на арене (разбитые удаляются сами).</summary>
+    public IReadOnlyList<BattleBox> Boxes => boxes;
+
+    /// <summary>Баффы на арене.</summary>
+    public IReadOnlyList<BattleBuffItem> Buffs => buffs;
 
     // ---------- Кто с кем ----------
 
@@ -249,6 +269,7 @@ public class BattleManager : MonoBehaviour
             for (int i = 0; i < barriers.Length; i++)
                 if (barriers[i] != null) barriers[i].SetActive(i < totalTerritories - 1);
         SetDecor(contested);
+        SpawnBoxes();
 
         cam = Camera.main;
         savedCamPos = cam.transform.position;
@@ -285,17 +306,19 @@ public class BattleManager : MonoBehaviour
             float x = index * territoryWidth + enemySpawnOffset + (j % 2) * 1.5f + j * 0.6f;
             if (mirror) x = ArenaLength - x;
             float y = Mathf.Lerp(floorMinY + 0.5f, floorMaxY - 0.5f, (j + 0.5f) / wave.Count);
-            Spawn(wave[j], faction, contested, new Vector2(x, y));
+            Spawn(wave[j], faction, contested, new Vector2(x, y), mirror ? totalTerritories - 1 - index : index);
         }
     }
 
     /// <summary>Создать бойца в точке localPos (координаты арены) и внести его в списки сторон.</summary>
-    private Fighter Spawn(BattleUnit u, BattleFaction faction, bool neutralLook, Vector2 localPos)
+    private Fighter Spawn(BattleUnit u, BattleFaction faction, bool neutralLook, Vector2 localPos, int territory = -1)
     {
         Vector3 pos = arenaRoot.position + (Vector3)localPos;
         Fighter f = Instantiate(fighterPrefab, pos, Quaternion.identity, runtimeRoot);
         f.Combat.SetProjectilePrefab(projectilePrefab);
         f.Init(u.data, u.stats, faction, u.hpFraction, neutralLook);
+        f.Territory = territory;
+        allFighters.Add(f);
 
         switch (faction)
         {
@@ -305,6 +328,92 @@ public class BattleManager : MonoBehaviour
             default: rivalGuards.Add(f); rivalsFoes.Add(f); break;
         }
         return f;
+    }
+
+    // ---------- Коробки и баффы ----------
+
+    /// <summary>
+    /// Расставить коробки случайно (не больше 5).
+    /// Обычный бой — по всей арене. Битва за флаг — честно: 2 на нашей половине,
+    /// 2 зеркально на вражеской и 1 в центре.
+    /// </summary>
+    private void SpawnBoxes()
+    {
+        boxes.Clear();
+        buffs.Clear();
+        if (boxPrefab == null) return;
+        if (contested)
+        {
+            for (int i = 0; i < 2; i++)
+            {
+                Vector2 p = RandomFloorPoint(3f, LaneTerritories * territoryWidth - 3f);
+                SpawnBox(p);
+                SpawnBox(new Vector2(ArenaLength - p.x, p.y));
+            }
+            SpawnBox(RandomFloorPoint(LaneTerritories * territoryWidth + 3f, (LaneTerritories + 1) * territoryWidth - 3f));
+            return;
+        }
+        int count = Mathf.Clamp(UnityEngine.Random.Range(boxCount.x, boxCount.y + 1), 0, 5);
+        for (int i = 0; i < count; i++) SpawnBox(RandomFloorPoint(4f, ArenaLength - 3f));
+    }
+
+    /// <summary>Случайная точка пола между minX и maxX (не вплотную к барьерам).</summary>
+    private Vector2 RandomFloorPoint(float minX, float maxX)
+    {
+        float x = UnityEngine.Random.Range(minX, maxX);
+        float edge = Mathf.Repeat(x, territoryWidth);
+        if (edge < 1.5f) x += 1.5f;
+        else if (edge > territoryWidth - 1.5f) x -= 1.5f;
+        float y = UnityEngine.Random.Range(floorMinY + 0.4f, floorMaxY - 0.4f);
+        return new Vector2(x, y);
+    }
+
+    private void SpawnBox(Vector2 localPos)
+    {
+        BattleBox b = Instantiate(boxPrefab, arenaRoot.position + (Vector3)localPos, Quaternion.identity, runtimeRoot);
+        boxes.Add(b);
+    }
+
+    /// <summary>Из разбитой коробки выпал бафф (вызывает BattleBox).</summary>
+    public void SpawnBuff(Vector3 worldPos)
+    {
+        if (buffPrefab == null) return;
+        BattleBuffItem item = Instantiate(buffPrefab, worldPos, Quaternion.identity, runtimeRoot);
+        item.Setup();
+        buffs.Add(item);
+    }
+
+    /// <summary>Может ли боец дойти до точки (она в пределах его открытых территорий).</summary>
+    public bool IsReachable(Fighter f, Vector2 worldPoint)
+    {
+        Vector2 clamped = ClampToArena(f, worldPoint);
+        return (clamped - worldPoint).sqrMagnitude < 0.04f;
+    }
+
+    /// <summary>
+    /// Куда отступать раненому бойцу: наши — к началу своей текущей территории (влево),
+    /// враг в битве за флаг — к началу своей (вправо), охрана — назад к месту, где появилась.
+    /// </summary>
+    public Vector2 GetRetreatPoint(Fighter f)
+    {
+        float localX;
+        switch (f.Faction)
+        {
+            case BattleFaction.Heroes:
+                localX = Mathf.Min(heroWave, totalTerritories - 1) * territoryWidth + 1f;
+                break;
+            case BattleFaction.Rivals:
+                localX = ArenaLength - Mathf.Min(rivalWave, LaneTerritories) * territoryWidth - 1f;
+                break;
+            case BattleFaction.RivalGuards:
+                localX = f.HomeX - arenaRoot.position.x - 4f;
+                break;
+            default: // Guards смотрят на наших слева — отступают вправо
+                localX = f.HomeX - arenaRoot.position.x + 4f;
+                break;
+        }
+        Vector3 p = ClampToArena(f, arenaRoot.position + new Vector3(localX, f.Position.y - arenaRoot.position.y, 0f));
+        return p;
     }
 
     // ---------- Ход боя ----------
@@ -461,8 +570,12 @@ public class BattleManager : MonoBehaviour
         {
             case BattleFaction.Heroes: maxX = heroMaxX; break;
             case BattleFaction.Rivals: minX = rivalMinX; break;
-            case BattleFaction.Guards: if (contested) maxX = LaneTerritories * territoryWidth - 0.5f; break;
-            case BattleFaction.RivalGuards: minX = (LaneTerritories + 1) * territoryWidth + 0.5f; break;
+        }
+        // Охрана не уходит со своей территории (иначе отступивший охранник прятался бы за барьером)
+        if (f.Territory >= 0)
+        {
+            minX = f.Territory * territoryWidth + 0.5f;
+            maxX = (f.Territory + 1) * territoryWidth - 0.5f;
         }
         local.x = Mathf.Clamp(local.x, minX, maxX);
         local.y = Mathf.Clamp(local.y, floorMinY, floorMaxY);
@@ -527,6 +640,7 @@ public class BattleManager : MonoBehaviour
         for (int i = runtimeRoot.childCount - 1; i >= 0; i--) Destroy(runtimeRoot.GetChild(i).gameObject);
         heroes.Clear(); guards.Clear(); rivals.Clear(); rivalGuards.Clear();
         heroesFoes.Clear(); guardsFoes.Clear(); rivalsFoes.Clear(); rivalGuardsFoes.Clear();
+        allFighters.Clear(); boxes.Clear(); buffs.Clear();
         contested = false;
         SetDecor(false);
         cam.transform.position = savedCamPos;

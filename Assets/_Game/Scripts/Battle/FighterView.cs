@@ -49,6 +49,12 @@ public class FighterView : MonoBehaviour
     private float flashTimer;            // Вспышка при попадании
     private float legBaseY;              // Исходная высота ног
     private Vector3 visualBasePos;
+    private SpriteRenderer aura;         // Аура баффа (копия кружка под ногами)
+    private SpriteRenderer slamRing;     // Волна удара по земле (Танк)
+    private float healTimer;             // Зелёная вспышка лечения
+    private float slamTimer;             // Сколько ещё видна волна
+    private Vector2 slamSize;            // Размер волны
+    private Color buffColor = new Color(1f, 0.85f, 0.25f); // Цвет ауры баффа
 
     private static readonly int StateParam = Animator.StringToHash("State");
 
@@ -86,8 +92,43 @@ public class FighterView : MonoBehaviour
         baseColors = new Color[allParts.Length];
         for (int i = 0; i < allParts.Length; i++) baseColors[i] = allParts[i].color;
 
+        // Аура баффа и волна удара — копии кружка команды (позже можно заменить своими спрайтами)
+        if (teamRing != null)
+        {
+            aura = Instantiate(teamRing, teamRing.transform.parent);
+            aura.name = "BuffAura";
+            aura.transform.localScale = teamRing.transform.localScale * 1.6f;
+            aura.sortingOrder = teamRing.sortingOrder - 1;
+            aura.gameObject.SetActive(false);
+            slamRing = Instantiate(teamRing, teamRing.transform.parent);
+            slamRing.name = "SlamWave";
+            slamRing.gameObject.SetActive(false);
+        }
+
         f.StateChanged += OnStateChanged;
         f.Combat.AttackStarted += OnAttackStarted;
+        f.BuffChanged += OnBuffChanged;
+    }
+
+    /// <summary>Зелёная вспышка — бойца вылечили.</summary>
+    public void FlashHeal() => healTimer = 0.45f;
+
+    /// <summary>Волна удара по земле (Танк): овал размером с зону удара.</summary>
+    public void PlaySlam(float radiusX, float radiusY)
+    {
+        slamTimer = 0.35f;
+        slamSize = new Vector2(radiusX * 2f, radiusY * 2f);
+        if (slamRing != null) slamRing.gameObject.SetActive(true);
+    }
+
+    /// <summary>Бафф начался/закончился: аура и подпись над головой.</summary>
+    private void OnBuffChanged(Fighter f)
+    {
+        if (aura != null) aura.gameObject.SetActive(f.HasBuff);
+        if (nameTag != null)
+            nameTag.text = f.HasBuff
+                ? $"{f.Data.displayName}\n<size=75%><color=#FFD84A>+{BoostNames.Get(f.BuffStat)}</color></size>"
+                : f.Data.displayName;
     }
 
     /// <summary>Вспышка при попадании.</summary>
@@ -115,6 +156,7 @@ public class FighterView : MonoBehaviour
             sortingGroup.sortingOrder = BattleManager.Instance.DepthSortingOrder(transform.position.y);
         if (visualRoot == null) return;
 
+        UpdateEffects();
         int facing = fighter.Movement.Facing;
         visualRoot.localScale = new Vector3(facing, 1f, 1f);
         if (proceduralAnimation) AnimatePose(facing);
@@ -177,6 +219,25 @@ public class FighterView : MonoBehaviour
         if (legRight != null) legRight.localPosition = new Vector3(legRight.localPosition.x, legBaseY - legSwing, 0f);
     }
 
+    /// <summary>Пульсация ауры баффа и расходящаяся волна удара по земле.</summary>
+    private void UpdateEffects()
+    {
+        if (aura != null && aura.gameObject.activeSelf)
+        {
+            float pulse = 0.35f + 0.25f * Mathf.Sin(Time.time * 6f);
+            aura.color = new Color(buffColor.r, buffColor.g, buffColor.b, fighter.IsAlive ? pulse : 0f);
+        }
+        if (slamRing != null && slamTimer > 0f)
+        {
+            slamTimer -= Time.deltaTime;
+            float k = 1f - Mathf.Clamp01(slamTimer / 0.35f); // 0 → 1
+            slamRing.transform.localScale = new Vector3(slamSize.x * (0.3f + 0.7f * k), slamSize.y * (0.3f + 0.7f * k), 1f);
+            slamRing.color = new Color(1f, 0.8f, 0.4f, 0.6f * (1f - k));
+            if (slamTimer <= 0f) slamRing.gameObject.SetActive(false);
+        }
+        if (healTimer > 0f) healTimer -= Time.deltaTime;
+    }
+
     /// <summary>Цвета: вспышка при ударе, мигание при подъёме, серость после смерти.</summary>
     private void UpdateColors()
     {
@@ -192,6 +253,7 @@ public class FighterView : MonoBehaviour
         {
             Color c = baseColors[i];
             if (flashTimer > 0f) c = Color.Lerp(c, new Color(1f, 0.35f, 0.3f, c.a), 0.7f);
+            else if (healTimer > 0f) c = Color.Lerp(c, new Color(0.4f, 1f, 0.5f, c.a), 0.6f * healTimer / 0.45f);
             if (dead)
             {
                 float grey = c.grayscale;
@@ -207,6 +269,7 @@ public class FighterView : MonoBehaviour
     {
         if (fighter == null) return;
         fighter.StateChanged -= OnStateChanged;
+        fighter.BuffChanged -= OnBuffChanged;
         if (fighter.Combat != null) fighter.Combat.AttackStarted -= OnAttackStarted;
     }
 }

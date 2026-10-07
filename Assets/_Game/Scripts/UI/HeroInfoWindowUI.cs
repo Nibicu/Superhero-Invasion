@@ -80,6 +80,10 @@ public class HeroInfoWindowUI : WindowUI
             ? $"Уровень {hero.Level} / {hm.MaxHeroLevel}  •  {hero.StatusText}" +
               (hero.Boosts > 0 ? $"\n<size=80%><color=#C58BFF>Усилен: {hero.Boosts} / {hm.MaxBoosts}</color></size>" : "")
             : "<color=#9AA4B5>Не нанят</color>";
+        // Класс, тип урона скилов и сила
+        HeroStats shown = hero != null ? hero.Stats : current.baseStats;
+        levelText.text += $"\n<size=85%><color=#FFD84A>{UnitClasses.Name(current.unitClass)}</color>  •  сила {BattleCalculator.UnitPower(current, shown)}" +
+                          $"\nскилы от: {UnitClasses.DamageName(current.skillDamage)}</size>";
 
         // Кнопка усиления — только для нанятых героев
         if (boostButton != null)
@@ -105,6 +109,8 @@ public class HeroInfoWindowUI : WindowUI
         // Навыки: открытые — белым, закрытые — серым с подписью уровня
         int level = hero != null ? hero.Level : 1;
         var sb = new StringBuilder();
+        ClassProfile cp = current.Profile;
+        sb.AppendLine($"<color=#FFD84A><b>{cp.skillName}</b></color> (скил класса, {cp.skillCost:0} энергии) — {cp.skillDescription}");
         foreach (HeroSkill s in current.skills)
         {
             if (level >= s.unlockLevel)

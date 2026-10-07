@@ -28,13 +28,41 @@ public class FighterHealth : MonoBehaviour
     /// <summary>Доля здоровья 0..1.</summary>
     public float Fraction => Max > 0 ? Current / Max : 0f;
 
+    /// <summary>Сколько секунд назад бойца ударили в последний раз.</summary>
+    public float TimeSinceHit => Time.time - lastHitTime;
+
+    [Tooltip("Через сколько секунд без ударов начинает работать реген HP")]
+    [SerializeField] private float regenDelay = 3f;
+    [Tooltip("Какая доля параметра 'Реген HP' восстанавливается в секунду (0.5 = половина)")]
+    [SerializeField] private float regenRate = 0.5f;
+
     /// <summary>Здоровье изменилось (для полоски HP).</summary>
     public event Action<FighterHealth> Changed;
 
     /// <summary>Боец погиб.</summary>
     public event Action<Fighter> Died;
 
-    private void Awake() => fighter = GetComponent<Fighter>();
+    private void Awake()
+    {
+        fighter = GetComponent<Fighter>();
+        lastHitTime = -100f;
+    }
+
+    /// <summary>Реген HP: работает, только если бойца давно не били (Реген HP × regenRate единиц в секунду).</summary>
+    private void Update()
+    {
+        if (!fighter.IsAlive || Current >= Max || TimeSinceHit < regenDelay) return;
+        if (BattleManager.Instance == null || !BattleManager.Instance.IsRunning) return;
+        Heal(fighter.Stats.hpRegen * regenRate * Time.deltaTime);
+    }
+
+    /// <summary>Вылечить на amount единиц (не больше максимума). Мёртвых не лечит.</summary>
+    public void Heal(float amount)
+    {
+        if (!fighter.IsAlive || amount <= 0f) return;
+        Current = Mathf.Min(Max, Current + amount);
+        Changed?.Invoke(this);
+    }
 
     /// <summary>Задать здоровье. fraction — с какой долей начинать (раненая команда).</summary>
     public void Setup(float max, float fraction)

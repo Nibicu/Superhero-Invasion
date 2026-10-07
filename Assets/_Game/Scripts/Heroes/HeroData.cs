@@ -16,9 +16,10 @@ public enum Side
 public struct HeroStats
 {
     public int hp;             // Здоровье
-    public int hpRegen;        // Реген здоровья
-    public int attack;         // Атака
-    public int specialAttack;  // Специальная атака
+    public int hpRegen;        // Реген здоровья (HP в секунду в бою, когда героя не бьют)
+    public int autoAttack;     // Авто атака — урон обычных атак
+    public int attack;         // Атака — урон скилов (у кого тип урона "Атака")
+    public int specialAttack;  // Специальная атака — урон скилов (у кого тип урона "Спец. атака")
     public int defense;        // Защита
     public int specialDefense; // Специальная защита
     public int energy;         // Энергия
@@ -28,24 +29,41 @@ public struct HeroStats
     /// <summary>Названия характеристик для интерфейса (в том же порядке, что ToArray).</summary>
     public static readonly string[] Names =
     {
-        "Здоровье", "Реген HP", "Атака", "Спец. атака", "Защита",
+        "Здоровье", "Реген HP", "Авто атака", "Атака", "Спец. атака", "Защита",
         "Спец. защита", "Энергия", "Реген энергии", "Скорость"
     };
 
     /// <summary>Максимумы для полосок в карточке героя (полоска заполнена целиком при таком значении).</summary>
-    public static readonly int[] BarMax = { 4000, 80, 400, 400, 400, 400, 400, 40, 160 };
+    public static readonly int[] BarMax = { 4000, 80, 150, 400, 400, 400, 400, 400, 40, 160 };
 
     /// <summary>Все значения массивом — удобно выводить в цикле.</summary>
     public int[] ToArray() => new[]
     {
-        hp, hpRegen, attack, specialAttack, defense, specialDefense, energy, energyRegen, speed
+        hp, hpRegen, autoAttack, attack, specialAttack, defense, specialDefense, energy, energyRegen, speed
     };
+
+    /// <summary>Характеристики с одним усиленным параметром (временный бафф в бою).</summary>
+    public HeroStats WithBoost(BoostStat stat, float mult)
+    {
+        HeroStats s = this;
+        switch (stat)
+        {
+            case BoostStat.AutoAttack: s.autoAttack = Mathf.RoundToInt(autoAttack * mult); break;
+            case BoostStat.Attack: s.attack = Mathf.RoundToInt(attack * mult); break;
+            case BoostStat.SpecialAttack: s.specialAttack = Mathf.RoundToInt(specialAttack * mult); break;
+            case BoostStat.Defense: s.defense = Mathf.RoundToInt(defense * mult); break;
+            case BoostStat.SpecialDefense: s.specialDefense = Mathf.RoundToInt(specialDefense * mult); break;
+            case BoostStat.Speed: s.speed = Mathf.RoundToInt(speed * mult); break;
+        }
+        return s;
+    }
 
     /// <summary>Характеристики, умноженные на коэффициент (для прокачки уровня).</summary>
     public HeroStats Scaled(float k) => new HeroStats
     {
         hp = Mathf.RoundToInt(hp * k),
         hpRegen = Mathf.RoundToInt(hpRegen * k),
+        autoAttack = Mathf.RoundToInt(autoAttack * k),
         attack = Mathf.RoundToInt(attack * k),
         specialAttack = Mathf.RoundToInt(specialAttack * k),
         defense = Mathf.RoundToInt(defense * k),
@@ -104,8 +122,28 @@ public class HeroData : ScriptableObject
     [Tooltip("Можно ли нанять в РОСТЕРЕ. Выключено — это моб-охранник (только для охраны объектов)")]
     public bool hireable = true;
 
+    [Header("Класс")]
+    [Tooltip("Танк, Боец, Маг, Стрелок или Поддержка — определяет поведение в бою и скил")]
+    public UnitClass unitClass = UnitClass.Fighter;
+
+    [Tooltip("От чего считается урон скилов: Атака (против Защиты) или Спец. атака (против Спец. защиты)")]
+    public DamageType skillDamage = DamageType.Attack;
+
     [Header("Характеристики (на 1 уровне)")]
     public HeroStats baseStats;
+
+    /// <summary>Настройки класса (поведение, скил).</summary>
+    public ClassProfile Profile => UnitClasses.Get(unitClass);
+
+    /// <summary>
+    /// Кнопка в меню компонента (три точки справа сверху в Инспекторе):
+    /// заполнить характеристики по шаблону класса с учётом звёзд. Потом их можно подправить руками.
+    /// </summary>
+    [ContextMenu("Заполнить характеристики по классу")]
+    private void FillStatsFromClass()
+    {
+        baseStats = UnitClasses.ScaledTemplate(unitClass, skillDamage, UnitClasses.StarPower(stars), stars);
+    }
 
     [Header("Навыки и бонус командира")]
     public HeroSkill[] skills = { new HeroSkill() };

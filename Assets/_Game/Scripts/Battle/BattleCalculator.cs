@@ -30,8 +30,20 @@ public static class BattleCalculator
     /// <summary>Минимальное HP команды после боя (команда не "умирает", а лечится на базе).</summary>
     public const float MinHpAfterBattle = 0.05f;
 
-    /// <summary>Сила по характеристикам: атака + спец. атака + защита + спец. защита.</summary>
-    public static int StatsPower(HeroStats s) => s.attack + s.specialAttack + s.defense + s.specialDefense;
+    /// <summary>
+    /// Сила бойца по характеристикам:
+    /// HP ÷ 10 + Авто атака × 2 + основная атака (Атака или Спец. атака — от чего считаются скилы)
+    /// + (Защита + Спец. защита) ÷ 2.
+    /// Герой 1★ 1 уровня — примерно 200–240, 2★ — около 500, 3★ — около 950.
+    /// </summary>
+    public static int UnitPower(HeroData d, HeroStats s)
+    {
+        int main = d != null && d.skillDamage == DamageType.Special ? s.specialAttack : s.attack;
+        return Mathf.RoundToInt(s.hp / 10f + s.autoAttack * 2f + main + (s.defense + s.specialDefense) / 2f);
+    }
+
+    /// <summary>Сила нанятого героя (с уровнем и усилениями).</summary>
+    public static int HeroPower(HeroInstance h) => UnitPower(h.Data, h.Stats);
 
     /// <summary>
     /// Боевая сила команды с учётом здоровья: раненая команда слабее
@@ -50,7 +62,7 @@ public static class BattleCalculator
         if (data.waves == null) return 0;
         foreach (GuardWave w in data.waves)
             foreach (GuardEntry g in w.guards)
-                if (g != null && g.unit != null) sum += StatsPower(GuardStats(g));
+                if (g != null && g.unit != null) sum += UnitPower(g.unit, GuardStats(g));
         return sum;
     }
 

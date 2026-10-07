@@ -29,8 +29,10 @@ public class FighterMovement : MonoBehaviour
     /// <summary>Куда смотрит боец: 1 — вправо, -1 — влево.</summary>
     public int Facing { get; private set; } = 1;
 
-    /// <summary>Скорость ходьбы.</summary>
-    public float Speed => speed;
+    /// <summary>Скорость ходьбы (с учётом баффа скорости).</summary>
+    public float Speed => fighter.HasBuff && fighter.BuffStat == BoostStat.Speed
+        ? baseSpeed + fighter.Stats.speed * speedPerStat
+        : speed;
 
     private void Awake() => fighter = GetComponent<Fighter>();
 
@@ -67,8 +69,9 @@ public class FighterMovement : MonoBehaviour
         {
             if (input.sqrMagnitude > 0.0004f)
             {
-                pos.x += input.x * speed * dt;
-                pos.y += input.y * speed * depthSpeedFactor * dt;
+                float v = Speed;
+                pos.x += input.x * v * dt;
+                pos.y += input.y * v * depthSpeedFactor * dt;
                 if (Mathf.Abs(input.x) > 0.1f) Facing = input.x > 0 ? 1 : -1;
                 if (fighter.State != FighterState.Moving) fighter.SetState(FighterState.Moving);
             }

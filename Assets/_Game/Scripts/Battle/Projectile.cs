@@ -1,17 +1,17 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 
 /// <summary>
-/// Энергетический снаряд спец. атаки.
+/// Снаряд: авто атака Стрелка (пуля), Мага и Поддержки (энергетический сгусток)
+/// или скил (снаряд Мага, прицельный выстрел Стрелка).
 /// Летит горизонтально в сторону взгляда стрелка, попадает в первого противника
-/// на той же глубине и исчезает. Союзников и стрелка не задевает.
-/// Исчезает и по истечении времени жизни или за краем арены.
+/// на той же глубине и исчезает (пробивающий — летит дальше). Союзников не задевает.
+/// Авто атаки разбивают коробки. Исчезает, пролетев свою дальность, или за краем арены.
 /// Положение объекта — "на земле" (для глубины), картинка поднята на высоту груди.
 /// </summary>
 public class Projectile : MonoBehaviour
 {
-    [Tooltip("Сколько секунд снаряд летит, если ни в кого не попал")]
-    [SerializeField] private float lifetime = 2.2f;
     [Tooltip("Радиус попадания по горизонтали")]
     [SerializeField] private float hitRadius = 0.5f;
     [Tooltip("Насколько цель может отличаться по глубине")]
@@ -23,27 +23,26 @@ public class Projectile : MonoBehaviour
     [Tooltip("Для правильного перекрытия по глубине")]
     [SerializeField] private SortingGroup sortingGroup;
 
-    private Fighter owner;   // Кто выстрелил
-    private BattleFaction faction; // Его сторона (снаряд бьёт только её противников)
-    private int specialPower; // Спец. атака стрелка (запоминаем при выстреле)
-    private int direction;   // 1 — вправо, -1 — влево
-    private float speed;
-    private int attackId;
-    private float age;
+    private Fighter owner;          // Кто выстрелил
+    private BattleFaction faction;  // Его сторона (снаряд бьёт только её противников)
+    private ShotInfo shot;          // Параметры выстрела
+    private int direction;          // 1 — вправо, -1 — влево
+    private int attackId;           // Номер атаки (защита от двойного урона)
+    private float travelled;        // Сколько уже пролетел
+    private readonly List<Fighter> alreadyHit = new List<Fighter>(); // Кого уже задел (для пробивающих)
 
     /// <summary>Запустить снаряд.</summary>
-    public void Launch(Fighter shooter, int dir, float flySpeed, int id, float height)
+    public void Launch(Fighter shooter, int dir, ShotInfo info, int id, float height)
     {
         owner = shooter;
         faction = shooter.Faction;
-        specialPower = shooter.Stats.specialAttack;
+        shot = info;
         direction = dir;
-        speed = flySpeed;
         attackId = id;
         if (visual != null)
         {
             visual.localPosition = new Vector3(0f, height, 0f);
-            visual.localScale = new Vector3(dir, 1f, 1f); // "хвост" позади
+            visual.localScale = new Vector3(dir * info.size * (info.pierce ? 1.6f : 1f), info.size, 1f); // "хвост" позади
         }
         Color c = shooter.Data.color;
         if (tinted != null)
@@ -57,18 +56,18 @@ public class Projectile : MonoBehaviour
         BattleManager bm = BattleManager.Instance;
         if (bm == null || !bm.IsRunning) { Destroy(gameObject); return; }
 
-        float dt = Time.deltaTime;
-        age += dt;
+        float step = direction * shot.speed * Time.deltaTime;
         Vector3 pos = transform.position;
-        pos.x += direction * speed * dt;
+        pos.x += step;
+        travelled += Mathf.Abs(step);
         transform.position = pos;
         if (sortingGroup != null) sortingGroup.sortingOrder = bm.DepthSortingOrder(pos.y) + 50;
 
-        if (age > lifetime || !bm.IsInsideArenaX(pos.x)) { Destroy(gameObject); return; }
+        if (travelled > shot.range || !bm.IsInsideArenaX(pos.x)) { Destroy(gameObject); return; }
 
         foreach (Fighter enemy in bm.GetOpponents(faction))
         {
-            if (!enemy.IsAlive) continue;
+            if (!enemy.IsAlive || alreadyHit.Contains(enemy)) continue;
             Vector2 d = enemy.Position - (Vector2)pos;
             if (Mathf.Abs(d.x) > hitRadius || Mathf.Abs(d.y) > depthTolerance) continue;
 
@@ -76,15 +75,25 @@ public class Projectile : MonoBehaviour
             {
                 attacker = owner,
                 attackId = attackId,
-                damage = FighterCombat.CalcDamage(specialPower, enemy.Stats.specialDefense),
-                knockback = new Vector2(direction * 5f, 0f),
-                stagger = 2
+                damage = FighterCombat.CalcDamage(shot.power, shot.vsSpecial ? enemy.Stats.specialDefense : enemy.Stats.defense),
+                knockback = new Vector2(direction * shot.knockback, 0f),
+                stagger = shot.stagger
             };
-            if (enemy.Health.TakeHit(hit))
+            if (!enemy.Health.TakeHit(hit)) continue;
+            alreadyHit.Add(enemy);
+            if (!shot.pierce) { Destroy(gameObject); return; }
+        }
+
+        // Авто атаки разбивают коробки
+        if (shot.hitsBoxes)
+            foreach (BattleBox box in bm.Boxes)
             {
+                if (box == null || box.IsBroken) continue;
+                Vector2 d = (Vector2)box.transform.position - (Vector2)pos;
+                if (Mathf.Abs(d.x) > hitRadius || Mathf.Abs(d.y) > depthTolerance) continue;
+                box.Hit();
                 Destroy(gameObject);
                 return;
             }
-        }
     }
 }

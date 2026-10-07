@@ -43,12 +43,8 @@ public class Fighter : MonoBehaviour
     [Tooltip("На каком расстоянии боец замечает противника")]
     public float detectionRadius = 9f;
 
-    [Header("Спец. атака (снаряд)")]
-    [Tooltip("Перезарядка спец. атаки (сек)")]
-    public float specialCooldown = 3.5f;
-    [Tooltip("Сколько энергии тратит спец. атака")]
-    public float specialEnergyCost = 60f;
-    [Tooltip("Скорость снаряда")]
+    [Header("Снаряды скилов")]
+    [Tooltip("Скорость снаряда скила (перезарядка и цена скилов — в UnitClasses, по классу)")]
     public float projectileSpeed = 9f;
 
     private float invulnerableTimer; // Неуязвимость после подъёма
@@ -70,8 +66,40 @@ public class Fighter : MonoBehaviour
     /// <summary>Описание героя/злодея (имя, цвет, портрет).</summary>
     public HeroData Data { get; private set; }
 
-    /// <summary>Характеристики (с учётом уровня и усилений).</summary>
-    public HeroStats Stats { get; private set; }
+    /// <summary>Характеристики с учётом уровня, усилений и временного баффа из коробки.</summary>
+    public HeroStats Stats => buffTimer > 0f ? baseStats.WithBoost(buffStat, buffMultiplier) : baseStats;
+
+    /// <summary>Класс бойца (Танк, Боец, Маг, Стрелок, Поддержка).</summary>
+    public UnitClass Class => Data.unitClass;
+
+    /// <summary>Настройки класса: поведение, дальности, скил.</summary>
+    public ClassProfile Profile => Data.Profile;
+
+    /// <summary>Сила скилов: Атака или Спец. атака (зависит от типа урона бойца).</summary>
+    public int SkillPower => Data.skillDamage == DamageType.Special ? Stats.specialAttack : Stats.attack;
+
+    /// <summary>Ослабляется ли урон скилов Спец. защитой цели (а не Защитой).</summary>
+    public bool SkillVsSpecial => Data.skillDamage == DamageType.Special;
+
+    /// <summary>Где боец появился (X в мире) — охрана отступает к этой точке.</summary>
+    public float HomeX { get; private set; }
+
+    /// <summary>Территория арены, которую стережёт охранник (-1 — не охрана). Охрана не уходит со своей территории.</summary>
+    public int Territory { get; set; } = -1;
+
+    /// <summary>Действует ли временный бафф.</summary>
+    public bool HasBuff => buffTimer > 0f;
+
+    /// <summary>Какой параметр усилен баффом.</summary>
+    public BoostStat BuffStat => buffStat;
+
+    /// <summary>Бафф начался или закончился (для внешнего вида).</summary>
+    public event Action<Fighter> BuffChanged;
+
+    private HeroStats baseStats;   // Характеристики без баффа
+    private BoostStat buffStat;    // Какой параметр усилен
+    private float buffMultiplier;  // Во сколько раз
+    private float buffTimer;       // Сколько секунд баффу осталось
 
     /// <summary>Текущее состояние.</summary>
     public FighterState State { get; private set; } = FighterState.Idle;
@@ -122,7 +150,8 @@ public class Fighter : MonoBehaviour
     public void Init(HeroData data, HeroStats stats, BattleFaction faction, float hpFraction, bool neutralLook = false)
     {
         Data = data;
-        Stats = stats;
+        baseStats = stats;
+        HomeX = transform.position.x;
         Faction = faction;
         Team = faction == BattleFaction.Heroes ? Team.Player : Team.Enemy;
         NeutralLook = neutralLook;
@@ -135,10 +164,24 @@ public class Fighter : MonoBehaviour
         SetState(FighterState.Idle);
     }
 
-    /// <summary>Таймеры состояний: конец реакции на удар, подъём после падения.</summary>
+    /// <summary>Временно усилить параметр (бафф из коробки). Новый бафф заменяет старый.</summary>
+    public void ApplyBuff(BoostStat stat, float multiplier, float duration)
+    {
+        buffStat = stat;
+        buffMultiplier = multiplier;
+        buffTimer = duration;
+        BuffChanged?.Invoke(this);
+    }
+
+    /// <summary>Таймеры состояний: конец реакции на удар, подъём после падения, бафф.</summary>
     private void Update()
     {
         StateTime += Time.deltaTime;
+        if (buffTimer > 0f)
+        {
+            buffTimer -= Time.deltaTime;
+            if (buffTimer <= 0f) BuffChanged?.Invoke(this);
+        }
         if (invulnerableTimer > 0f) invulnerableTimer -= Time.deltaTime;
 
         if (State == FighterState.Hurt && StateTime >= hurtDuration)

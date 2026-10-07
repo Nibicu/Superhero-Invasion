@@ -76,6 +76,7 @@ public class RosterWindowUI : WindowUI
             string info = hm.IsHired(Team.Player, data)
                 ? "<color=#6EE07A>В вашей команде</color>"
                 : $"<color={costColor}>{data.hireCost} золота</color>";
+            info = $"<color=#C9D3E6>{UnitClasses.Name(data.unitClass)}</color>  •  {info}"; // класс героя
             string action = canHire ? "НАНЯТЬ" : reason.ToUpper();
 
             HeroData captured = data; // копия для лямбды

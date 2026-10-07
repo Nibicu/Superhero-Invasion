@@ -417,8 +417,7 @@ public class EnemyAI : MonoBehaviour
     /// <summary>Сила одного героя (для выбора капитана).</summary>
     private static int HeroPower(HeroInstance h)
     {
-        HeroStats s = h.Stats;
-        return s.attack + s.specialAttack + s.defense + s.specialDefense;
+        return BattleCalculator.HeroPower(h);
     }
 
     private static bool Contains(IReadOnlyList<Squad> list, Squad s)

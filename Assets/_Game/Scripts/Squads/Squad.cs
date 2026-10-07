@@ -83,19 +83,14 @@ public class Squad
     public int CurrentHp => Mathf.RoundToInt(MaxHp * HpFraction);
 
     /// <summary>
-    /// "Сила" команды — простая оценка для интерфейса и будущего ИИ:
-    /// сумма атаки, спец. атаки, защиты и спец. защиты всех героев.
+    /// "Сила" команды — сумма сил всех героев (формула — BattleCalculator.UnitPower).
     /// </summary>
     public int Power
     {
         get
         {
             int sum = 0;
-            foreach (HeroInstance h in AllHeroes)
-            {
-                HeroStats s = h.Stats;
-                sum += s.attack + s.specialAttack + s.defense + s.specialDefense;
-            }
+            foreach (HeroInstance h in AllHeroes) sum += BattleCalculator.HeroPower(h);
             return sum;
         }
     }

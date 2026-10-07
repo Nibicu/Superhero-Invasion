@@ -68,7 +68,7 @@ public class MyHeroesWindowUI : WindowUI
             HeroCardUI card = Instantiate(cardTemplate, grid);
             card.gameObject.SetActive(true);
             HeroInstance captured = hero; // копия для лямбды
-            card.Setup(hero.Data, $"Ур. {hero.Level}  •  {hero.StatusText}", "ПОДРОБНЕЕ", true,
+            card.Setup(hero.Data, $"{UnitClasses.Name(hero.Data.unitClass)}  •  Ур. {hero.Level}  •  {hero.StatusText}", "ПОДРОБНЕЕ", true,
                 () => heroInfo.ShowHero(captured.Data), () => heroInfo.ShowHero(captured.Data));
             cards.Add(card);
         }

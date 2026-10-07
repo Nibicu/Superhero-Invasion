@@ -103,7 +103,7 @@ public class MapObject : AttackableSite, IIncomeSource
                     data = g.unit,
                     stats = s,
                     hpFraction = 1f,
-                    info = $"Территория {w + 1}  •  Ур. {g.level}  •  сила {BattleCalculator.StatsPower(s)}"
+                    info = $"{UnitClasses.Name(g.unit.unitClass)}  •  Территория {w + 1}  •  Ур. {g.level}  •  сила {BattleCalculator.UnitPower(g.unit, s)}"
                 });
             }
             waves.Add(list);
