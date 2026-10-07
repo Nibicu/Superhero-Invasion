@@ -34,6 +34,8 @@ public class FighterView : MonoBehaviour
     [Header("Цвета команд")]
     [SerializeField] private Color playerColor = new Color(0.25f, 0.6f, 1f);
     [SerializeField] private Color enemyColor = new Color(1f, 0.3f, 0.3f);
+    [Tooltip("Цвет нейтральной охраны в битве за флаг")]
+    [SerializeField] private Color neutralColor = new Color(0.75f, 0.75f, 0.75f);
 
     [Header("Анимации (на будущее)")]
     [Tooltip("Animator с настоящими анимациями (необязательно)")]
@@ -69,14 +71,15 @@ public class FighterView : MonoBehaviour
         if (limbs != null) foreach (SpriteRenderer r in limbs) if (r != null) r.color = dark;
         if (teamRing != null)
         {
-            Color t = f.Team == Team.Player ? playerColor : enemyColor;
+            Color t = f.NeutralLook ? neutralColor : f.Team == Team.Player ? playerColor : enemyColor;
             teamRing.color = new Color(t.r, t.g, t.b, 0.75f);
         }
         if (initials != null) initials.text = f.Data.Initials;
         if (nameTag != null)
         {
             nameTag.text = f.Data.displayName;
-            nameTag.color = f.Team == Team.Player ? new Color(0.75f, 0.88f, 1f) : new Color(1f, 0.75f, 0.75f);
+            nameTag.color = f.NeutralLook ? new Color(0.85f, 0.85f, 0.85f)
+                : f.Team == Team.Player ? new Color(0.75f, 0.88f, 1f) : new Color(1f, 0.75f, 0.75f);
         }
 
         allParts = visualRoot.GetComponentsInChildren<SpriteRenderer>(true); // только тело, без полоски HP

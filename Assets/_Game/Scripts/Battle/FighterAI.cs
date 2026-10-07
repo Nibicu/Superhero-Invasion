@@ -8,7 +8,7 @@ using UnityEngine;
 ///  3) в радиусе удара — бьёт; на одной линии издалека — стреляет снарядом
 ///     ("маги" — у кого спец. атака выше обычной — держат дистанцию и стреляют чаще);
 ///  4) цель погибла или сбита с ног — ищет другую;
-///  5) противников рядом нет — наши идут к точке сбора (следующая территория), охрана стоит.
+///  5) противников рядом нет — команды идут к точке сбора (следующая территория или флаг), охрана стоит.
 /// Не знает ничего лишнего и не атакует через всю арену.
 /// </summary>
 [DefaultExecutionOrder(-10)] // решает раньше, чем двигается FighterMovement
@@ -75,11 +75,11 @@ public class FighterAI : MonoBehaviour
 
         if (target == null)
         {
-            // Противников рядом нет: наши идут к точке сбора, охрана ждёт
-            if (self.Team == Team.Player)
+            // Противников рядом нет: команды идут к точке сбора (следующая территория или флаг), охрана ждёт
+            if (bm.TryGetRallyPoint(self, out Vector2 rally))
             {
-                destination = new Vector2(bm.RallyX, self.Position.y);
-                hasDestination = Mathf.Abs(destination.x - self.Position.x) > 0.3f;
+                destination = rally;
+                hasDestination = (destination - self.Position).magnitude > 0.3f;
             }
             else hasDestination = false;
             return;
@@ -122,7 +122,7 @@ public class FighterAI : MonoBehaviour
     {
         Fighter best = null;
         float bestDist = self.detectionRadius;
-        foreach (Fighter f in bm.GetOpponents(self.Team))
+        foreach (Fighter f in bm.GetOpponents(self.Faction))
         {
             if (!f.IsTargetable) continue;
             float dist = Vector2.Distance(f.Position, self.Position);
@@ -135,7 +135,7 @@ public class FighterAI : MonoBehaviour
     private Vector2 Separation(BattleManager bm)
     {
         Vector2 push = Vector2.zero;
-        foreach (Fighter ally in bm.GetTeam(self.Team))
+        foreach (Fighter ally in bm.GetAllies(self.Faction))
         {
             if (ally == self || !ally.IsAlive) continue;
             Vector2 d = self.Position - ally.Position;

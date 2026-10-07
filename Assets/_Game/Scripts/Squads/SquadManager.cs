@@ -161,6 +161,14 @@ public class SquadManager : MonoBehaviour
         return true;
     }
 
+    /// <summary>Сколько секунд команда будет ехать от своей базы до цели (оценка для ИИ).</summary>
+    public float EstimateTravelTime(Squad squad, ISquadTarget target)
+    {
+        MainBase home = MainBase.Get(squad.Owner);
+        if (home == null || unitPrefab == null) return float.MaxValue;
+        return unitPrefab.EstimateTravelTime(squad, home.transform.position, target.ApproachPoint);
+    }
+
     /// <summary>Фишка вернулась на базу — команда снова свободна (вызывает SquadUnit).</summary>
     public void OnUnitReturned(SquadUnit unit)
     {

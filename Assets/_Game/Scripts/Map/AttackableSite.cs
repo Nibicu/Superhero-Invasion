@@ -15,12 +15,14 @@ public enum AttackPhase
 /// "Место нападения" — общая основа для объекта карты (MapObject) и главной базы (MainBase).
 /// Порядок нападения одинаковый для всех:
 ///  1) команда приезжает → идёт подготовка к бою (prepTime, 20 с). Можно отступить;
+///     если за это время приезжает команда ДРУГОЙ стороны — она тоже вступает (будет битва за флаг);
 ///  2) подготовка закончилась:
+///     - две команды → окно перед боем только с "НАЧАТЬ БОЙ" (автобоя нет) → битва за флаг;
 ///     - защитников нет → нападающие сразу побеждают без боя;
 ///     - в бою участвует игрок (нападает или защищается) → окно перед боем (10 с на выбор);
 ///     - бьются враг и нейтральная охрана → автобой сразу;
 ///  3) автобой даёт итог мгновенно, ручной бой — после арены;
-///  4) итог: победа (захват объекта / урон базе) или поражение, команда едет домой.
+///  4) итог: победа (захват объекта / урон базе) или поражение, команды едут домой.
 /// Пока идёт нападение, окна этого места закрыты и покупки в нём недоступны.
 /// </summary>
 public abstract class AttackableSite : MonoBehaviour, ISquadTarget
@@ -29,17 +31,24 @@ public abstract class AttackableSite : MonoBehaviour, ISquadTarget
     [Tooltip("Сколько секунд идёт подготовка к бою после прибытия команды")]
     [SerializeField] private float prepTime = 20f;
 
-    /// <summary>Нападение на какое-то место началось или закончилось (окна закрываются/обновляются).</summary>
+    /// <summary>Нападение на какое-то место началось, изменилось или закончилось (окна закрываются/обновляются).</summary>
     public static event Action<AttackableSite> AttackChanged;
 
-    private SquadUnit attacker;  // Фишка нападающей команды (null — никто не нападает)
-    private AttackPhase phase;   // Этап нападения
-    private float prepLeft;      // Сколько секунд подготовки осталось
+    private SquadUnit attacker;   // Фишка нападающей команды (null — никто не нападает)
+    private SquadUnit challenger; // Вторая команда другой стороны, успевшая к подготовке (битва за флаг)
+    private AttackPhase phase;    // Этап нападения
+    private float prepLeft;       // Сколько секунд подготовки осталось
 
     // ---------- Свойства ----------
 
     /// <summary>Нападающая команда на месте (null — нападения нет).</summary>
     public SquadUnit Attacker => attacker;
+
+    /// <summary>Вторая нападающая команда (другой стороны) или null.</summary>
+    public SquadUnit Challenger => challenger;
+
+    /// <summary>Будет битва за флаг: на месте команды обеих сторон.</summary>
+    public bool IsContested => challenger != null;
 
     /// <summary>Идёт ли нападение (от прибытия команды до итога).</summary>
     public bool IsUnderAttack => attacker != null;
@@ -47,7 +56,7 @@ public abstract class AttackableSite : MonoBehaviour, ISquadTarget
     /// <summary>Этап нападения.</summary>
     public AttackPhase Phase => phase;
 
-    /// <summary>Чья команда нападает (имеет смысл, только если IsUnderAttack).</summary>
+    /// <summary>Чья команда напала первой (имеет смысл, только если IsUnderAttack).</summary>
     public Team AttackingTeam => attacker != null ? attacker.Squad.Owner : Team.Player;
 
     /// <summary>Длительность подготовки к бою.</summary>
@@ -59,8 +68,24 @@ public abstract class AttackableSite : MonoBehaviour, ISquadTarget
     /// <summary>Прогресс подготовки 0..1 (для полоски на карте).</summary>
     public float PrepProgress => prepTime > 0f ? 1f - Mathf.Clamp01(prepLeft / prepTime) : 1f;
 
-    /// <summary>Игрок защищается (нападает враг на место игрока).</summary>
-    public bool PlayerDefends => attacker != null && attacker.Squad.Owner != Team.Player;
+    /// <summary>Игрок защищается: враг напал на место, которым владеет игрок.</summary>
+    public bool PlayerDefends =>
+        attacker != null && challenger == null && attacker.Squad.Owner != Team.Player
+        && TryGetDefendingTeam(out Team def) && def == Team.Player;
+
+    /// <summary>
+    /// Может ли команда стороны team присоединиться к нападению (битва за флаг):
+    /// идёт подготовка, напала другая сторона, второй команды ещё нет, и этой стороне можно сюда нападать.
+    /// </summary>
+    public bool CanJoin(Team team) =>
+        attacker != null && challenger == null && phase == AttackPhase.Preparing
+        && attacker.Squad.Owner != team && CanBeAttackedBy(team, out _);
+
+    /// <summary>Команда игрока в битве за флаг (или null).</summary>
+    public SquadUnit PlayerContestant => !IsContested ? null : attacker.Squad.Owner == Team.Player ? attacker : challenger;
+
+    /// <summary>Команда врага в битве за флаг (или null).</summary>
+    public SquadUnit EnemyContestant => !IsContested ? null : attacker.Squad.Owner == Team.Player ? challenger : attacker;
 
     // ---------- Что каждое место определяет само ----------
 
@@ -85,8 +110,8 @@ public abstract class AttackableSite : MonoBehaviour, ISquadTarget
     /// <summary>Кто владеет местом и защищает его. false — место ничьё (нейтральное).</summary>
     public abstract bool TryGetDefendingTeam(out Team team);
 
-    /// <summary>Можно ли этой команде нападать сюда (своё нельзя и т.п.).</summary>
-    protected abstract bool CanBeAttackedBy(Squad squad, out string reason);
+    /// <summary>Можно ли этой стороне нападать сюда (своё нельзя и т.п.).</summary>
+    protected abstract bool CanBeAttackedBy(Team team, out string reason);
 
     /// <summary>Нападающие победили: захват объекта или урон базе.</summary>
     protected abstract void OnAttackerWon(Squad squad);
@@ -122,10 +147,16 @@ public abstract class AttackableSite : MonoBehaviour, ISquadTarget
     /// <summary>Можно ли отправить сюда команду.</summary>
     public bool CanAccept(Squad squad, out string reason)
     {
-        if (!CanBeAttackedBy(squad, out reason)) return false;
-        if (attacker != null && attacker.Squad.Owner == squad.Owner)
+        if (!CanBeAttackedBy(squad.Owner, out reason)) return false;
+        if (attacker == null) return true;
+        if (attacker.Squad.Owner == squad.Owner || (challenger != null && challenger.Squad.Owner == squad.Owner))
         {
             reason = "Здесь уже ваша команда";
+            return false;
+        }
+        if (!CanJoin(squad.Owner))
+        {
+            reason = "Здесь уже идёт бой";
             return false;
         }
         return true;
@@ -134,13 +165,31 @@ public abstract class AttackableSite : MonoBehaviour, ISquadTarget
     /// <summary>Команду только что отправили (в пути) — месту ничего делать не нужно.</summary>
     public virtual void OnSquadDispatched(Squad squad) { }
 
-    /// <summary>Команда приехала — начинается подготовка к бою.</summary>
+    /// <summary>
+    /// Команда приехала. Никого нет — начинается подготовка к бою.
+    /// Идёт подготовка у команды другой стороны — вступаем вторыми (битва за флаг).
+    /// Иначе — команда возвращается.
+    /// </summary>
     public void OnSquadArrived(SquadUnit unit)
     {
         Team team = unit.Squad.Owner;
-        if (attacker != null || !CanBeAttackedBy(unit.Squad, out _))
+
+        if (attacker != null && CanJoin(team))
         {
-            // Пока ехали — место уже наше или здесь уже кто-то нападает
+            challenger = unit;
+            unit.transform.position += new Vector3(0.7f, 0.35f, 0f); // не стоять на фишке первой команды
+            SquadManager.Instance.SetStatus(unit.Squad, SquadStatus.Capturing);
+            ToastUI.Show(team == Team.Player
+                ? $"Команда {unit.Squad.Number} успела к «{SiteName}»! Будет битва за флаг через {Mathf.CeilToInt(prepLeft)} с"
+                : $"Враг тоже напал на «{SiteName}»! Будет битва за флаг через {Mathf.CeilToInt(prepLeft)} с");
+            UpdateAttackVisuals();
+            AttackChanged?.Invoke(this);
+            return;
+        }
+
+        if (attacker != null || !CanBeAttackedBy(team, out _))
+        {
+            // Пока ехали — место уже наше, здесь уже идёт бой или ждут две команды
             if (team == Team.Player) ToastUI.Show($"{SiteName}: нападение невозможно, команда возвращается");
             unit.ReturnHome();
             return;
@@ -153,7 +202,7 @@ public abstract class AttackableSite : MonoBehaviour, ISquadTarget
 
         if (team == Team.Player)
             ToastUI.Show($"Команда {unit.Squad.Number} у цели «{SiteName}». Бой через {prepTime:0} с (можно отступить)");
-        else if (TryGetDefendingTeam(out Team def) && def == Team.Player)
+        else if (PlayerDefends)
             ToastUI.Show($"Враг напал на «{SiteName}»! Бой через {prepTime:0} с");
 
         UpdateAttackVisuals();
@@ -161,15 +210,39 @@ public abstract class AttackableSite : MonoBehaviour, ISquadTarget
     }
 
     /// <summary>Можно ли команде отступить отсюда (только пока идёт подготовка).</summary>
-    public bool CanRetreat(SquadUnit unit) => unit != attacker || phase == AttackPhase.Preparing;
+    public bool CanRetreat(SquadUnit unit) => (unit != attacker && unit != challenger) || phase == AttackPhase.Preparing;
 
-    /// <summary>Команда отступила (в пути или во время подготовки).</summary>
+    /// <summary>
+    /// Команда отступила (в пути или во время подготовки).
+    /// Если отступила одна из двух команд — подготовка продолжается для оставшейся.
+    /// </summary>
     public virtual void OnSquadRecalled(SquadUnit unit)
     {
+        if (unit == challenger)
+        {
+            challenger = null;
+            if (unit.Squad.Owner != Team.Player) ToastUI.Show($"Враг отступил от «{SiteName}»");
+            UpdateAttackVisuals();
+            AttackChanged?.Invoke(this);
+            return;
+        }
         if (unit != attacker) return;
-        bool enemyRetreated = PlayerDefends;
+
+        if (challenger != null)
+        {
+            // Первая команда ушла — вторая остаётся единственной, подготовка идёт дальше
+            attacker = challenger;
+            challenger = null;
+            if (unit.Squad.Owner != Team.Player) ToastUI.Show($"Враг отступил от «{SiteName}»");
+            UpdateAttackVisuals();
+            AttackChanged?.Invoke(this);
+            return;
+        }
+
+        bool enemyRetreated = unit.Squad.Owner != Team.Player;
+        bool wasDefending = PlayerDefends;
         EndAttack();
-        if (enemyRetreated) ToastUI.Show($"Враг отступил от «{SiteName}»");
+        if (enemyRetreated && wasDefending) ToastUI.Show($"Враг отступил от «{SiteName}»");
     }
 
     // ---------- Бой ----------
@@ -179,6 +252,16 @@ public abstract class AttackableSite : MonoBehaviour, ISquadTarget
     {
         prepLeft = 0f;
         OnBattlePhaseStarting();
+
+        // Две команды — битва за флаг (только вручную)
+        if (challenger != null)
+        {
+            phase = AttackPhase.Deciding;
+            UpdateAttackVisuals();
+            if (BattlePrepWindowUI.Instance != null) BattlePrepWindowUI.Instance.RequestBattle(this);
+            else FinishContested(UnityEngine.Random.value < 0.5f, attacker.Squad.HpFraction, challenger.Squad.HpFraction);
+            return;
+        }
 
         // Защищать некому — победа без боя и без потерь
         if (DefenderPower <= 0)
@@ -199,12 +282,12 @@ public abstract class AttackableSite : MonoBehaviour, ISquadTarget
         ResolveAuto(); // игрок не участвует — сразу автобой
     }
 
-    /// <summary>Отряд нападающих — для окна перед боем и арены.</summary>
-    public List<BattleUnit> GetAttackerUnits()
+    /// <summary>Отряд команды — для окна перед боем и арены.</summary>
+    public static List<BattleUnit> GetSquadUnits(SquadUnit unit)
     {
         var list = new List<BattleUnit>();
-        if (attacker == null) return list;
-        Squad s = attacker.Squad;
+        if (unit == null) return list;
+        Squad s = unit.Squad;
         foreach (HeroInstance h in s.AllHeroes)
             list.Add(new BattleUnit
             {
@@ -216,10 +299,13 @@ public abstract class AttackableSite : MonoBehaviour, ISquadTarget
         return list;
     }
 
+    /// <summary>Отряд нападающих — для окна перед боем и арены.</summary>
+    public List<BattleUnit> GetAttackerUnits() => GetSquadUnits(attacker);
+
     /// <summary>Автобой: итог сразу (уверенная победа / 50 на 50 / поражение) и потери HP.</summary>
     public void ResolveAuto()
     {
-        if (attacker == null) return;
+        if (attacker == null || IsContested) return; // в битве за флаг автобоя нет
         Squad squad = attacker.Squad;
         BattleForecast f = BattleCalculator.Forecast(BattleCalculator.SquadPower(squad), DefenderPower);
         bool won = BattleCalculator.RollAutoBattle(f);
@@ -246,6 +332,33 @@ public abstract class AttackableSite : MonoBehaviour, ISquadTarget
         bool attackerWon = defended ? !result.win : result.win;
         SetDefenderHp(defended ? result.ourHp : result.theirHp);
         Finish(attackerWon, defended ? result.theirHp : result.ourHp);
+    }
+
+    /// <summary>Битва за флаг закончилась (result — с точки зрения игрока).</summary>
+    public void OnContestedBattleFinished(BattleResult result)
+    {
+        if (!IsContested) return;
+        bool playerFirst = attacker.Squad.Owner == Team.Player;
+        bool attackerWon = playerFirst ? result.win : !result.win;
+        FinishContested(attackerWon,
+            playerFirst ? result.ourHp : result.rivalHp,
+            playerFirst ? result.rivalHp : result.ourHp);
+    }
+
+    /// <summary>Итог битвы за флаг: победитель забирает место, обе команды едут домой.</summary>
+    private void FinishContested(bool attackerWon, float attackerHp, float challengerHp)
+    {
+        SquadUnit a = attacker, c = challenger;
+        a.Squad.HpFraction = attackerHp;
+        c.Squad.HpFraction = challengerHp;
+        Squad winner = attackerWon ? a.Squad : c.Squad;
+
+        EndAttack();
+
+        OnAttackerWon(winner);
+        if (winner.Owner != Team.Player) ToastUI.Show($"Битва за «{SiteName}» проиграна — объект достался врагу");
+        a.ReturnHome();
+        c.ReturnHome();
     }
 
     /// <summary>Применить итог: здоровье команды, победа/поражение, команда едет домой.</summary>
@@ -278,6 +391,7 @@ public abstract class AttackableSite : MonoBehaviour, ISquadTarget
     private void EndAttack()
     {
         attacker = null;
+        challenger = null;
         phase = AttackPhase.None;
         prepLeft = 0f;
         OnAttackEnded();
@@ -290,7 +404,10 @@ public abstract class AttackableSite : MonoBehaviour, ISquadTarget
     {
         switch (phase)
         {
-            case AttackPhase.Preparing: return $"{SiteName}: идёт нападение, бой через {Mathf.CeilToInt(prepLeft)} с";
+            case AttackPhase.Preparing:
+                return IsContested
+                    ? $"{SiteName}: две команды готовятся к битве за флаг, бой через {Mathf.CeilToInt(prepLeft)} с"
+                    : $"{SiteName}: идёт нападение, бой через {Mathf.CeilToInt(prepLeft)} с";
             case AttackPhase.Deciding: return $"{SiteName}: начинается бой";
             case AttackPhase.Fighting: return $"{SiteName}: идёт бой";
             default: return SiteName;

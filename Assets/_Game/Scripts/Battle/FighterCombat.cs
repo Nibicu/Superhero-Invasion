@@ -128,7 +128,7 @@ public class FighterCombat : MonoBehaviour
     {
         Vector2 me = fighter.Position;
         int facing = fighter.Movement.Facing;
-        foreach (Fighter enemy in BattleManager.Instance.GetOpponents(fighter.Team))
+        foreach (Fighter enemy in BattleManager.Instance.GetOpponents(fighter.Faction))
         {
             if (!enemy.IsAlive || hitThisAttack.Contains(enemy)) continue;
             Vector2 d = enemy.Position - me;

@@ -38,7 +38,9 @@ public class FighterMovement : MonoBehaviour
     public void Setup(int speedStat)
     {
         speed = baseSpeed + speedStat * speedPerStat;
-        Facing = fighter.Team == Team.Player ? 1 : -1;
+        // Наши и копия охраны для врага смотрят вправо, остальные — влево
+        BattleFaction f = fighter.Faction;
+        Facing = f == BattleFaction.Heroes || f == BattleFaction.RivalGuards ? 1 : -1;
     }
 
     /// <summary>Идти в направлении dir в этом кадре (длина больше 1 обрезается).</summary>
@@ -82,7 +84,7 @@ public class FighterMovement : MonoBehaviour
             knockVelocity = Vector2.MoveTowards(knockVelocity, Vector2.zero, knockbackDrag * dt);
         }
 
-        transform.position = BattleManager.Instance.ClampToArena(fighter.Team, pos);
+        transform.position = BattleManager.Instance.ClampToArena(fighter, pos);
         input = Vector2.zero; // намерение действует только один кадр
     }
 }

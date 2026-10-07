@@ -42,10 +42,7 @@ public class SquadUnit : MonoBehaviour
         home = homePos;
         transform.position = homePos;
 
-        // Скорость: базовая + немного от средней скорости героев
-        int sum = 0, count = 0;
-        foreach (HeroInstance h in squad.AllHeroes) { sum += h.Stats.speed; count++; }
-        speed = baseSpeed + (count > 0 ? sum / (float)count / 100f : 0f);
+        speed = SpeedOf(squad);
 
         // Внешний вид
         HeroData cap = squad.Captain.Data;
@@ -58,6 +55,21 @@ public class SquadUnit : MonoBehaviour
         BuildPath(homePos, target.ApproachPoint);
         moving = true;
         returning = false;
+    }
+
+    /// <summary>Скорость команды на карте: базовая + немного от средней скорости героев.</summary>
+    public float SpeedOf(Squad squad)
+    {
+        int sum = 0, count = 0;
+        foreach (HeroInstance h in squad.AllHeroes) { sum += h.Stats.speed; count++; }
+        return baseSpeed + (count > 0 ? sum / (float)count / 100f : 0f);
+    }
+
+    /// <summary>Сколько секунд команда будет ехать от from до to по дорогам (оценка для ИИ).</summary>
+    public float EstimateTravelTime(Squad squad, Vector3 from, Vector3 to)
+    {
+        float length = Mathf.Abs(from.y) + Mathf.Abs(to.x - from.x) + Mathf.Abs(to.y);
+        return length / Mathf.Max(0.1f, SpeedOf(squad));
     }
 
     /// <summary>Отправить команду обратно на базу (вызывает цель после захвата/миссии).</summary>

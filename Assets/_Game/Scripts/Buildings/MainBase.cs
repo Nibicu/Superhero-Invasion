@@ -247,10 +247,10 @@ public class MainBase : AttackableSite, IIncomeSource
     }
 
     /// <summary>Свою или разрушенную базу атаковать нельзя.</summary>
-    protected override bool CanBeAttackedBy(Squad squad, out string reason)
+    protected override bool CanBeAttackedBy(Team team, out string reason)
     {
         reason = null;
-        if (squad.Owner == owner) { reason = "Это своя база"; return false; }
+        if (team == owner) { reason = "Это своя база"; return false; }
         if (hp <= 0) { reason = "База уже разрушена"; return false; }
         return true;
     }

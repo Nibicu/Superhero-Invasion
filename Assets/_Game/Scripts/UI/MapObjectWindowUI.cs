@@ -54,9 +54,13 @@ public class MapObjectWindowUI : WindowUI
         if (!IsOpen || site != current) return;
         if (!site.IsUnderAttack) { Refresh(); return; }
         ToastUI.Show($"{site.SiteName}: нападение! Окно закрыто до конца боя");
-        if (picker.IsOpen) picker.Close();
-        Close();
+        Close(); // список команд закрывается сам, если присоединиться к бою уже нельзя
     }
+
+    /// <summary>
+    /// Враг готовится захватить объект — сразу список команд, чтобы успеть вступить (битва за флаг).
+    /// </summary>
+    public void OpenJoinPicker(MapObject obj) => picker.OpenFor(obj, null);
 
     /// <summary>Открыть окно объекта (во время нападения — нельзя).</summary>
     public void Open(MapObject obj)

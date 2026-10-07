@@ -19,7 +19,24 @@ public struct BattleResult
 {
     public bool win;       // Победили ли наши
     public float ourHp;    // Доля HP наших бойцов после боя
-    public float theirHp;  // Доля HP противников после боя
+    public float theirHp;  // Доля HP охраны/защитников после боя
+    public float rivalHp;  // Доля HP вражеской команды (только в битве за флаг)
+}
+
+/// <summary>
+/// Сторона в бою на арене. Кто с кем дерётся:
+///  Heroes (наши)        — с Guards и Rivals;
+///  Guards (охрана)      — только с Heroes;
+///  Rivals (команда врага в битве за флаг) — с RivalGuards и Heroes;
+///  RivalGuards (копия охраны для врага)   — только с Rivals.
+/// В обычном бою есть только Heroes и Guards.
+/// </summary>
+public enum BattleFaction
+{
+    Heroes,
+    Guards,
+    Rivals,
+    RivalGuards
 }
 
 /// <summary>Один охранник объекта: кто (HeroData) и какого уровня.</summary>

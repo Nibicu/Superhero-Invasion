@@ -123,10 +123,10 @@ public class MapObject : AttackableSite, IIncomeSource
     }
 
     /// <summary>Свой объект захватывать не нужно.</summary>
-    protected override bool CanBeAttackedBy(Squad squad, out string reason)
+    protected override bool CanBeAttackedBy(Team team, out string reason)
     {
         reason = null;
-        if (IsOwnedBy(squad.Owner)) { reason = "Объект уже ваш"; return false; }
+        if (IsOwnedBy(team)) { reason = "Объект уже ваш"; return false; }
         return true;
     }
 
@@ -161,6 +161,13 @@ public class MapObject : AttackableSite, IIncomeSource
     {
         if (!enabled) return;
         if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) return;
+        if (IsUnderAttack && CanJoin(Team.Player))
+        {
+            // Враг готовится к захвату — можно успеть своей командой (будет битва за флаг)
+            ToastUI.Show($"Враг захватывает «{data.displayName}»! Успейте за {Mathf.CeilToInt(PrepLeft)} с — будет битва за флаг");
+            if (MapObjectWindowUI.Instance != null) MapObjectWindowUI.Instance.OpenJoinPicker(this);
+            return;
+        }
         if (IsUnderAttack) { ToastUI.Show(AttackStatusText()); return; }
         if (MapObjectWindowUI.Instance != null) MapObjectWindowUI.Instance.Open(this);
     }
@@ -249,8 +256,10 @@ public class MapObject : AttackableSite, IIncomeSource
         if (IsUnderAttack)
         {
             string col = AttackingTeam == Team.Player ? "#7FB8FF" : "#FF7A7A";
+            if (IsContested) col = "#FFD84A";
+            string what = IsContested ? "Битва за флаг" : "Бой";
             attack = Phase == AttackPhase.Preparing
-                ? $"\n<size=60%><color={col}>Бой через {Mathf.CeilToInt(PrepLeft)} с</color></size>"
+                ? $"\n<size=60%><color={col}>{what} через {Mathf.CeilToInt(PrepLeft)} с</color></size>"
                 : $"\n<size=60%><color={col}>Идёт бой!</color></size>";
         }
         if (label != null) label.text = $"{data.displayName}\n<size=70%>{OwnerText}</size>{attack}";
@@ -261,6 +270,6 @@ public class MapObject : AttackableSite, IIncomeSource
         progressFill.localScale = new Vector3(w, progressFill.localScale.y, 1f);
         progressFill.localPosition = new Vector3(-progressWidth / 2f + w / 2f, progressFill.localPosition.y, 0f);
         var sr = progressFill.GetComponent<SpriteRenderer>();
-        if (sr != null) sr.color = AttackingTeam == Team.Player ? playerColor : enemyColor;
+        if (sr != null) sr.color = IsContested ? new Color(1f, 0.85f, 0.25f) : AttackingTeam == Team.Player ? playerColor : enemyColor;
     }
 }

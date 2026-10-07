@@ -55,8 +55,17 @@ public class Fighter : MonoBehaviour
 
     // ---------- Данные бойца ----------
 
-    /// <summary>Чей боец.</summary>
+    /// <summary>Чей боец (для цвета): наши герои — Player, все остальные — Enemy.</summary>
     public Team Team { get; private set; }
+
+    /// <summary>Сторона в бою: наши герои, их охрана, вражеская команда или её охрана.</summary>
+    public BattleFaction Faction { get; private set; }
+
+    /// <summary>Охрана в битве за флаг — красится в нейтральный серый цвет.</summary>
+    public bool NeutralLook { get; private set; }
+
+    /// <summary>Своё место у флага (небольшой сдвиг от центра, чтобы герои не стояли в одной точке).</summary>
+    public Vector2 RallyOffset { get; private set; }
 
     /// <summary>Описание героя/злодея (имя, цвет, портрет).</summary>
     public HeroData Data { get; private set; }
@@ -107,14 +116,18 @@ public class Fighter : MonoBehaviour
 
     /// <summary>
     /// Подготовить бойца к бою (вызывает BattleManager сразу после создания).
-    /// hpFraction — с какой долей здоровья боец выходит (раненая команда).
+    /// faction — сторона в бою, hpFraction — с какой долей здоровья боец выходит (раненая команда),
+    /// neutralLook — покрасить как нейтральную охрану.
     /// </summary>
-    public void Init(HeroData data, HeroStats stats, Team team, float hpFraction)
+    public void Init(HeroData data, HeroStats stats, BattleFaction faction, float hpFraction, bool neutralLook = false)
     {
         Data = data;
         Stats = stats;
-        Team = team;
-        name = $"{team}_{data.displayName}";
+        Faction = faction;
+        Team = faction == BattleFaction.Heroes ? Team.Player : Team.Enemy;
+        NeutralLook = neutralLook;
+        RallyOffset = new Vector2(UnityEngine.Random.Range(-1.2f, 1.2f), UnityEngine.Random.Range(-0.6f, 0.6f));
+        name = $"{faction}_{data.displayName}";
         Health.Setup(stats.hp, hpFraction);
         Movement.Setup(stats.speed);
         Combat.Setup(stats.energy, stats.energyRegen);

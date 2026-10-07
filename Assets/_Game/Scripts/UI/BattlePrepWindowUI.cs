@@ -13,6 +13,8 @@ using UnityEngine.UI;
 /// и отсчёт 10 секунд. Не выбрали — автобой.
 /// "АВТОБОЙ" — итог сразу, по прогнозу.
 /// "НАЧАТЬ БОЙ" — переход на арену (BattleManager).
+/// - БИТВА ЗА ФЛАГ (наша и вражеская команды напали на объект одновременно):
+///   только "НАЧАТЬ БОЙ" — автобоя нет, через 10 с бой начнётся сам.
 /// Если бои начались одновременно, окна показываются по очереди.
 /// </summary>
 public class BattlePrepWindowUI : MonoBehaviour
@@ -71,7 +73,15 @@ public class BattlePrepWindowUI : MonoBehaviour
     {
         if (current == null) return;
         timer -= Time.deltaTime;
-        countdownText.text = $"Автобой через <color=#FFFFFF>{Mathf.CeilToInt(Mathf.Max(0f, timer))}</color> с";
+        int left = Mathf.CeilToInt(Mathf.Max(0f, timer));
+        if (current.IsContested)
+        {
+            // В битве за флаг автобоя нет — по истечении времени бой начинается сам
+            countdownText.text = $"Бой начнётся через <color=#FFFFFF>{left}</color> с";
+            if (timer <= 0f) ChooseFight();
+            return;
+        }
+        countdownText.text = $"Автобой через <color=#FFFFFF>{left}</color> с";
         if (timer <= 0f) ChooseAuto();
     }
 
@@ -95,6 +105,15 @@ public class BattlePrepWindowUI : MonoBehaviour
     {
         current = site;
         timer = decisionTime;
+        foreach (GameObject g in rows) Destroy(g);
+        rows.Clear();
+        autoButton.gameObject.SetActive(!site.IsContested); // в битве за флаг автобоя нет
+
+        if (site.IsContested)
+        {
+            ShowContested(site);
+            return;
+        }
         bool defending = site.PlayerDefends;
 
         // "Наши" — нападающая команда или защитники, в зависимости от того, кто напал
@@ -111,12 +130,41 @@ public class BattlePrepWindowUI : MonoBehaviour
         verdictText.text = BattleCalculator.ForecastTitle(forecast);
         hintText.text = defending ? BattleCalculator.DefenseHint(forecast) : BattleCalculator.ForecastHint(forecast);
 
-        foreach (GameObject g in rows) Destroy(g);
-        rows.Clear();
         foreach (BattleUnit u in OurUnits(site)) AddRow(ourList, u.data, u.info);
         foreach (List<BattleUnit> wave in TheirWaves(site))
             foreach (BattleUnit u in wave)
                 AddRow(enemyList, u.data, u.info);
+
+        root.SetActive(true);
+        transform.SetAsLastSibling();
+    }
+
+    /// <summary>
+    /// Битва за флаг: слева наша команда, справа команда врага и охрана
+    /// (у каждой команды своя копия охраны). Только "НАЧАТЬ БОЙ".
+    /// </summary>
+    private void ShowContested(AttackableSite site)
+    {
+        Squad mine = site.PlayerContestant.Squad;
+        Squad theirs = site.EnemyContestant.Squad;
+        int our = BattleCalculator.SquadPower(mine);
+        int their = BattleCalculator.SquadPower(theirs);
+
+        titleText.text = $"БИТВА ЗА ФЛАГ: {site.SiteName.ToUpper()}";
+        if (ourLabelText != null) ourLabelText.text = "ВАША КОМАНДА";
+        if (enemyLabelText != null) enemyLabelText.text = "КОМАНДА ВРАГА";
+        ourPowerText.text = $"Сила: <color=#7FB8FF>{our}</color>";
+        enemyPowerText.text = $"Сила: <color=#FF7A7A>{their}</color>";
+        verdictText.text = "<color=#FFD84A>ДВЕ КОМАНДЫ — БИТВА ЗА ФЛАГ!</color>";
+
+        int guardsCount = 0;
+        List<List<BattleUnit>> waves = site.GetDefenderWaves();
+        foreach (List<BattleUnit> wave in waves) guardsCount += wave.Count;
+        hintText.text = $"Охрана: {waves.Count} территории, {guardsCount} бойцов, сила {site.DefenderPower} — у каждой команды своя копия " +
+                        "(вы — слева, враг — справа). Пройдите свои территории быстрее врага и удержите флаг в центре 10 с.";
+
+        foreach (BattleUnit u in AttackableSite.GetSquadUnits(site.PlayerContestant)) AddRow(ourList, u.data, u.info);
+        foreach (BattleUnit u in AttackableSite.GetSquadUnits(site.EnemyContestant)) AddRow(enemyList, u.data, u.info);
 
         root.SetActive(true);
         transform.SetAsLastSibling();
@@ -149,7 +197,7 @@ public class BattlePrepWindowUI : MonoBehaviour
     /// <summary>Автобой: итог сразу, по прогнозу.</summary>
     private void ChooseAuto()
     {
-        if (current == null) return;
+        if (current == null || current.IsContested) return; // в битве за флаг автобоя нет
         AttackableSite site = current;
         Close();
         site.ResolveAuto();
@@ -162,6 +210,16 @@ public class BattlePrepWindowUI : MonoBehaviour
         if (current == null) return;
         AttackableSite site = current;
         Close();
+        if (site.IsContested)
+        {
+            // Битва за флаг: наша команда, команда врага и охрана (BattleManager продублирует её для каждой команды)
+            List<BattleUnit> mine = AttackableSite.GetSquadUnits(site.PlayerContestant);
+            List<BattleUnit> rival = AttackableSite.GetSquadUnits(site.EnemyContestant);
+            List<List<BattleUnit>> guardWaves = site.GetDefenderWaves();
+            site.OnManualBattleStarted();
+            BattleManager.Instance.StartContestedBattle(site.SiteName, site.SiteColor, mine, rival, guardWaves, site.OnContestedBattleFinished);
+            return;
+        }
         List<BattleUnit> ours = OurUnits(site);
         List<List<BattleUnit>> theirs = TheirWaves(site);
         site.OnManualBattleStarted();

@@ -5,13 +5,24 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Ведёт ручной бой за объект.
+/// Ведёт ручной бой на арене. Бывает два вида боя.
+///
+/// ОБЫЧНЫЙ БОЙ (захват объекта, атака или защита базы):
 /// - Карта ставится на паузу, камера переезжает на арену (она в этой же сцене, далеко от карты).
-/// - Арена разделена на территории (обычно 3). На каждой — своя волна охраны объекта.
-///   Наши герои не могут пройти дальше открытой территории (невидимая стена + барьер).
-/// - Волна уничтожена → барьер открывается, герои идут дальше, появляется следующая волна.
+/// - Арена разделена на территории (обычно 3). На каждой — своя волна охраны.
+///   Наши не могут пройти дальше открытой территории (невидимая стена + барьер).
+/// - Волна уничтожена → барьер открывается, наши идут дальше, появляется следующая волна.
 /// - Все волны уничтожены — победа; все наши выбыли или нажато "Отступить" — поражение.
-/// - После боя камера и интерфейс карты возвращаются, а захватываемый объект получает результат.
+///
+/// БИТВА ЗА ФЛАГ (наша и вражеская команды напали на объект одновременно):
+/// - 7 территорий: 3 наших слева, центр с флагом, 3 вражеских справа.
+/// - Охрана объекта дублируется: своя копия у каждой команды (наши — слева, враг — справа).
+/// - Кто прошёл свои 3 территории — выходит в центр. Флаг нужно удержать flagHoldTime секунд:
+///   в зоне только наши — отсчёт идёт к нам, только враги — к ним, обе стороны или никого — стоит.
+///   Если враг уже набрал 7 с, а мы его выбили — сначала отсчёт уходит обратно до нуля, потом идёт к нам.
+/// - Победа: удержали флаг или вся команда врага выбыла. Поражение — наоборот (или "Отступить").
+///
+/// После боя камера и интерфейс карты возвращаются, а место боя получает результат.
 /// Хранит списки бойцов, чтобы удары и ИИ не искали объекты по сцене каждый кадр.
 /// </summary>
 public class BattleManager : MonoBehaviour
@@ -25,6 +36,9 @@ public class BattleManager : MonoBehaviour
     /// <summary>Бой закончился (окно перед боем показывает следующий запрос, если он есть).</summary>
     public static event Action BattleEnded;
 
+    /// <summary>Сколько территорий у каждой команды в битве за флаг.</summary>
+    public const int LaneTerritories = 3;
+
     [Header("Арена")]
     [Tooltip("Левый край арены (x = 0 арены), на уровне 'горизонта' пола")]
     [SerializeField] private Transform arenaRoot;
@@ -36,8 +50,22 @@ public class BattleManager : MonoBehaviour
     [SerializeField] private float floorMinY = -3f;
     [Tooltip("Верхняя граница пола (дальняя от зрителя)")]
     [SerializeField] private float floorMaxY = 0.8f;
-    [Tooltip("Барьеры между территориями (0 — между 1-й и 2-й и т.д.)")]
+    [Tooltip("Барьеры между территориями (0 — между 1-й и 2-й и т.д.). Для битвы за флаг нужно 6")]
     [SerializeField] private GameObject[] barriers;
+
+    [Header("Декорации")]
+    [Tooltip("Видны только в обычном бою (финишный флажок, таблички 1–3)")]
+    [SerializeField] private GameObject[] normalOnly;
+    [Tooltip("Видны только в битве за флаг (таблички 7 территорий, столбы ворот, зона флага)")]
+    [SerializeField] private GameObject[] contestedOnly;
+
+    [Header("Битва за флаг")]
+    [Tooltip("Зона флага в центре арены")]
+    [SerializeField] private FlagZoneView flagZone;
+    [Tooltip("Сколько секунд нужно удерживать флаг")]
+    [SerializeField] private float flagHoldTime = 10f;
+    [Tooltip("Размер зоны флага: полуширина по X и полувысота по глубине (Y)")]
+    [SerializeField] private Vector2 flagZoneRadius = new Vector2(3f, 1.3f);
 
     [Header("Префабы")]
     [SerializeField] private Fighter fighterPrefab;
@@ -56,7 +84,7 @@ public class BattleManager : MonoBehaviour
     [SerializeField] private float damageMultiplier = 1.5f;
     [Tooltip("Сколько секунд показывается результат перед возвратом на карту")]
     [SerializeField] private float resultDelay = 2.5f;
-    [Tooltip("Где появляются враги на своей территории (отступ от её левого края)")]
+    [Tooltip("Где появляются враги на своей территории (отступ от её края со стороны команды)")]
     [SerializeField] private float enemySpawnOffset = 13f;
 
     [Header("Интерфейс")]
@@ -64,16 +92,31 @@ public class BattleManager : MonoBehaviour
     [SerializeField] private Canvas mapCanvas;
     [SerializeField] private BattleHUD hud;
 
-    private readonly List<Fighter> players = new List<Fighter>(); // Наши бойцы
-    private readonly List<Fighter> enemies = new List<Fighter>(); // Охрана (все волны, включая павших)
-    private ArenaTint[] tints;          // Детали арены, которые красятся в цвет объекта
-    private List<List<BattleUnit>> waves; // Защитники по территориям
-    private string siteName;            // За что бьёмся (название)
+    // Бойцы по сторонам
+    private readonly List<Fighter> heroes = new List<Fighter>();      // Наши
+    private readonly List<Fighter> guards = new List<Fighter>();      // Охрана против наших (все волны, включая павших)
+    private readonly List<Fighter> rivals = new List<Fighter>();      // Команда врага (битва за флаг)
+    private readonly List<Fighter> rivalGuards = new List<Fighter>(); // Копия охраны против врага
+    // Противники каждой стороны (заполняются при появлении бойцов)
+    private readonly List<Fighter> heroesFoes = new List<Fighter>();
+    private readonly List<Fighter> guardsFoes = new List<Fighter>();
+    private readonly List<Fighter> rivalsFoes = new List<Fighter>();
+    private readonly List<Fighter> rivalGuardsFoes = new List<Fighter>();
+
+    private ArenaTint[] tints;            // Детали арены, которые красятся в цвет объекта
+    private List<List<BattleUnit>> waves; // Охрана по территориям
+    private string siteName;              // За что бьёмся (название)
     private Action<BattleResult> onFinished; // Кого известить об итоге
-    private int territory;              // Текущая территория (с 0)
-    private int totalTerritories;
-    private float unlockedMaxX;         // До какого X (локально) могут дойти наши
-    private bool finishing;             // Итог уже известен, ждём возврата
+    private bool contested;               // Битва за флаг (две команды)
+    private int totalTerritories;         // Сколько территорий на арене
+    private int heroWave;                 // Сколько территорий прошли наши (в обычном бою — номер текущей)
+    private int rivalWave;                // Сколько территорий прошёл враг
+    private float heroMaxX;               // До какого X (локально) могут дойти наши
+    private float rivalMinX;              // До какого X (локально) может дойти враг
+    private float heroRallyX;             // Куда идут наши, когда рядом нет противников (мир)
+    private float rivalRallyX;            // Куда идёт враг (мир)
+    private float flagValue;              // Захват флага: + к нам, − к врагу (от −flagHoldTime до +flagHoldTime)
+    private bool finishing;               // Итог уже известен, ждём возврата
     private Camera cam;
     private Vector3 savedCamPos;
     private float savedCamSize;
@@ -83,9 +126,6 @@ public class BattleManager : MonoBehaviour
 
     /// <summary>Куда складывать снаряды и бойцов.</summary>
     public Transform RuntimeRoot => runtimeRoot;
-
-    /// <summary>Точка сбора наших (X в мире): к ней идут, когда врагов рядом нет.</summary>
-    public float RallyX { get; private set; }
 
     /// <summary>
     /// Порядок отрисовки по глубине: кто ниже на экране — тот выше (рисуется поверх).
@@ -98,6 +138,7 @@ public class BattleManager : MonoBehaviour
         Instance = this;
         WorldTime.Paused = false;
         tints = arenaRoot.GetComponentsInChildren<ArenaTint>(true);
+        SetDecor(false);
     }
 
     private void OnDestroy()
@@ -105,16 +146,36 @@ public class BattleManager : MonoBehaviour
         if (Instance == this) Instance = null;
     }
 
-    /// <summary>Бойцы команды.</summary>
-    public IReadOnlyList<Fighter> GetTeam(Team team) => team == Team.Player ? players : enemies;
+    // ---------- Кто с кем ----------
 
-    /// <summary>Противники команды.</summary>
-    public IReadOnlyList<Fighter> GetOpponents(Team team) => team == Team.Player ? enemies : players;
+    /// <summary>Союзники (своя сторона).</summary>
+    public IReadOnlyList<Fighter> GetAllies(BattleFaction f)
+    {
+        switch (f)
+        {
+            case BattleFaction.Heroes: return heroes;
+            case BattleFaction.Guards: return guards;
+            case BattleFaction.Rivals: return rivals;
+            default: return rivalGuards;
+        }
+    }
+
+    /// <summary>Противники стороны.</summary>
+    public IReadOnlyList<Fighter> GetOpponents(BattleFaction f)
+    {
+        switch (f)
+        {
+            case BattleFaction.Heroes: return heroesFoes;
+            case BattleFaction.Guards: return guardsFoes;
+            case BattleFaction.Rivals: return rivalsFoes;
+            default: return rivalGuardsFoes;
+        }
+    }
 
     // ---------- Начало боя ----------
 
     /// <summary>
-    /// Начать бой. title и color — название и цвет арены,
+    /// Обычный бой. title и color — название и цвет арены,
     /// ours — наши бойцы (своя команда, а при защите — защитники объекта или гарнизон),
     /// theirWaves — противники по территориям (охрана объекта или нападающая команда),
     /// finished — вызовется после возврата на карту.
@@ -122,64 +183,128 @@ public class BattleManager : MonoBehaviour
     public void StartBattle(string title, Color color, List<BattleUnit> ours, List<List<BattleUnit>> theirWaves, Action<BattleResult> finished)
     {
         if (IsRunning) return;
-        waves = theirWaves;
+        contested = false;
+        totalTerritories = Mathf.Clamp(theirWaves.Count, 1, (barriers?.Length ?? 0) + 1);
+        BeginBattle(title, color, theirWaves, finished);
+
+        heroMaxX = territoryWidth - 0.5f;
+        heroRallyX = WorldX(enemySpawnOffset - 1f);
+        SpawnTeam(ours, BattleFaction.Heroes, false);
+        SpawnGuardWave(0, BattleFaction.Guards);
+
+        hud.Show(this, siteName, heroes);
+        hud.ShowMessage($"{siteName.ToUpper()}\n<size=60%>Территория 1 / {totalTerritories}</size>");
+    }
+
+    /// <summary>
+    /// Битва за флаг: наша команда ours (слева) и команда врага rivalUnits (справа)
+    /// одновременно бьются с охраной guardWaves (у каждой — своя копия), потом — за флаг в центре.
+    /// </summary>
+    public void StartContestedBattle(string title, Color color, List<BattleUnit> ours, List<BattleUnit> rivalUnits,
+                                     List<List<BattleUnit>> guardWaves, Action<BattleResult> finished)
+    {
+        if (IsRunning) return;
+        if (barriers == null || barriers.Length < LaneTerritories * 2)
+            Debug.LogError("BattleManager: для битвы за флаг нужно 6 барьеров на арене");
+        contested = true;
+        totalTerritories = LaneTerritories * 2 + 1;
+        BeginBattle(title, color, guardWaves, finished);
+
+        heroMaxX = territoryWidth - 0.5f;
+        rivalMinX = (totalTerritories - 1) * territoryWidth + 0.5f;
+        heroRallyX = WorldX(enemySpawnOffset - 1f);
+        rivalRallyX = WorldX(ArenaLength - enemySpawnOffset + 1f);
+        flagValue = 0f;
+        if (flagZone != null)
+        {
+            flagZone.transform.position = arenaRoot.position + (Vector3)FlagPoint;
+            flagZone.Setup(flagZoneRadius);
+            flagZone.SetProgress(0f, false);
+        }
+
+        SpawnTeam(ours, BattleFaction.Heroes, false);
+        SpawnTeam(rivalUnits, BattleFaction.Rivals, true);
+        SpawnGuardWave(0, BattleFaction.Guards);
+        SpawnGuardWave(0, BattleFaction.RivalGuards);
+
+        hud.Show(this, siteName, heroes);
+        hud.ShowMessage($"БИТВА ЗА ФЛАГ!\n<size=60%>Пройдите 3 территории быстрее врага и удержите флаг {flagHoldTime:0} с</size>", 3.5f);
+    }
+
+    /// <summary>Общая подготовка арены, камеры и интерфейса.</summary>
+    private void BeginBattle(string title, Color color, List<List<BattleUnit>> guardWaves, Action<BattleResult> finished)
+    {
+        waves = guardWaves;
         siteName = title;
         onFinished = finished;
         IsRunning = true;
         finishing = false;
         WorldTime.Paused = true;
+        heroWave = 0;
+        rivalWave = 0;
 
-        totalTerritories = Mathf.Clamp(waves.Count, 1, (barriers?.Length ?? 0) + 1);
         foreach (ArenaTint t in tints) t.Apply(color);
-        if (barriers != null) foreach (GameObject b in barriers) if (b != null) b.SetActive(true);
+        // Нужные барьеры закрыты, лишние (за краем арены) спрятаны
+        if (barriers != null)
+            for (int i = 0; i < barriers.Length; i++)
+                if (barriers[i] != null) barriers[i].SetActive(i < totalTerritories - 1);
+        SetDecor(contested);
 
-        territory = 0;
-        unlockedMaxX = territoryWidth - 0.5f;
-        RallyX = WorldX(enemySpawnOffset - 1f);
-
-        // Наши бойцы — слева, вразброс по глубине (если их много — в три ряда)
-        int rowsX = ours.Count > 5 ? 3 : 2;
-        for (int i = 0; i < ours.Count; i++)
-        {
-            float x = 1.5f + (i % rowsX) * 1.2f;
-            float y = Mathf.Lerp(floorMinY + 0.4f, floorMaxY - 0.4f, (i + 0.5f) / ours.Count);
-            Spawn(ours[i].data, ours[i].stats, Team.Player, ours[i].hpFraction, new Vector2(x, y));
-        }
-        SpawnWave(0);
-
-        // Камера и интерфейс
         cam = Camera.main;
         savedCamPos = cam.transform.position;
         savedCamSize = cam.orthographicSize;
         cam.orthographicSize = cameraSize;
         cam.transform.position = new Vector3(arenaRoot.position.x + HalfViewWidth(), arenaRoot.position.y + cameraYOffset, savedCamPos.z);
         SetMapUI(false);
-        hud.Show(this, siteName, players);
-        hud.ShowMessage($"{siteName.ToUpper()}\n<size=60%>Территория 1 / {totalTerritories}</size>");
     }
 
-    /// <summary>Создать бойца в точке localPos (координаты арены).</summary>
-    private Fighter Spawn(HeroData data, HeroStats stats, Team team, float hpFraction, Vector2 localPos)
+    /// <summary>Выставить команду у своего края арены (наши — слева, враг — справа), вразброс по глубине.</summary>
+    private void SpawnTeam(List<BattleUnit> units, BattleFaction faction, bool fromRight)
+    {
+        int rowsX = units.Count > 5 ? 3 : 2;
+        for (int i = 0; i < units.Count; i++)
+        {
+            float x = 1.5f + (i % rowsX) * 1.2f;
+            if (fromRight) x = ArenaLength - x;
+            float y = Mathf.Lerp(floorMinY + 0.4f, floorMaxY - 0.4f, (i + 0.5f) / units.Count);
+            Spawn(units[i], faction, false, new Vector2(x, y));
+        }
+    }
+
+    /// <summary>
+    /// Выпустить волну охраны index. Guards — на территории index слева,
+    /// RivalGuards (копия для врага) — зеркально, на территории index справа.
+    /// </summary>
+    private void SpawnGuardWave(int index, BattleFaction faction)
+    {
+        if (waves == null || index >= waves.Count) return;
+        List<BattleUnit> wave = waves[index];
+        bool mirror = faction == BattleFaction.RivalGuards;
+        for (int j = 0; j < wave.Count; j++)
+        {
+            float x = index * territoryWidth + enemySpawnOffset + (j % 2) * 1.5f + j * 0.6f;
+            if (mirror) x = ArenaLength - x;
+            float y = Mathf.Lerp(floorMinY + 0.5f, floorMaxY - 0.5f, (j + 0.5f) / wave.Count);
+            Spawn(wave[j], faction, contested, new Vector2(x, y));
+        }
+    }
+
+    /// <summary>Создать бойца в точке localPos (координаты арены) и внести его в списки сторон.</summary>
+    private Fighter Spawn(BattleUnit u, BattleFaction faction, bool neutralLook, Vector2 localPos)
     {
         Vector3 pos = arenaRoot.position + (Vector3)localPos;
         Fighter f = Instantiate(fighterPrefab, pos, Quaternion.identity, runtimeRoot);
         f.Combat.SetProjectilePrefab(projectilePrefab);
-        f.Init(data, stats, team, hpFraction);
-        (team == Team.Player ? players : enemies).Add(f);
-        return f;
-    }
+        f.Init(u.data, u.stats, faction, u.hpFraction, neutralLook);
 
-    /// <summary>Выпустить охрану территории index.</summary>
-    private void SpawnWave(int index)
-    {
-        if (waves == null || index >= waves.Count) return;
-        List<BattleUnit> wave = waves[index];
-        for (int j = 0; j < wave.Count; j++)
+        switch (faction)
         {
-            float x = index * territoryWidth + enemySpawnOffset + (j % 2) * 1.5f + j * 0.6f;
-            float y = Mathf.Lerp(floorMinY + 0.5f, floorMaxY - 0.5f, (j + 0.5f) / wave.Count);
-            Spawn(wave[j].data, wave[j].stats, Team.Enemy, wave[j].hpFraction, new Vector2(x, y));
+            case BattleFaction.Heroes: heroes.Add(f); guardsFoes.Add(f); rivalsFoes.Add(f); break;
+            case BattleFaction.Guards: guards.Add(f); heroesFoes.Add(f); break;
+            case BattleFaction.Rivals: rivals.Add(f); heroesFoes.Add(f); rivalGuardsFoes.Add(f); break;
+            default: rivalGuards.Add(f); rivalsFoes.Add(f); break;
         }
+        return f;
     }
 
     // ---------- Ход боя ----------
@@ -189,38 +314,157 @@ public class BattleManager : MonoBehaviour
         if (!IsRunning) return;
         UpdateCamera();
         if (finishing) return;
+        if (contested) UpdateContested();
+        else UpdateNormal();
+    }
 
-        int enemiesAlive = AliveCount(enemies);
-        if (AliveCount(players) == 0)
+    /// <summary>Обычный бой: зачистили волну — открываем следующую территорию.</summary>
+    private void UpdateNormal()
+    {
+        if (AliveCount(heroes) == 0)
         {
             Finish(false, "Все герои выбыли из боя");
+            return;
         }
-        else if (enemiesAlive == 0)
+        if (AliveCount(guards) == 0)
         {
-            territory++;
-            if (territory >= totalTerritories) Finish(true, $"{siteName}: победа!");
-            else OpenTerritory(territory);
+            heroWave++;
+            if (heroWave >= totalTerritories) { Finish(true, $"{siteName}: победа!"); return; }
+            OpenHeroTerritory();
+            hud.ShowMessage($"ВПЕРЁД!\n<size=60%>Территория {heroWave + 1} / {totalTerritories}</size>");
         }
-        hud.SetProgress(Mathf.Min(territory + 1, totalTerritories), totalTerritories, AliveCount(enemies));
+        hud.SetProgress(Mathf.Min(heroWave + 1, totalTerritories), totalTerritories, AliveCount(guards));
     }
 
-    /// <summary>Открыть следующую территорию: убрать барьер, выпустить новую волну.</summary>
-    private void OpenTerritory(int index)
+    /// <summary>Битва за флаг: продвижение обеих команд и захват флага.</summary>
+    private void UpdateContested()
     {
-        if (barriers != null && index - 1 < barriers.Length && barriers[index - 1] != null)
-            barriers[index - 1].SetActive(false);
-        unlockedMaxX = (index + 1) * territoryWidth - 0.5f;
-        RallyX = WorldX(index * territoryWidth + enemySpawnOffset - 1f);
-        SpawnWave(index);
-        hud.ShowMessage($"ВПЕРЁД!\n<size=60%>Территория {index + 1} / {totalTerritories}</size>");
+        if (AliveCount(heroes) == 0) { Finish(false, "Все наши герои выбыли — объект достаётся врагу"); return; }
+        if (AliveCount(rivals) == 0) { Finish(true, "Команда врага разбита!"); return; }
+
+        // Наши зачистили свою территорию
+        if (heroWave < LaneTerritories && AliveCount(guards) == 0)
+        {
+            heroWave++;
+            OpenHeroTerritory();
+            hud.ShowMessage(heroWave < LaneTerritories
+                ? $"ВПЕРЁД!\n<size=60%>Территория {heroWave + 1} / {LaneTerritories}</size>"
+                : "К ФЛАГУ!\n<size=60%>Удержите центр</size>");
+        }
+
+        // Враг зачистил свою территорию
+        if (rivalWave < LaneTerritories && AliveCount(rivalGuards) == 0)
+        {
+            rivalWave++;
+            if (barriers != null && barriers.Length > totalTerritories - 1 - rivalWave && barriers[totalTerritories - 1 - rivalWave] != null)
+                barriers[totalTerritories - 1 - rivalWave].SetActive(false);
+            rivalMinX = (totalTerritories - 1 - rivalWave) * territoryWidth + 0.5f;
+            if (rivalWave < LaneTerritories)
+            {
+                rivalRallyX = WorldX(ArenaLength - (rivalWave * territoryWidth + enemySpawnOffset - 1f));
+                SpawnGuardWave(rivalWave, BattleFaction.RivalGuards);
+            }
+            else hud.ShowMessage("<color=#FF7A7A>ВРАГ В ЦЕНТРЕ!</color>\n<size=60%>Не дайте ему удержать флаг</size>");
+        }
+
+        UpdateFlag();
+        hud.SetProgressText(ContestedProgressText());
     }
 
-    /// <summary>Ограничить позицию бойца ареной (наши — только до открытой территории).</summary>
-    public Vector3 ClampToArena(Team team, Vector3 pos)
+    /// <summary>Открыть нашим следующую территорию: убрать барьер, выпустить новую волну охраны.</summary>
+    private void OpenHeroTerritory()
+    {
+        int barrier = heroWave - 1;
+        if (barriers != null && barrier < barriers.Length && barriers[barrier] != null)
+            barriers[barrier].SetActive(false);
+        heroMaxX = (heroWave + 1) * territoryWidth - 0.5f;
+        if (!contested || heroWave < LaneTerritories)
+        {
+            heroRallyX = WorldX(heroWave * territoryWidth + enemySpawnOffset - 1f);
+            SpawnGuardWave(heroWave, BattleFaction.Guards);
+        }
+    }
+
+    /// <summary>
+    /// Захват флага: в зоне только наши — отсчёт к нам, только враги — к ним,
+    /// обе стороны или никого — отсчёт стоит.
+    /// </summary>
+    private void UpdateFlag()
+    {
+        int ours = CountInZone(heroes), theirs = CountInZone(rivals);
+        if (ours > 0 && theirs == 0) flagValue += Time.deltaTime;
+        else if (theirs > 0 && ours == 0) flagValue -= Time.deltaTime;
+        flagValue = Mathf.Clamp(flagValue, -flagHoldTime, flagHoldTime);
+
+        if (flagZone != null) flagZone.SetProgress(flagValue / flagHoldTime, ours > 0 && theirs > 0);
+
+        if (flagValue >= flagHoldTime) Finish(true, "Флаг удержан — объект наш!");
+        else if (flagValue <= -flagHoldTime) Finish(false, "Враг удержал флаг — объект достаётся ему");
+    }
+
+    /// <summary>Сколько живых бойцов из списка стоит в зоне флага.</summary>
+    private int CountInZone(List<Fighter> list)
+    {
+        int n = 0;
+        Vector2 c = (Vector2)arenaRoot.position + FlagPoint;
+        foreach (Fighter f in list)
+        {
+            if (!f.IsAlive) continue;
+            Vector2 d = f.Position - c;
+            float ex = d.x / flagZoneRadius.x, ey = d.y / flagZoneRadius.y;
+            if (ex * ex + ey * ey <= 1f) n++;
+        }
+        return n;
+    }
+
+    /// <summary>Строка прогресса сверху: территории обеих команд и флаг.</summary>
+    private string ContestedProgressText()
+    {
+        string flag;
+        if (flagValue > 0.05f) flag = $"<color=#7FB8FF>Флаг: наши {flagValue:0.0} / {flagHoldTime:0}</color>";
+        else if (flagValue < -0.05f) flag = $"<color=#FF7A7A>Флаг: враг {-flagValue:0.0} / {flagHoldTime:0}</color>";
+        else flag = "Флаг: ничей";
+        return $"<color=#7FB8FF>Наши: {Mathf.Min(heroWave, LaneTerritories)}/{LaneTerritories}</color>   •   " +
+               $"<color=#FF7A7A>Враг: {Mathf.Min(rivalWave, LaneTerritories)}/{LaneTerritories}</color>   •   {flag}";
+    }
+
+    /// <summary>
+    /// Куда идти команде, когда рядом нет противников: к следующей волне охраны
+    /// или (в битве за флаг, пройдя свои территории) — к флагу. Охрана стоит на месте (false).
+    /// </summary>
+    public bool TryGetRallyPoint(Fighter f, out Vector2 point)
+    {
+        Vector2 flag = (Vector2)arenaRoot.position + FlagPoint + f.RallyOffset;
+        switch (f.Faction)
+        {
+            case BattleFaction.Heroes:
+                point = contested && heroWave >= LaneTerritories ? flag : new Vector2(heroRallyX, f.Position.y);
+                return true;
+            case BattleFaction.Rivals:
+                point = rivalWave >= LaneTerritories ? flag : new Vector2(rivalRallyX, f.Position.y);
+                return true;
+            default:
+                point = f.Position;
+                return false;
+        }
+    }
+
+    /// <summary>
+    /// Ограничить позицию бойца ареной: каждая сторона — только в своих открытых территориях,
+    /// охрана в битве за флаг — только на своей половине.
+    /// </summary>
+    public Vector3 ClampToArena(Fighter f, Vector3 pos)
     {
         Vector3 local = pos - arenaRoot.position;
-        float maxX = team == Team.Player ? unlockedMaxX : totalTerritories * territoryWidth - 0.5f;
-        local.x = Mathf.Clamp(local.x, 0.5f, maxX);
+        float minX = 0.5f, maxX = ArenaLength - 0.5f;
+        switch (f.Faction)
+        {
+            case BattleFaction.Heroes: maxX = heroMaxX; break;
+            case BattleFaction.Rivals: minX = rivalMinX; break;
+            case BattleFaction.Guards: if (contested) maxX = LaneTerritories * territoryWidth - 0.5f; break;
+            case BattleFaction.RivalGuards: minX = (LaneTerritories + 1) * territoryWidth + 0.5f; break;
+        }
+        local.x = Mathf.Clamp(local.x, minX, maxX);
         local.y = Mathf.Clamp(local.y, floorMinY, floorMaxY);
         local.z = 0f;
         return arenaRoot.position + local;
@@ -230,7 +474,7 @@ public class BattleManager : MonoBehaviour
     public bool IsInsideArenaX(float worldX)
     {
         float x = worldX - arenaRoot.position.x;
-        return x > -1f && x < totalTerritories * territoryWidth + 1f;
+        return x > -1f && x < ArenaLength + 1f;
     }
 
     /// <summary>Отступить (кнопка в интерфейсе боя).</summary>
@@ -256,8 +500,9 @@ public class BattleManager : MonoBehaviour
         var result = new BattleResult
         {
             win = win,
-            ourHp = RemainingHp(players),
-            theirHp = RemainingHp(enemies)
+            ourHp = RemainingHp(heroes),
+            theirHp = RemainingHp(guards),
+            rivalHp = RemainingHp(rivals)
         };
 
         Cleanup();
@@ -280,8 +525,10 @@ public class BattleManager : MonoBehaviour
     {
         IsRunning = false;
         for (int i = runtimeRoot.childCount - 1; i >= 0; i--) Destroy(runtimeRoot.GetChild(i).gameObject);
-        players.Clear();
-        enemies.Clear();
+        heroes.Clear(); guards.Clear(); rivals.Clear(); rivalGuards.Clear();
+        heroesFoes.Clear(); guardsFoes.Clear(); rivalsFoes.Clear(); rivalGuardsFoes.Clear();
+        contested = false;
+        SetDecor(false);
         cam.transform.position = savedCamPos;
         cam.orthographicSize = savedCamSize;
         hud.Hide();
@@ -291,18 +538,32 @@ public class BattleManager : MonoBehaviour
 
     // ---------- Помощники ----------
 
+    /// <summary>Длина арены (все территории).</summary>
+    private float ArenaLength => totalTerritories * territoryWidth;
+
+    /// <summary>Центр зоны флага (локально от arenaRoot): середина центральной территории.</summary>
+    private Vector2 FlagPoint => new Vector2((LaneTerritories + 0.5f) * territoryWidth, (floorMinY + floorMaxY) / 2f);
+
+    /// <summary>Показать декорации нужного вида боя.</summary>
+    private void SetDecor(bool contestedMode)
+    {
+        if (normalOnly != null) foreach (GameObject g in normalOnly) if (g != null) g.SetActive(!contestedMode);
+        if (contestedOnly != null) foreach (GameObject g in contestedOnly) if (g != null) g.SetActive(contestedMode);
+        if (flagZone != null) flagZone.gameObject.SetActive(contestedMode);
+    }
+
     /// <summary>Камера следит за нашими героями и не выходит за края арены.</summary>
     private void UpdateCamera()
     {
         float sum = 0f;
         int n = 0;
-        foreach (Fighter f in players)
+        foreach (Fighter f in heroes)
             if (f.IsAlive) { sum += f.transform.position.x; n++; }
         if (n == 0) return;
 
         float half = HalfViewWidth();
         float minX = arenaRoot.position.x + half;
-        float maxX = arenaRoot.position.x + totalTerritories * territoryWidth - half;
+        float maxX = arenaRoot.position.x + ArenaLength - half;
         float targetX = Mathf.Clamp(sum / n + 2f, minX, Mathf.Max(minX, maxX));
         Vector3 p = cam.transform.position;
         p.x = Mathf.Lerp(p.x, targetX, 1f - Mathf.Exp(-cameraFollowSpeed * Time.deltaTime));

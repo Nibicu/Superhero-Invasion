@@ -150,6 +150,11 @@ public class EnemyAI : MonoBehaviour
             if (!SM.CanRetreat(squad, out _)) continue; // бой уже начался — поздно
 
             bool lose = BattleCalculator.Forecast(BattleCalculator.SquadPower(squad), site.DefenderPower) == BattleForecast.Lose;
+            // Битва за флаг: команда противника намного сильнее — тоже уходим
+            SquadUnit foe = site.IsContested ? site.PlayerContestant : null;
+            if (foe != null && foe.Squad.Owner != team &&
+                BattleCalculator.Forecast(BattleCalculator.SquadPower(squad), BattleCalculator.SquadPower(foe.Squad)) == BattleForecast.Lose)
+                lose = true;
             bool badBaseAttack = site is MainBase mb && !MayAttackBase(mb);
             if (!lose && !badBaseAttack) continue;
             if (SM.TryRetreat(squad, out _))
@@ -223,7 +228,17 @@ public class EnemyAI : MonoBehaviour
         // Объекты: не наши, никто из наших туда не едет
         foreach (MapObject o in MapObject.All)
         {
-            if (o.IsOwnedBy(team) || o.IsUnderAttack || IsOrdered(o) || !o.CanAccept(squad, out _)) continue;
+            if (o.IsOwnedBy(team) || IsOrdered(o) || !o.CanAccept(squad, out _)) continue;
+
+            // Объект уже захватывает противник: вступаем в битву за флаг, только если успеем
+            // до конца подготовки и наша команда не слабее его команды
+            bool join = o.IsUnderAttack;
+            if (join)
+            {
+                if (!o.CanJoin(team) || SM.EstimateTravelTime(squad, o) > o.PrepLeft - 1f) continue;
+                Squad rival = o.Attacker.Squad;
+                if (BattleCalculator.Forecast(BattleCalculator.SquadPower(squad), BattleCalculator.SquadPower(rival)) == BattleForecast.Lose) continue;
+            }
             MapObjectData d = o.Data;
             float value = d.goldIncome * 3f + d.plutoniumIncome * 40f + d.heroLimitBonus * 150f
                           + (d.unlocksFactoryUpgrades ? 400f : 0f) + (d.allowsHeroBoost ? 300f : 0f);
@@ -234,6 +249,7 @@ public class EnemyAI : MonoBehaviour
             if (forecast == BattleForecast.Lose) continue;
             if (forecast == BattleForecast.Equal) value *= 0.7f;
             value *= objectPriority; // объекты — главный приоритет
+            if (join) value *= 1.3f; // заодно не дать объект противнику
             float score = value / (Vector3.Distance(home, o.ApproachPoint) + 5f);
             if (score > bestScore) { bestScore = score; best = o; }
         }

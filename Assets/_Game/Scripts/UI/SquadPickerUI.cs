@@ -41,13 +41,14 @@ public class SquadPickerUI : WindowUI
     }
 
     /// <summary>
-    /// На цель напали — список закрывается (окна места закрыты до конца боя).
+    /// На цель напали — список закрывается (окна места закрыты до конца боя),
+    /// кроме случая, когда напал враг и ещё можно успеть вступить (битва за флаг).
     /// Нападение на любую базу запрещает отправку — перерисовываем кнопки.
     /// </summary>
     private void OnAttackChanged(AttackableSite site)
     {
         if (!IsOpen) return;
-        if (site.IsUnderAttack && ReferenceEquals(site, target)) Close();
+        if (site.IsUnderAttack && ReferenceEquals(site, target) && !site.CanJoin(Team.Player)) Close();
         else Refresh();
     }
 
@@ -59,7 +60,7 @@ public class SquadPickerUI : WindowUI
     /// <summary>Открыть список команд для отправки к цели. sent — вызовется после отправки.</summary>
     public void OpenFor(ISquadTarget squadTarget, Action sent)
     {
-        if (squadTarget is AttackableSite site && site.IsUnderAttack)
+        if (squadTarget is AttackableSite site && site.IsUnderAttack && !site.CanJoin(Team.Player))
         {
             ToastUI.Show(site.AttackStatusText());
             return;

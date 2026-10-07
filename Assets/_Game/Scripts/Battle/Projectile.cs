@@ -24,7 +24,7 @@ public class Projectile : MonoBehaviour
     [SerializeField] private SortingGroup sortingGroup;
 
     private Fighter owner;   // Кто выстрелил
-    private Team team;       // Его команда (снаряд не бьёт своих)
+    private BattleFaction faction; // Его сторона (снаряд бьёт только её противников)
     private int specialPower; // Спец. атака стрелка (запоминаем при выстреле)
     private int direction;   // 1 — вправо, -1 — влево
     private float speed;
@@ -35,7 +35,7 @@ public class Projectile : MonoBehaviour
     public void Launch(Fighter shooter, int dir, float flySpeed, int id, float height)
     {
         owner = shooter;
-        team = shooter.Team;
+        faction = shooter.Faction;
         specialPower = shooter.Stats.specialAttack;
         direction = dir;
         speed = flySpeed;
@@ -66,7 +66,7 @@ public class Projectile : MonoBehaviour
 
         if (age > lifetime || !bm.IsInsideArenaX(pos.x)) { Destroy(gameObject); return; }
 
-        foreach (Fighter enemy in bm.GetOpponents(team))
+        foreach (Fighter enemy in bm.GetOpponents(faction))
         {
             if (!enemy.IsAlive) continue;
             Vector2 d = enemy.Position - (Vector2)pos;

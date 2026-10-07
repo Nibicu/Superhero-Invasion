@@ -68,6 +68,9 @@ public class BattleHUD : MonoBehaviour
     public void SetProgress(int territory, int total, int enemiesLeft) =>
         progressText.text = $"Территория {territory} / {total}   •   Врагов: {enemiesLeft}";
 
+    /// <summary>Строка прогресса произвольным текстом (битва за флаг).</summary>
+    public void SetProgressText(string text) => progressText.text = text;
+
     /// <summary>Крупное сообщение по центру на пару секунд.</summary>
     public void ShowMessage(string text, float duration = 2f)
     {
