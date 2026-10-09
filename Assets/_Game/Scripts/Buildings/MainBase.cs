@@ -104,7 +104,8 @@ public class MainBase : AttackableSite, IIncomeSource
     public int UpgradeCost => IsMaxLevel ? 0 : upgradeCosts[level - 1];
 
     // Доход самой базы (для ResourceManager)
-    public int GoldIncome => goldIncomePerLevel[level - 1];
+    public int GoldIncome => goldIncomePerLevel[level - 1]
+        + (ArtifactManager.Instance != null ? ArtifactManager.Instance.GetBonusIncome(owner) : 0); // + артефакты "+20 к доходу"
     public int PlutoniumIncome => 0;
     public string SourceName => baseName;
 

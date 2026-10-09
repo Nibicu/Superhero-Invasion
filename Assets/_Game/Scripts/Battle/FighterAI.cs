@@ -5,15 +5,16 @@ using UnityEngine;
 /// Раз в небольшую случайную задержку ("время реакции") принимает решение. Порядок важности:
 ///
 /// 1) ОТСТУПЛЕНИЕ. HP упало ниже порога класса (Танк 10%, Боец 20%, Маг 25%, Стрелок 30%, Поддержка 20%) —
-///    боец убегает от врагов (к своему краю территории или к аптечке) и лечится регеном.
-///    Убежать можно, только если его сейчас не бьют; иначе дерётся, пока не появится шанс.
-///    Когда HP выше 35% — снова идёт в бой.
+///    боец отходит НЕДАЛЕКО (держится в kiteDistance от врага) и всё время двигается,
+///    по пути бьёт скилами; увидел зелье — бежит к нему. Прижали вплотную — отбивается.
+///    Когда HP выше 35% — снова идёт в бой. Охрана объектов (нейтральные юниты) не отступает никогда.
 /// 2) ЛЕЧЕНИЕ (Поддержка): союзник (или сама) ранен — лечит.
 /// 3) ПРЕДМЕТЫ: врагов рядом нет (или коробка/бафф совсем близко) — идёт разбить коробку или подобрать бафф.
 /// 4) БОЙ по стилю класса:
 ///    - ближний (Танк, Боец): подходит вплотную, в основном авто атаки, скил иногда;
 ///    - средний (Маг, Поддержка): держит среднюю дистанцию, больше полагается на скилы;
-///    - дальний (Стрелок): держится далеко, в основном авто атаки (пули), скил иногда.
+///    - дальний (Стрелок): держится далеко, в основном авто атаки (пули), скил иногда;
+///    - если враг подошёл вплотную, Маг, Поддержка и Стрелок бьют рукой, пока он не отлетит.
 /// 5) Противников рядом нет — команды идут к точке сбора (следующая территория или флаг), охрана стоит.
 /// </summary>
 [DefaultExecutionOrder(-10)] // решает раньше, чем двигается FighterMovement
@@ -34,6 +35,8 @@ public class FighterAI : MonoBehaviour
     [SerializeField] private float underAttackTime = 1.2f;
     [Tooltip("...или если противник ближе этого расстояния")]
     [SerializeField] private float underAttackDistance = 1.3f;
+    [Tooltip("На каком расстоянии от ближайшего врага держится отступающий (недалеко, чтобы не потерять бой)")]
+    [SerializeField] private float kiteDistance = 5f;
 
     [Header("Предметы")]
     [Tooltip("Как далеко боец замечает коробки и баффы, когда врагов рядом нет")]
@@ -49,13 +52,20 @@ public class FighterAI : MonoBehaviour
     private bool hasDestination;
     private bool wantAuto;        // Решили сделать авто атаку
     private bool wantSkill;       // Решили применить скил
+    private bool autoClose;       // Авто атака вплотную (Маг, Поддержка, Стрелок бьют рукой)
     private bool retreating;      // Режим отступления
     private float thinkTimer;
 
     /// <summary>Отступает ли сейчас (для отладки и интерфейса).</summary>
     public bool IsRetreating => retreating;
 
-    private void Awake() => self = GetComponent<Fighter>();
+    private float wavePhase; // Свой ритм покачивания при отступлении (чтобы не двигались одинаково)
+
+    private void Awake()
+    {
+        self = GetComponent<Fighter>();
+        wavePhase = Random.Range(0f, 10f);
+    }
 
     private void Update()
     {
@@ -73,7 +83,7 @@ public class FighterAI : MonoBehaviour
         if (wantSkill || wantAuto)
         {
             self.Movement.FaceTowards(aimPoint.x);
-            bool done = wantSkill ? self.Combat.TrySkill(healTarget) : self.Combat.TryAuto();
+            bool done = wantSkill ? self.Combat.TrySkill(healTarget) : self.Combat.TryAuto(autoClose);
             if (done) { wantSkill = false; wantAuto = false; }
             return;
         }
@@ -92,6 +102,7 @@ public class FighterAI : MonoBehaviour
     {
         wantAuto = false;
         wantSkill = false;
+        autoClose = false;
         healTarget = null;
         ClassProfile profile = self.Profile;
 
@@ -105,17 +116,32 @@ public class FighterAI : MonoBehaviour
             && Vector2.Distance(nearest.Position, self.Position) + 2f < Vector2.Distance(target.Position, self.Position)))
             target = nearest;
 
-        // 1) Отступление
+        // 1) Отступление: недалеко, всё время в движении, со скилами; увидел зелье — бежит к нему
         float hp = self.Health.Fraction;
-        if (!retreating && hp <= profile.retreatAt) retreating = true;
+        if (!retreating && hp <= profile.retreatAt && !self.IsGuard) retreating = true; // охрана объектов не отступает
         if (retreating && hp >= UnitClasses.ResumeAt) retreating = false;
-        bool pressed = IsUnderAttack(bm);
-        if (retreating && !pressed)
+        if (retreating)
         {
             if (self.Class == UnitClass.Support && TryHeal(bm, true)) return; // Поддержка лечит себя на бегу
-            BattleBuffItem medkit = FindBuff(bm, true, itemSearchRadius);
-            destination = medkit != null ? medkit.Position : bm.GetRetreatPoint(self);
-            hasDestination = (destination - self.Position).magnitude > 0.2f;
+            BattleBuffItem potion = FindBuff(bm, true, itemSearchRadius);
+            if (potion != null)
+            {
+                destination = potion.Position;
+                hasDestination = true;
+                return;
+            }
+            // Прижали вплотную и бьют — отбивается, пока не появится шанс отойти
+            Fighter threat = NearestOpponent(bm, self.detectionRadius * 1.5f);
+            if (threat != null && IsUnderAttack(bm) && Vector2.Distance(threat.Position, self.Position) <= self.meleeRange * 1.3f)
+            {
+                target = threat;
+                if (profile.style == CombatStyle.Melee) FightMelee(bm, profile);
+                else FightRanged(profile);
+                return;
+            }
+            if (TrySkillWhileRetreating(bm)) return;
+            destination = KitePoint(bm, threat);
+            hasDestination = true;
             return;
         }
 
@@ -195,6 +221,20 @@ public class FighterAI : MonoBehaviour
         aimPoint = target.Position;
         bool aligned = absY <= aimTolerance;
 
+        // Враг вплотную — бьём рукой (пока не отлетит), Маг и Стрелок иногда отвечают скилом в упор
+        if (absX <= self.meleeRange * 1.1f && absY <= self.depthTolerance * 0.8f)
+        {
+            hasDestination = false;
+            if (self.Class != UnitClass.Support && self.Combat.CanSkill && Random.value < profile.skillChance)
+                wantSkill = true;
+            else
+            {
+                wantAuto = true;
+                autoClose = true;
+            }
+            return;
+        }
+
         if (aligned)
         {
             // Скил: Маг — часто, Стрелок — иногда (Поддержка лечит в другом месте)
@@ -217,6 +257,61 @@ public class FighterAI : MonoBehaviour
         float side = d.x >= 0 ? -1f : 1f;
         destination = new Vector2(target.Position.x + side * profile.preferredRange, target.Position.y);
         hasDestination = (destination - self.Position).magnitude > 0.15f;
+    }
+
+    // ---------- Отступление ----------
+
+    /// <summary>
+    /// Скил на бегу: Танк — удар по земле, если враг рядом; Боец — мощный удар вплотную;
+    /// Маг и Стрелок — выстрел по цели на одной линии. Вернёт true, если решили применить.
+    /// </summary>
+    private bool TrySkillWhileRetreating(BattleManager bm)
+    {
+        if (self.Class == UnitClass.Support || target == null || !self.Combat.CanSkill) return false;
+        Vector2 d = target.Position - self.Position;
+        bool ok;
+        switch (self.Class)
+        {
+            case UnitClass.Tank: ok = self.Combat.InSlamZone(target.Position); break;
+            case UnitClass.Fighter: ok = Mathf.Abs(d.x) <= self.Combat.SkillRange && Mathf.Abs(d.y) <= self.depthTolerance * 0.8f; break;
+            default: ok = Mathf.Abs(d.y) <= aimTolerance && Mathf.Abs(d.x) <= self.Combat.SkillRange; break;
+        }
+        if (!ok) return false;
+        aimPoint = target.Position;
+        wantSkill = true;
+        hasDestination = false;
+        return true;
+    }
+
+    /// <summary>
+    /// Куда отходить раненому: недалеко (kiteDistance от ближайшего врага, чтобы его не теряли из виду)
+    /// и всё время двигаясь — покачиваясь по глубине. Прижали к краю — уходит вбок.
+    /// </summary>
+    private Vector2 KitePoint(BattleManager bm, Fighter threat)
+    {
+        if (threat == null) return bm.GetRetreatPoint(self);
+        float away = Mathf.Sign(self.Position.x - threat.Position.x);
+        if (away == 0f) away = 1f;
+        float wave = Mathf.Sin(Time.time * 1.7f + wavePhase); // у каждого свой ритм
+        Vector3 want = new Vector3(threat.Position.x + away * kiteDistance, self.Position.y + wave * 1.2f, 0f);
+        Vector3 p = bm.ClampToArena(self, want);
+        if (Mathf.Abs(p.x - want.x) > 1f) // упёрлись в край или барьер — уходим по глубине
+            p = bm.ClampToArena(self, new Vector3(self.Position.x, self.Position.y + (wave > 0f ? 1.5f : -1.5f), 0f));
+        return p;
+    }
+
+    /// <summary>Ближайший живой противник в радиусе (даже недоступный — от него и отходим).</summary>
+    private Fighter NearestOpponent(BattleManager bm, float radius)
+    {
+        Fighter best = null;
+        float bestDist = radius;
+        foreach (Fighter f in bm.GetOpponents(self.Faction))
+        {
+            if (!f.IsAlive) continue;
+            float dist = Vector2.Distance(f.Position, self.Position);
+            if (dist < bestDist) { bestDist = dist; best = f; }
+        }
+        return best;
     }
 
     // ---------- Лечение ----------
@@ -295,7 +390,7 @@ public class FighterAI : MonoBehaviour
         float bestDist = radius;
         foreach (BattleBuffItem b in bm.Buffs)
         {
-            if (b == null || b.Taken) continue;
+            if (b == null || !b.Available) continue;
             if (healOnly && !b.IsHeal) continue;
             if (b.IsHeal && self.Health.Fraction > 0.9f) continue; // здоровому аптечка не нужна
             float dist = Vector2.Distance(b.Position, self.Position);
@@ -311,7 +406,7 @@ public class FighterAI : MonoBehaviour
         float bestDist = radius;
         foreach (BattleBox b in bm.Boxes)
         {
-            if (b == null || b.IsBroken) continue;
+            if (b == null || !b.CanBeHit) continue;
             float dist = Vector2.Distance(b.Position, self.Position);
             if (dist < bestDist && bm.IsReachable(self, b.Position)) { bestDist = dist; best = b; }
         }

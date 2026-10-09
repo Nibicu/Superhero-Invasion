@@ -8,7 +8,9 @@ using UnityEngine;
 /// АВТО АТАКА (урон — от "Авто атаки", ослабляется Защитой цели, разбивает коробки):
 ///  - Танк и Боец — удар вплотную;
 ///  - Маг и Поддержка — энергетический сгусток на среднюю дистанцию;
-///  - Стрелок — пуля издалека.
+///  - Стрелок — пуля издалека;
+///  - если враг подошёл вплотную, Маг, Поддержка и Стрелок тоже бьют рукой (TryAuto(true)).
+/// Энергия восстанавливается в energyRegenRate раз медленнее параметра "Реген энергии".
 ///
 /// СКИЛ (тратит энергию, есть перезарядка; урон — от Атаки или Спец. атаки, смотря какой тип урона у бойца):
 ///  - Танк "Удар по земле" — урон всем врагам вокруг, отбрасывает и сбивает с ног;
@@ -29,6 +31,10 @@ public class FighterCombat : MonoBehaviour
     [SerializeField] private Projectile projectilePrefab;
     [Tooltip("На какой высоте над землёй появляется снаряд")]
     [SerializeField] private float projectileHeight = 1.0f;
+
+    [Header("Энергия")]
+    [Tooltip("Какая доля параметра 'Реген энергии' восстанавливается в секунду (0.5 = половина). Меньше — реже скилы и лечение")]
+    [SerializeField] private float energyRegenRate = 0.5f;
 
     [Header("Авто атака на расстоянии")]
     [Tooltip("Скорость пуль и сгустков авто атаки")]
@@ -65,6 +71,7 @@ public class FighterCombat : MonoBehaviour
     private bool hitDone;             // Удар в этой атаке уже нанесён
     private bool isSkill;             // Текущая атака — скил
     private Fighter healTarget;       // Кого лечит Поддержка
+    private bool autoMelee;           // Текущая авто атака — вплотную (рукой), а не выстрелом
     private int currentAttackId;      // Номер текущей атаки
     private readonly List<Fighter> hitThisAttack = new List<Fighter>(); // Кого уже ударили этой атакой
 
@@ -130,10 +137,14 @@ public class FighterCombat : MonoBehaviour
     /// <summary>Назначить префаб снаряда.</summary>
     public void SetProjectilePrefab(Projectile prefab) => projectilePrefab = prefab;
 
-    /// <summary>Попробовать сделать авто атаку (если можно).</summary>
-    public bool TryAuto()
+    /// <summary>
+    /// Попробовать сделать авто атаку (если можно).
+    /// closeRange — враг вплотную: Маг, Поддержка и Стрелок бьют рукой, а не стреляют.
+    /// </summary>
+    public bool TryAuto(bool closeRange = false)
     {
         if (!CanAuto) return false;
+        autoMelee = closeRange || IsMeleeAuto;
         StartAttack(false);
         return true;
     }
@@ -168,7 +179,7 @@ public class FighterCombat : MonoBehaviour
         float dt = Time.deltaTime;
         if (cooldownTimer > 0f) cooldownTimer -= dt;
         if (skillTimer > 0f) skillTimer -= dt;
-        if (fighter.IsAlive) Energy = Mathf.Min(MaxEnergy, Energy + energyRegen * dt);
+        if (fighter.IsAlive) Energy = Mathf.Min(MaxEnergy, Energy + energyRegen * energyRegenRate * dt);
 
         if (!attackActive) return;
         if (fighter.State != FighterState.Attacking) { attackActive = false; return; } // атаку прервали ударом
@@ -193,7 +204,7 @@ public class FighterCombat : MonoBehaviour
     private void DoAuto()
     {
         int power = fighter.Stats.autoAttack;
-        if (IsMeleeAuto)
+        if (autoMelee)
         {
             MeleeHit(power, false, 1, fighter.knockbackForce, fighter.meleeRange, true);
             return;
@@ -296,7 +307,7 @@ public class FighterCombat : MonoBehaviour
         if (!boxes) return;
         foreach (BattleBox box in BattleManager.Instance.Boxes)
         {
-            if (box == null || box.IsBroken) continue;
+            if (box == null || !box.CanBeHit) continue;
             Vector2 d = (Vector2)box.transform.position - me;
             if (d.x * facing < -0.2f || Mathf.Abs(d.x) > range + 0.3f || Mathf.Abs(d.y) > fighter.depthTolerance) continue;
             box.Hit();

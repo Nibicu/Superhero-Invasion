@@ -75,9 +75,21 @@ public class BattleManager : MonoBehaviour
     [Tooltip("Бафф, который выпадает из коробки")]
     [SerializeField] private BattleBuffItem buffPrefab;
 
-    [Header("Коробки")]
-    [Tooltip("Сколько коробок ставить в обычном бою: от и до (не больше 5)")]
-    [SerializeField] private Vector2Int boxCount = new Vector2Int(3, 5);
+    [Header("Ящики и зелья")]
+    [Tooltip("Сколько ящиков стоит на арене с начала обычного боя: от и до")]
+    [SerializeField] private Vector2Int boxCount = new Vector2Int(1, 2);
+    [Tooltip("Раз во сколько секунд с неба падает предмет: от и до")]
+    [SerializeField] private Vector2 dropInterval = new Vector2(7f, 12f);
+    [Tooltip("Шанс, что упадёт зелье (иначе — ящик)")]
+    [SerializeField, Range(0f, 1f)] private float potionChance = 0.55f;
+    [Tooltip("Больше этого числа ящиков на арене одновременно не бывает")]
+    [SerializeField] private int maxBoxes = 6;
+    [Tooltip("Больше этого числа зелий на арене одновременно не бывает")]
+    [SerializeField] private int maxPotions = 6;
+    [Tooltip("С какой высоты падают предметы")]
+    [SerializeField] private float dropHeight = 7f;
+
+    private float dropTimer; // До следующего падения предмета
 
     [Header("Камера")]
     [Tooltip("Размер камеры на арене (меньше — крупнее бойцы)")]
@@ -367,6 +379,7 @@ public class BattleManager : MonoBehaviour
         f.Init(u.data, u.stats, faction, u.hpFraction, neutralLook);
         f.Territory = territory;
         f.IsReinforcement = u.reinforcement;
+        f.IsGuard = u.guard;
         allFighters.Add(f);
 
         switch (faction)
@@ -382,28 +395,67 @@ public class BattleManager : MonoBehaviour
     // ---------- Коробки и баффы ----------
 
     /// <summary>
-    /// Расставить коробки случайно (не больше 5).
-    /// Обычный бой — по всей арене. Битва за флаг — честно: 2 на нашей половине,
-    /// 2 зеркально на вражеской и 1 в центре.
+    /// Поставить немного ящиков с начала боя (остальное падает с неба во время боя).
+    /// Обычный бой — 1–2 по арене. Битва за флаг — честно: по одному на каждой половине (зеркально).
     /// </summary>
     private void SpawnBoxes()
     {
         boxes.Clear();
         buffs.Clear();
+        dropTimer = UnityEngine.Random.Range(dropInterval.x, dropInterval.y);
         if (boxPrefab == null) return;
         if (contested)
         {
-            for (int i = 0; i < 2; i++)
-            {
-                Vector2 p = RandomFloorPoint(3f, LaneTerritories * territoryWidth - 3f);
-                SpawnBox(p);
-                SpawnBox(new Vector2(ArenaLength - p.x, p.y));
-            }
-            SpawnBox(RandomFloorPoint(LaneTerritories * territoryWidth + 3f, (LaneTerritories + 1) * territoryWidth - 3f));
+            Vector2 p = RandomFloorPoint(3f, LaneTerritories * territoryWidth - 3f);
+            SpawnBox(p);
+            SpawnBox(new Vector2(ArenaLength - p.x, p.y));
             return;
         }
-        int count = Mathf.Clamp(UnityEngine.Random.Range(boxCount.x, boxCount.y + 1), 0, 5);
+        int count = Mathf.Clamp(UnityEngine.Random.Range(boxCount.x, boxCount.y + 1), 0, maxBoxes);
         for (int i = 0; i < count; i++) SpawnBox(RandomFloorPoint(4f, ArenaLength - 3f));
+    }
+
+    /// <summary>
+    /// Падение предметов с неба: раз в dropInterval секунд — зелье или ящик
+    /// рядом со случайным бойцом команд (там, куда он может дойти). Лимиты — maxBoxes и maxPotions.
+    /// </summary>
+    private void UpdateDrops()
+    {
+        dropTimer -= Time.deltaTime;
+        if (dropTimer > 0f) return;
+        dropTimer = UnityEngine.Random.Range(dropInterval.x, dropInterval.y);
+
+        // Рядом с кем уронить: живые бойцы команд (наши и вражеская команда)
+        var candidates = new List<Fighter>();
+        foreach (Fighter f in heroes) if (f.IsAlive) candidates.Add(f);
+        foreach (Fighter f in rivals) if (f.IsAlive) candidates.Add(f);
+        if (candidates.Count == 0) return;
+        Fighter near = candidates[UnityEngine.Random.Range(0, candidates.Count)];
+
+        int potions = 0, liveBoxes = 0;
+        foreach (BattleBuffItem b in buffs) if (b != null && !b.Taken && b.IsPotion) potions++;
+        foreach (BattleBox b in boxes) if (b != null && !b.IsBroken) liveBoxes++;
+        bool potion = UnityEngine.Random.value < potionChance;
+        if (potion && potions >= maxPotions) potion = false;
+        if (!potion && liveBoxes >= maxBoxes) { if (potions >= maxPotions) return; potion = true; }
+
+        Vector3 spot = near.Position + new Vector2(UnityEngine.Random.Range(-6f, 6f), 0f);
+        spot.y = arenaRoot.position.y + UnityEngine.Random.Range(floorMinY + 0.4f, floorMaxY - 0.4f);
+        spot = ClampToArena(near, spot); // туда, куда этот боец может дойти
+
+        if (potion && buffPrefab != null)
+        {
+            BattleBuffItem item = Instantiate(buffPrefab, spot, Quaternion.identity, runtimeRoot);
+            item.SetupPotion();
+            item.DropIn(dropHeight);
+            buffs.Add(item);
+        }
+        else if (!potion && boxPrefab != null)
+        {
+            BattleBox b = Instantiate(boxPrefab, spot, Quaternion.identity, runtimeRoot);
+            b.DropIn(dropHeight);
+            boxes.Add(b);
+        }
     }
 
     /// <summary>Случайная точка пола между minX и maxX (не вплотную к барьерам).</summary>
@@ -472,6 +524,7 @@ public class BattleManager : MonoBehaviour
         if (!IsRunning) return;
         UpdateCamera();
         if (finishing) return;
+        UpdateDrops();
         if (contested) UpdateContested();
         else if (defenseMode) UpdateDefense();
         else UpdateNormal();

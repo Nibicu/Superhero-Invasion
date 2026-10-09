@@ -90,6 +90,9 @@ public class Fighter : MonoBehaviour
     /// <summary>Боец из команды, пришедшей на защиту объекта.</summary>
     public bool IsReinforcement { get; set; }
 
+    /// <summary>Охранник объекта (нейтральный юнит) — не отступает при низком HP.</summary>
+    public bool IsGuard { get; set; }
+
     /// <summary>Действует ли временный бафф.</summary>
     public bool HasBuff => buffTimer > 0f;
 

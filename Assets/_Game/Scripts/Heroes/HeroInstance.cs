@@ -42,8 +42,23 @@ public class HeroInstance
     /// <summary>Сколько раз героя усилили плутонием (Институт ядерной физики).</summary>
     public int Boosts { get; private set; }
 
-    /// <summary>Текущие характеристики с учётом уровня и усилений.</summary>
-    public HeroStats Stats => Data.baseStats.Scaled(1f + StatGrowthPerLevel * (Level - 1) + StatGrowthPerBoost * Boosts);
+    /// <summary>Сколько ячеек для вещей-артефактов у героя.</summary>
+    public const int SlotCount = 3;
+
+    /// <summary>Вещи-артефакты, надетые на героя (null — ячейка пуста). Меняет их ArtifactManager.</summary>
+    public ArtifactData[] Slots { get; } = new ArtifactData[SlotCount];
+
+    /// <summary>Текущие характеристики: уровень и усиления (в процентах) + прибавки от надетых вещей.</summary>
+    public HeroStats Stats
+    {
+        get
+        {
+            HeroStats s = Data.baseStats.Scaled(1f + StatGrowthPerLevel * (Level - 1) + StatGrowthPerBoost * Boosts);
+            foreach (ArtifactData a in Slots)
+                if (a != null) s = s.Plus(a.bonus);
+            return s;
+        }
+    }
 
     /// <summary>Добавить одно усиление (цену и максимум проверяет HeroManager).</summary>
     public void AddBoost() => Boosts++;

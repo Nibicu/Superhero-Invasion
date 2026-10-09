@@ -42,6 +42,21 @@ public struct HeroStats
         hp, hpRegen, autoAttack, attack, specialAttack, defense, specialDefense, energy, energyRegen, speed
     };
 
+    /// <summary>Сумма характеристик (например, герой + прибавка от надетой вещи).</summary>
+    public HeroStats Plus(HeroStats b) => new HeroStats
+    {
+        hp = hp + b.hp,
+        hpRegen = hpRegen + b.hpRegen,
+        autoAttack = autoAttack + b.autoAttack,
+        attack = attack + b.attack,
+        specialAttack = specialAttack + b.specialAttack,
+        defense = defense + b.defense,
+        specialDefense = specialDefense + b.specialDefense,
+        energy = energy + b.energy,
+        energyRegen = energyRegen + b.energyRegen,
+        speed = speed + b.speed,
+    };
+
     /// <summary>Характеристики с одним усиленным параметром (временный бафф в бою).</summary>
     public HeroStats WithBoost(BoostStat stat, float mult)
     {

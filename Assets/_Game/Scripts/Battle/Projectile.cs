@@ -88,7 +88,7 @@ public class Projectile : MonoBehaviour
         if (shot.hitsBoxes)
             foreach (BattleBox box in bm.Boxes)
             {
-                if (box == null || box.IsBroken) continue;
+                if (box == null || !box.CanBeHit) continue;
                 Vector2 d = (Vector2)box.transform.position - (Vector2)pos;
                 if (Mathf.Abs(d.x) > hitRadius || Mathf.Abs(d.y) > depthTolerance) continue;
                 box.Hit();

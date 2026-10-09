@@ -79,6 +79,9 @@ public class EnemyAI : MonoBehaviour
         // Плутоний тратится отдельно: прокачка в Лаборатории, потом усиление (если есть Институт)
         if (!TryLevelUpHero()) TryBoostHero();
 
+        // Артефакты из инвентаря: активируемые — сразу использовать, вещи — надеть на сильных героев
+        UseArtifacts();
+
         // Одно "денежное" действие за раз — по приоритету
         if (HM.GetHeroes(team).Count < 2 && TryHire()) return;
         if (TryBuild()) return;
@@ -413,6 +416,48 @@ public class EnemyAI : MonoBehaviour
         if (best == null || !HM.TryLevelUp(best, out _)) return false;
         Log($"прокачал {best.Data.displayName} до ур. {best.Level}");
         return true;
+    }
+
+    /// <summary>
+    /// Артефакты: активируемые используются сразу ("+1 уровень" — самому сильному герою, который ещё растёт),
+    /// вещи надеваются на самого сильного героя со свободной ячейкой (кроме тех, кто на задании).
+    /// </summary>
+    private void UseArtifacts()
+    {
+        ArtifactManager am = ArtifactManager.Instance;
+        if (am == null) return;
+        foreach (ArtifactData a in new List<ArtifactData>(am.GetStash(team)))
+        {
+            if (a.kind == ArtifactKind.Activatable)
+            {
+                HeroInstance target = null;
+                if (a.effect == ArtifactEffect.FreeHeroLevel)
+                {
+                    foreach (HeroInstance h in HM.GetHeroes(team))
+                        if (h.Level < HM.MaxHeroLevel && (target == null || HeroPower(h) > HeroPower(target))) target = h;
+                    if (target == null) continue; // пока некого прокачать — артефакт ждёт
+                }
+                if (am.TryActivate(team, a, target, out _)) Log($"использовал артефакт «{a.displayName}»");
+                continue;
+            }
+
+            // Кому надеть: сильному герою, которому вещь подходит (перчатка — тем, у кого скилы от Атаки,
+            // пояс — от Спец. атаки); неподходящему — только если больше некому
+            HeroInstance best = null;
+            float bestScore = 0f;
+            foreach (HeroInstance h in HM.GetHeroes(team))
+            {
+                if (h.Status == HeroStatus.OnMission) continue;
+                bool hasFree = false;
+                foreach (ArtifactData s in h.Slots) if (s == null) hasFree = true;
+                if (!hasFree) continue;
+                bool useless = (a.bonus.attack > 0 && h.Data.skillDamage != DamageType.Attack)
+                            || (a.bonus.specialAttack > 0 && h.Data.skillDamage != DamageType.Special);
+                float score = HeroPower(h) * (useless ? 0.3f : 1f);
+                if (score > bestScore) { bestScore = score; best = h; }
+            }
+            if (best != null && am.TryEquipFree(best, a, out _)) Log($"надел «{a.displayName}» на {best.Data.displayName}");
+        }
     }
 
     // ---------- Помощники ----------

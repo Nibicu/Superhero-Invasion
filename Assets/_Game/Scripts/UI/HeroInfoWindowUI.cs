@@ -25,6 +25,11 @@ public class HeroInfoWindowUI : WindowUI
     [SerializeField] private Button boostButton;      // "УСИЛИТЬ" за плутоний (нужен Институт)
     [SerializeField] private TMP_Text boostText;      // Текст на кнопке усиления
 
+    [Header("Инвентарь героя (3 ячейки для вещей-артефактов)")]
+    [SerializeField] private GameObject slotsRoot;    // Ряд ячеек (виден только у нанятого героя)
+    [SerializeField] private Button[] slotButtons;    // Кнопки-ячейки
+    [SerializeField] private TMP_Text[] slotTexts;    // Буква надетой вещи или "+"
+
     private HeroData current; // Какой герой показан
 
     /// <summary>Подписываем кнопки.</summary>
@@ -33,13 +38,20 @@ public class HeroInfoWindowUI : WindowUI
         base.Awake();
         actionButton.onClick.AddListener(OnActionClicked);
         if (boostButton != null) boostButton.onClick.AddListener(OnBoostClicked);
+        if (slotButtons != null)
+            for (int i = 0; i < slotButtons.Length; i++)
+            {
+                int index = i; // копия для лямбды
+                slotButtons[i].onClick.AddListener(() => OnSlotClicked(index));
+            }
     }
 
-    /// <summary>Подписываемся на изменения денег и героев.</summary>
+    /// <summary>Подписываемся на изменения денег, героев и артефактов.</summary>
     private void Start()
     {
         ResourceManager.Instance.ResourcesChanged += OnTeamChanged;
         HeroManager.Instance.HeroesChanged += OnTeamChanged;
+        if (ArtifactManager.Instance != null) ArtifactManager.Instance.Changed += OnTeamChanged;
     }
 
     /// <summary>Отписываемся.</summary>
@@ -48,6 +60,28 @@ public class HeroInfoWindowUI : WindowUI
         base.OnDestroy();
         if (ResourceManager.Instance != null) ResourceManager.Instance.ResourcesChanged -= OnTeamChanged;
         if (HeroManager.Instance != null) HeroManager.Instance.HeroesChanged -= OnTeamChanged;
+        if (ArtifactManager.Instance != null) ArtifactManager.Instance.Changed -= OnTeamChanged;
+    }
+
+    /// <summary>Клик по ячейке — выбрать вещь для неё (или снять надетую).</summary>
+    private void OnSlotClicked(int slot)
+    {
+        HeroInstance hero = HeroManager.Instance.FindHero(Team.Player, current);
+        if (hero != null && ArtifactWindowUI.Instance != null) ArtifactWindowUI.Instance.OpenForSlot(hero, slot);
+    }
+
+    /// <summary>Нарисовать 3 ячейки: надетая вещь — её цвет и буква, пустая — "+".</summary>
+    private void RefreshSlots(HeroInstance hero)
+    {
+        if (slotsRoot != null) slotsRoot.SetActive(hero != null);
+        if (hero == null || slotButtons == null) return;
+        for (int i = 0; i < slotButtons.Length && i < HeroInstance.SlotCount; i++)
+        {
+            ArtifactData a = hero.Slots[i];
+            slotButtons[i].image.color = a != null ? a.color : new Color(0.2f, 0.25f, 0.34f);
+            if (slotTexts != null && i < slotTexts.Length)
+                slotTexts[i].text = a != null ? a.iconLetter : "+";
+        }
     }
 
     private void OnTeamChanged(Team team)
@@ -70,6 +104,7 @@ public class HeroInfoWindowUI : WindowUI
         HeroInstance hero = hm.FindHero(Team.Player, current); // null — если не нанят
 
         header.color = HeroData.StarColor(current.stars);
+        RefreshSlots(hero);
         portrait.Show(current);
         stars.Show(current.stars);
         nameText.text = current.displayName;
