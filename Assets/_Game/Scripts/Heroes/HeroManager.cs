@@ -31,8 +31,8 @@ public class HeroManager : MonoBehaviour
     [SerializeField] private int baseHeroLimit = 4;
     [Tooltip("Максимальный уровень героя")]
     [SerializeField] private int maxHeroLevel = 5;
-    [Tooltip("Цена прокачки = это число × звёзды × текущий уровень")]
-    [SerializeField] private int levelUpCostPerStar = 150;
+    [Tooltip("Цена прокачки уровня героя в плутонии (нужна Лаборатория на базе)")]
+    [SerializeField] private int levelUpPlutoniumCost = 30;
 
     [Header("Усиление в Институте (за плутоний)")]
     [Tooltip("Сколько раз можно усилить одного героя")]
@@ -170,21 +170,33 @@ public class HeroManager : MonoBehaviour
 
     // ---------- Прокачка ----------
 
-    /// <summary>Цена прокачки героя до следующего уровня (0 — если уже максимум).</summary>
-    public int GetLevelUpCost(HeroInstance hero)
+    /// <summary>Цена прокачки героя до следующего уровня в плутонии (0 — если уже максимум).</summary>
+    public int GetLevelUpCost(HeroInstance hero) => hero.Level >= maxHeroLevel ? 0 : levelUpPlutoniumCost;
+
+    /// <summary>
+    /// Можно ли прокачать героя (без учёта плутония): не максимальный уровень
+    /// и на базе его стороны построена Лаборатория.
+    /// </summary>
+    public bool CanLevelUp(HeroInstance hero, out string reason)
     {
-        if (hero.Level >= maxHeroLevel) return 0;
-        return levelUpCostPerStar * hero.Data.stars * hero.Level;
+        reason = null;
+        if (hero.Level >= maxHeroLevel) { reason = "Максимальный уровень"; return false; }
+        MainBase b = MainBase.Get(hero.Owner);
+        if (b == null || !b.HasBuildingOfType(BuildingType.Laboratory)) { reason = "Нужна Лаборатория"; return false; }
+        return true;
     }
 
-    /// <summary>Прокачать героя на 1 уровень за золото.</summary>
+    /// <summary>Прокачать героя на 1 уровень в Лаборатории за плутоний.</summary>
     public bool TryLevelUp(HeroInstance hero, out string error)
     {
-        error = null;
-        if (hero.Level >= maxHeroLevel) { error = "Максимальный уровень"; return false; }
-        if (!ResourceManager.Instance.TrySpend(hero.Owner, GetLevelUpCost(hero)))
+        if (!CanLevelUp(hero, out error))
         {
-            error = "Не хватает золота";
+            if (error == "Нужна Лаборатория") error = "Постройте Лабораторию на базе, чтобы прокачивать героев";
+            return false;
+        }
+        if (!ResourceManager.Instance.TrySpend(hero.Owner, 0, GetLevelUpCost(hero)))
+        {
+            error = "Не хватает плутония";
             return false;
         }
         hero.LevelUp();

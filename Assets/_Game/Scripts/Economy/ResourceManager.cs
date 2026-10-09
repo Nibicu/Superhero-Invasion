@@ -4,8 +4,8 @@ using UnityEngine;
 
 /// <summary>
 /// Главный "кошелёк" игры. Хранит золото и плутоний игрока и врага
-/// и раз в incomeInterval секунд (по GDD — 10) начисляет доход
-/// со всех зарегистрированных источников (IIncomeSource).
+/// и начисляет доход со всех зарегистрированных источников (IIncomeSource):
+/// золото — раз в incomeInterval секунд (10), плутоний — раз в plutoniumInterval секунд (40).
 ///
 /// Как пользоваться из других скриптов:
 ///   ResourceManager.Instance.GetGold(Team.Player)
@@ -31,8 +31,10 @@ public class ResourceManager : MonoBehaviour
     [SerializeField] private int startPlutonium = 0;
 
     [Header("Доход")]
-    [Tooltip("Раз во сколько секунд начисляется доход")]
+    [Tooltip("Раз во сколько секунд начисляется золото")]
     [SerializeField] private float incomeInterval = 10f;
+    [Tooltip("Раз во сколько секунд начисляется плутоний (Лаборатория и т.п.)")]
+    [SerializeField] private float plutoniumInterval = 40f;
 
     [Header("Отладка")]
     [Tooltip("Читы для проверки: G = +1000 золота, P = +50 плутония")]
@@ -43,7 +45,8 @@ public class ResourceManager : MonoBehaviour
     [SerializeField] private Wallet enemy = new Wallet();  // Кошелёк врага
 
     private readonly List<IIncomeSource> sources = new List<IIncomeSource>(); // Все источники дохода в игре
-    private float timer; // Сколько секунд прошло с прошлого начисления
+    private float timer;          // Сколько секунд прошло с прошлого начисления золота
+    private float plutoniumTimer; // Сколько секунд прошло с прошлого начисления плутония
 
     /// <summary>Вызывается, когда у стороны изменились ресурсы (для обновления UI).</summary>
     public event Action<Team> ResourcesChanged;
@@ -53,6 +56,9 @@ public class ResourceManager : MonoBehaviour
 
     /// <summary>Интервал начисления дохода в секундах.</summary>
     public float IncomeInterval => incomeInterval;
+
+    /// <summary>Интервал начисления плутония в секундах.</summary>
+    public float PlutoniumInterval => plutoniumInterval;
 
     /// <summary>Сколько секунд осталось до следующего начисления.</summary>
     public float TimeToNextIncome => Mathf.Max(0f, incomeInterval - timer);
@@ -88,8 +94,15 @@ public class ResourceManager : MonoBehaviour
         if (timer >= incomeInterval)
         {
             timer -= incomeInterval;
-            GiveIncome(Team.Player);
-            GiveIncome(Team.Enemy);
+            GiveIncome(Team.Player, true, false);
+            GiveIncome(Team.Enemy, true, false);
+        }
+        plutoniumTimer += WorldTime.DeltaTime;
+        if (plutoniumTimer >= plutoniumInterval)
+        {
+            plutoniumTimer -= plutoniumInterval;
+            GiveIncome(Team.Player, false, true);
+            GiveIncome(Team.Enemy, false, true);
         }
 
         if (debugCheats)
@@ -127,10 +140,13 @@ public class ResourceManager : MonoBehaviour
         }
     }
 
-    /// <summary>Начислить стороне доход со всех её источников.</summary>
-    private void GiveIncome(Team team)
+    /// <summary>Начислить стороне доход со всех её источников: только золото (раз в 10 с) или только плутоний (раз в 40 с).</summary>
+    private void GiveIncome(Team team, bool giveGold, bool givePlutonium)
     {
         GetIncomePerTick(team, out int gold, out int plutonium);
+        if (!giveGold) gold = 0;
+        if (!givePlutonium) plutonium = 0;
+        if (gold == 0 && plutonium == 0) return;
         Add(team, gold, plutonium);
         IncomeReceived?.Invoke(team, gold, plutonium);
     }

@@ -47,10 +47,6 @@ public class EnemyAI : MonoBehaviour
     [Tooltip("Какую долю объектов карты нужно захватить, чтобы атаковать базу с гарнизоном (0.5 = больше половины)")]
     [SerializeField, Range(0f, 1f)] private float objectsShareForBaseAttack = 0.5f;
 
-    [Header("Прокачка героев")]
-    [Tooltip("Прокачивать героев за золото, только если после покупки останется не меньше этой суммы (запас на базу и найм)")]
-    [SerializeField] private int levelUpGoldReserve = 1500;
-
     private float timer;                                                        // До следующего решения
     private readonly Dictionary<Squad, ISquadTarget> orders = new Dictionary<Squad, ISquadTarget>(); // Куда уже отправлены команды
 
@@ -80,16 +76,15 @@ public class EnemyAI : MonoBehaviour
         SendDefenders();
         DispatchSquads();
 
-        // Плутоний тратится отдельно — на усиление героев (если есть Институт)
-        TryBoostHero();
+        // Плутоний тратится отдельно: прокачка в Лаборатории, потом усиление (если есть Институт)
+        if (!TryLevelUpHero()) TryBoostHero();
 
         // Одно "денежное" действие за раз — по приоритету
         if (HM.GetHeroes(team).Count < 2 && TryHire()) return;
         if (TryBuild()) return;
         if (TryHire()) return;
         if (TryUpgradeBuildings()) return;
-        if (TryUpgradeBase()) return;
-        TryLevelUpHero();
+        TryUpgradeBase();
     }
 
     // ---------- Команды ----------
@@ -406,23 +401,16 @@ public class EnemyAI : MonoBehaviour
         return true;
     }
 
-    /// <summary>Прокачать самого дешёвого для прокачки героя, если золота с запасом.</summary>
+    /// <summary>Прокачать в Лаборатории (за плутоний) самого сильного героя, которого ещё можно прокачать.</summary>
     private bool TryLevelUpHero()
     {
         HeroInstance best = null;
-        int bestCost = int.MaxValue;
         foreach (HeroInstance h in HM.GetHeroes(team))
         {
-            int cost = HM.GetLevelUpCost(h);
-            if (cost <= 0 || cost >= bestCost) continue;
-            best = h;
-            bestCost = cost;
+            if (!HM.CanLevelUp(h, out _) || !RM.CanAfford(team, 0, HM.GetLevelUpCost(h))) continue;
+            if (best == null || HeroPower(h) > HeroPower(best)) best = h;
         }
-        // Если ячейки заняты, а базу можно улучшить — сначала копим на базу
-        int reserve = levelUpGoldReserve;
-        if (FreeSlot() < 0 && !Base.IsMaxLevel) reserve = Mathf.Max(reserve, Base.UpgradeCost);
-        if (best == null || RM.GetGold(team) - bestCost < reserve) return false;
-        if (!HM.TryLevelUp(best, out _)) return false;
+        if (best == null || !HM.TryLevelUp(best, out _)) return false;
         Log($"прокачал {best.Data.displayName} до ур. {best.Level}");
         return true;
     }

@@ -136,12 +136,18 @@ public class HeroInfoWindowUI : WindowUI
             actionButton.interactable = false;
             actionText.text = "МАКС. УРОВЕНЬ";
         }
+        else if (!hm.CanLevelUp(hero, out string lvlReason))
+        {
+            // Прокачка только в Лаборатории
+            actionButton.interactable = false;
+            actionText.text = $"{lvlReason.ToUpper()}\n<size=75%>прокачка героев — в Лаборатории</size>";
+        }
         else
         {
             int cost = hm.GetLevelUpCost(hero);
-            bool afford = ResourceManager.Instance.CanAfford(Team.Player, cost);
+            bool afford = ResourceManager.Instance.CanAfford(Team.Player, 0, cost);
             actionButton.interactable = true;
-            actionText.text = $"ПРОКАЧАТЬ ДО УР. {hero.Level + 1}\n<size=75%><color={(afford ? "#FFD84A" : "#FF6B6B")}>{cost} золота</color> • +10% к статам</size>";
+            actionText.text = $"ПРОКАЧАТЬ ДО УР. {hero.Level + 1}\n<size=75%><color={(afford ? "#E2C6FF" : "#FF6B6B")}>{cost} плутония</color> • +10% к статам</size>";
         }
     }
 

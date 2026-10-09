@@ -9,10 +9,11 @@ using UnityEngine;
 public enum BuildingType
 {
     Other,        // Без особого эффекта (только доход/описание)
-    Management,   // Менеджерский отдел — приносит золото
-    Radar,        // Радар — позволяет смотреть базу и объекты врага
+    Management,   // Менеджерский отдел — больше не используется (убран из игры)
+    Radar,        // Радар — позволяет смотреть базу, объекты и команды врага
     ReserveRooms, // Резервные комнаты — увеличивают лимит героев
-    Barracks      // Бараки — разрешают нанимать героев 2 и 3 звёзд
+    Barracks,     // Бараки — разрешают нанимать героев 2 и 3 звёзд
+    Laboratory    // Лаборатория — прокачка уровня героев за плутоний
 }
 
 /// <summary>
@@ -31,7 +32,7 @@ public class BuildingLevel
     [Tooltip("Золото за одно начисление (раз в 10 секунд)")]
     public int goldIncome = 0;
 
-    [Tooltip("Плутоний за одно начисление")]
+    [Tooltip("Плутоний за одно начисление плутония (раз в 40 секунд)")]
     public int plutoniumIncome = 0;
 
     [Tooltip("На сколько увеличивает лимит героев (Резервные комнаты)")]
@@ -96,7 +97,7 @@ public class BuildingData : ScriptableObject
         BuildingLevel l = GetLevel(level);
         var sb = new StringBuilder();
         if (l.goldIncome > 0) sb.AppendLine($"<color=#FFD84A>+{l.goldIncome} золота</color>");
-        if (l.plutoniumIncome > 0) sb.AppendLine($"<color=#C58BFF>+{l.plutoniumIncome} плутония</color>");
+        if (l.plutoniumIncome > 0) sb.AppendLine($"<color=#C58BFF>+{l.plutoniumIncome} плутония</color> раз в 40 с");
         if (l.heroCapacityBonus > 0) sb.AppendLine($"Лимит героев +{l.heroCapacityBonus}");
         if (l.maxHeroStars > 0) sb.AppendLine($"Найм героев до {l.maxHeroStars} звёзд");
         if (!string.IsNullOrEmpty(l.effectText)) sb.AppendLine(l.effectText);

@@ -94,6 +94,17 @@ public class SquadUnit : MonoBehaviour
         pathIndex = 0;
     }
 
+    /// <summary>
+    /// Клик по фишке — окно "Состав команды" (свои — всегда, чужие — только с Радаром).
+    /// Для клика на фишке есть CircleCollider2D.
+    /// </summary>
+    private void OnMouseUpAsButton()
+    {
+        if (UnityEngine.EventSystems.EventSystem.current != null
+            && UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject()) return;
+        if (SquadInfoWindowUI.Instance != null) SquadInfoWindowUI.Instance.Show(Squad);
+    }
+
     /// <summary>Едем по маршруту.</summary>
     private void Update()
     {

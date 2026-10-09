@@ -33,7 +33,7 @@ public class MainBase : AttackableSite, IIncomeSource
     [Tooltip("Сколько ячеек открыто на каждом уровне")]
     [SerializeField] private int[] slotsPerLevel = { 3, 4, 5 };
     [Tooltip("Доход самой базы на каждом уровне (золото раз в 10 с)")]
-    [SerializeField] private int[] goldIncomePerLevel = { 100, 150, 200 };
+    [SerializeField] private int[] goldIncomePerLevel = { 10, 20, 30 };
 
     [Header("Постройки")]
     [Tooltip("Все постройки, которые в принципе можно строить на этой базе")]

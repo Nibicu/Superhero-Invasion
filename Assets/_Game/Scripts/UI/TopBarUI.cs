@@ -4,8 +4,8 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Верхняя панель ресурсов: золото, плутоний, доход за начисление
-/// и полоска-таймер до следующего начисления.
+/// Верхняя панель ресурсов: золото, плутоний и доход
+/// (золото — за 10 с, плутоний — за 40 с). Таймера дохода больше нет.
 /// При получении дохода над золотом всплывает надпись "+300".
 /// Все ссылки назначаются в инспекторе (объект Canvas/TopBar).
 /// </summary>
@@ -15,10 +15,11 @@ public class TopBarUI : MonoBehaviour
     [SerializeField] private TMP_Text goldText;      // Сколько золота у игрока
     [SerializeField] private TMP_Text plutoniumText; // Сколько плутония у игрока
     [SerializeField] private TMP_Text incomeText;    // Доход за начисление, например "+300  +10"
-    [SerializeField] private TMP_Text timerText;     // Секунды до следующего начисления
+    [Tooltip("Больше не используется: таймер дохода убран (полоска и секунды спрятаны в сцене)")]
+    [SerializeField] private TMP_Text timerText;
 
-    [Header("Таймер дохода")]
-    [SerializeField] private Image timerFill; // Полоска, заполняется за 10 секунд (Image Type = Filled)
+    [Header("Таймер дохода (убран)")]
+    [SerializeField] private Image timerFill;
 
     [Header("Всплывающий доход")]
     [SerializeField] private TMP_Text popupText;          // Надпись "+300", всплывает при начислении
@@ -58,19 +59,18 @@ public class TopBarUI : MonoBehaviour
         rm.IncomeReceived -= OnIncomeReceived;
     }
 
-    /// <summary>Каждый кадр обновляем полоску таймера и доход (источники могут меняться).</summary>
+    /// <summary>Каждый кадр обновляем доход (источники могут меняться). Таймера дохода больше нет.</summary>
     private void Update()
     {
         ResourceManager rm = ResourceManager.Instance;
-        if (timerFill != null) timerFill.fillAmount = rm.IncomeProgress;
-        if (timerText != null) timerText.text = Mathf.CeilToInt(rm.TimeToNextIncome) + "с";
+        if (rm == null) return;
 
         if (incomeText != null)
         {
             rm.GetIncomePerTick(Team.Player, out int gold, out int plutonium);
             incomeText.text = plutonium > 0
-                ? $"+{gold} <color=#C58BFF>+{plutonium}</color>"
-                : $"+{gold}";
+                ? $"+{gold}<size=70%>/{rm.IncomeInterval:0}с</size>  <color=#C58BFF>+{plutonium}<size=70%>/{rm.PlutoniumInterval:0}с</size></color>"
+                : $"+{gold}<size=70%>/{rm.IncomeInterval:0}с</size>";
         }
     }
 
