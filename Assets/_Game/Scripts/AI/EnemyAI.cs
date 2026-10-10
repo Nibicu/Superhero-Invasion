@@ -249,7 +249,7 @@ public class EnemyAI : MonoBehaviour
         if (MissionManager.Instance != null)
             foreach (MissionMarker m in MissionManager.Instance.Active)
             {
-                if (m == null || m.AssignedSquad != null || IsOrdered(m)) continue;
+                if (m == null || m.Side != team || m.AssignedSquad != null || IsOrdered(m)) continue;
                 if (m.Data.GetSuccessChance(squad.Power) < minMissionChance) continue;
                 if (!m.CanAccept(squad, out _)) continue;
                 float value = m.Data.rewardGold + m.Data.rewardPlutonium * 15f
@@ -257,6 +257,27 @@ public class EnemyAI : MonoBehaviour
                 float score = value / (Vector3.Distance(home, m.ApproachPoint) + 5f);
                 if (score > bestScore) { bestScore = score; best = m; }
             }
+
+        // Общая миссия: награда как у объекта (золото, плутоний, артефакты), охрана по территориям.
+        // Если её уже выполняет противник — вступаем в битву за флаг, только если успеем и не слабее его
+        GlobalMission gm = GlobalMissionManager.Instance != null ? GlobalMissionManager.Instance.Current : null;
+        if (gm != null && !gm.IsCompleted && !IsOrdered(gm) && gm.CanAccept(squad, out _))
+        {
+            bool join = gm.IsUnderAttack;
+            bool ok = !join || (gm.CanJoin(team) && SM.EstimateTravelTime(squad, gm) <= gm.PrepLeft - 1f
+                      && BattleCalculator.Forecast(BattleCalculator.SquadPower(squad), BattleCalculator.SquadPower(gm.Attacker.Squad)) != BattleForecast.Lose);
+            var forecast = BattleCalculator.Forecast(BattleCalculator.SquadPower(squad), gm.DefenderPower);
+            if (ok && forecast != BattleForecast.Lose)
+            {
+                GlobalMissionData d = gm.Data;
+                float value = d.rewardGold + d.rewardPlutonium * 15f + d.rewardArtifacts * 400f;
+                if (forecast == BattleForecast.Equal) value *= 0.7f;
+                value *= objectPriority; // общая миссия ценна, как объект
+                if (join) value *= 1.3f; // заодно не дать награду противнику
+                float score = value / (Vector3.Distance(home, gm.ApproachPoint) + 5f);
+                if (score > bestScore) { bestScore = score; best = gm; }
+            }
+        }
 
         // Объекты: не наши, никто из наших туда не едет
         foreach (MapObject o in MapObject.All)

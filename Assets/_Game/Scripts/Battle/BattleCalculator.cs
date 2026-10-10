@@ -56,11 +56,14 @@ public static class BattleCalculator
         g.unit.baseStats.Scaled(1f + HeroInstance.StatGrowthPerLevel * (g.level - 1));
 
     /// <summary>Сила всей охраны объекта (все волны).</summary>
-    public static int GarrisonPower(MapObjectData data)
+    public static int GarrisonPower(MapObjectData data) => GarrisonPower(data.waves);
+
+    /// <summary>Сила охраны по волнам (объект, общая миссия, портал).</summary>
+    public static int GarrisonPower(GuardWave[] waves)
     {
         int sum = 0;
-        if (data.waves == null) return 0;
-        foreach (GuardWave w in data.waves)
+        if (waves == null) return 0;
+        foreach (GuardWave w in waves)
             foreach (GuardEntry g in w.guards)
                 if (g != null && g.unit != null) sum += UnitPower(g.unit, GuardStats(g));
         return sum;

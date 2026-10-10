@@ -7448,7 +7448,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\u0422\u0435\u0441\u0442: G = +1000 \u0437\u043E\u043B\u043E\u0442\u0430, P = +50 \u043F\u043B\u0443\u0442\u043E\u043D\u0438\u044F, I = \u0430\u0440\u0442\u0435\u0444\u0430\u043A\u0442"
+  m_text: "\u0422\u0435\u0441\u0442: G = +1000 \u0437\u043E\u043B\u043E\u0442\u0430, P = +50 \u043F\u043B\u0443\u0442\u043E\u043D\u0438\u044F, I = \u0430\u0440\u0442\u0435\u0444\u0430\u043A\u0442, M = \u043E\u0431\u0449\u0430\u044F \u043C\u0438\u0441\u0441\u0438\u044F"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -55983,6 +55983,7 @@ GameObject:
   - component: {fileID: 714901167}
   - component: {fileID: 714901168}
   - component: {fileID: 714901169}
+  - component: {fileID: 714901170}
   m_Layer: 0
   m_Name: Managers
   m_TagString: Untagged
@@ -56105,11 +56106,17 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 5141f4a47f13c424098a93402bf7c4f9, type: 2}
   - {fileID: 11400000, guid: 3267b5c90a5de544d857cb88c9b885ac, type: 2}
   - {fileID: 11400000, guid: 126136094d1325d4ea8abce0e7fe2fe4, type: 2}
+  - {fileID: 11400000, guid: c3319462c91ff2840b5b9641fd1ae425, type: 2}
+  - {fileID: 11400000, guid: bd00cccd52841544eb1a80271193d6a1, type: 2}
+  - {fileID: 11400000, guid: 1a79cd58bf0da974998bca2112afb233, type: 2}
+  - {fileID: 11400000, guid: 889af4a7675b02849a87571838b24dc3, type: 2}
+  - {fileID: 11400000, guid: 48310518426db9e4da06121ef833a825, type: 2}
+  - {fileID: 11400000, guid: 5a9fa801dbe4b594f92fbc3cee438825, type: 2}
+  - {fileID: 11400000, guid: 2c862f3eaf46c0b4daab52d06527e68c, type: 2}
   markerPrefab: {fileID: 6174912887115454394, guid: 10fde023df4eb1b47ac388cc4901d938, type: 3}
   firstDelay: 8
-  minInterval: 20
-  maxInterval: 40
-  maxActive: 3
+  interval: 30
+  maxActivePerSide: 3
   areaMin: {x: -11.5, y: -5.3}
   areaMax: {x: 11.5, y: 7.6}
   minDistanceFromRoad: 1.8
@@ -56162,6 +56169,26 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 44921ce0947cd49459233b614b282565, type: 2}
   - {fileID: 11400000, guid: ee0725e1b6d17db4bae5a47ec20d2121, type: 2}
   - {fileID: 11400000, guid: 475ab1c82c709574faf7363ce15e9ce0, type: 2}
+  debugCheats: 1
+--- !u!114 &714901170
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 714901162}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ff60873af5ff44a4498b201b22553a42, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GlobalMissionManager
+  pool:
+  - {fileID: 11400000, guid: ad23867a9c7e5b2498d5173a5062ddb5, type: 2}
+  - {fileID: 11400000, guid: 4441635c72b78614b90a1f9f672f58f9, type: 2}
+  - {fileID: 11400000, guid: 820f4a98e23558141bb3d47352277e17, type: 2}
+  markerPrefab: {fileID: 5671173590814714099, guid: 2e68b0e133ddc944f9e81f7e341f53cf, type: 3}
+  firstDelay: 150
+  interval: 150
   debugCheats: 1
 --- !u!1 &716132035
 GameObject:
@@ -116997,6 +117024,7 @@ MonoBehaviour:
   backdropButton: {fileID: 1399339332}
   header: {fileID: 315065108}
   titleText: {fileID: 1553472518}
+  headerIcon: {fileID: 688816906}
   descText: {fileID: 362549233}
   detailsText: {fileID: 1652650057}
   statusText: {fileID: 944614059}

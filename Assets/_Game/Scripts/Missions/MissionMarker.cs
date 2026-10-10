@@ -8,6 +8,7 @@ using UnityEngine.EventSystems;
 /// - Клик открывает окно миссии (MissionWindowUI).
 /// - Команда приехала → идёт таймер выполнения → бросок шанса успеха →
 ///   награда (или ранение команды при провале) → команда едет домой, миссия исчезает.
+/// Миссию видит и выполняет только её сторона (Side): миссии злодеев игроку не видны.
 /// Создаётся MissionManager'ом из префаба MissionMarker.
 /// </summary>
 public class MissionMarker : MonoBehaviour, ISquadTarget
@@ -29,6 +30,9 @@ public class MissionMarker : MonoBehaviour, ISquadTarget
 
     /// <summary>Данные миссии.</summary>
     public MissionData Data { get; private set; }
+
+    /// <summary>Чья это миссия: Player — миссия героев, Enemy — миссия злодеев.</summary>
+    public Team Side { get; private set; }
 
     /// <summary>Едет ли / работает ли здесь команда.</summary>
     public Squad AssignedSquad => assigned;
@@ -54,15 +58,23 @@ public class MissionMarker : MonoBehaviour, ISquadTarget
     }
 
     /// <summary>Запустить миссию (вызывает MissionManager).</summary>
-    public void Init(MissionData data, MissionManager owner)
+    public void Init(MissionData data, MissionManager owner, Team side)
     {
         Data = data;
         manager = owner;
+        Side = side;
         lifeLeft = data.lifetime;
         if (circle != null) circle.color = data.color;
         if (glow != null) glow.color = new Color(data.color.r, data.color.g, data.color.b, 0.35f);
         if (questionMark != null) questionMark.color = data.color;
         SetBar(1f, Color.white);
+
+        // Миссии другой стороны игрок не видит и не может нажать
+        if (side != Team.Player)
+        {
+            foreach (Renderer r in GetComponentsInChildren<Renderer>(true)) r.enabled = false;
+            foreach (Collider2D c in GetComponentsInChildren<Collider2D>(true)) c.enabled = false;
+        }
     }
 
     /// <summary>Пульсация, таймер жизни или прогресс выполнения.</summary>
@@ -95,10 +107,11 @@ public class MissionMarker : MonoBehaviour, ISquadTarget
 
     // ---------- ISquadTarget ----------
 
-    /// <summary>На миссию можно отправить только одну команду.</summary>
+    /// <summary>На миссию можно отправить только одну команду и только своей стороны.</summary>
     public bool CanAccept(Squad squad, out string reason)
     {
         reason = null;
+        if (squad.Owner != Side) { reason = "Это миссия другой стороны"; return false; }
         if (assigned != null) { reason = "Сюда уже едет команда"; return false; }
         return true;
     }

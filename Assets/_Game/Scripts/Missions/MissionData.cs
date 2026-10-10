@@ -1,6 +1,13 @@
 using System.Text;
 using UnityEngine;
 
+/// <summary>Для кого миссия: миссии героев видит и выполняет только игрок за героев, миссии злодеев — только злодеи.</summary>
+public enum MissionSide
+{
+    Heroes,  // Миссия героев (сторона игрока)
+    Villains // Миссия злодеев (сторона врага)
+}
+
 /// <summary>
 /// Описание миссии ("?" на карте): что случилось, сколько длится, какая нужна сила и какая награда.
 /// Создать новую: ПКМ в Project → Create → Супергеройское бюро → Миссия,
@@ -15,6 +22,9 @@ public class MissionData : ScriptableObject
 
     [Tooltip("Что произошло")]
     [TextArea(2, 4)] public string description = "";
+
+    [Tooltip("Для кого миссия: Heroes — видят и выполняют только герои, Villains — только злодеи")]
+    public MissionSide side = MissionSide.Heroes;
 
     [Tooltip("Цвет круга на карте")]
     public Color color = new Color(0.96f, 0.77f, 0.26f);
@@ -42,6 +52,9 @@ public class MissionData : ScriptableObject
 
     [Tooltip("Миссия появляется только до первого успешного выполнения")]
     public bool oneTime = false;
+
+    /// <summary>Сторона, которой видна миссия (герои — игрок, злодеи — враг).</summary>
+    public Team SideTeam => side == MissionSide.Heroes ? Team.Player : Team.Enemy;
 
     /// <summary>Шанс успеха для команды с силой power (0..1). Сила не ниже рекомендуемой — 100%.</summary>
     public float GetSuccessChance(int power)

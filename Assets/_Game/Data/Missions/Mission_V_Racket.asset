@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 770d6a9599b3b264b8158c900e70a665, type: 3}
+  m_Name: Mission_V_Racket
+  m_EditorClassIdentifier: Assembly-CSharp::MissionData
+  title: "\u0420\u044D\u043A\u0435\u0442 \u0432 \u043F\u043E\u0440\u0442\u0443"
+  description: "\u0422\u043E\u0440\u0433\u043E\u0432\u0446\u044B \u0432 \u043F\u043E\u0440\u0442\u0443 \u0434\u0430\u0432\u043D\u043E \u043D\u0435 \u043F\u043B\u0430\u0442\u0438\u043B\u0438 \xAB\u0437\u0430 \u0437\u0430\u0449\u0438\u0442\u0443\xBB."
+  side: 1
+  color: {r: 0.85, g: 0.3, b: 0.45, a: 1}
+  duration: 20
+  lifetime: 60
+  requiredPower: 200
+  rewardGold: 300
+  rewardPlutonium: 0
+  levelUpTeam: 0
+  unlockBuilding: {fileID: 0}
+  oneTime: 0

@@ -122,6 +122,12 @@ public class SquadUnit : MonoBehaviour
             SquadManager.Instance.OnUnitReturned(this);
             Destroy(gameObject);
         }
+        else if (Target is Object o && o == null)
+        {
+            // Цель исчезла, пока ехали (например, общую миссию уже выполнили) — едем домой
+            if (Squad.Owner == Team.Player) ToastUI.Show($"Команда {Squad.Number}: цели больше нет, возвращается на базу");
+            ReturnHome();
+        }
         else
         {
             Target.OnSquadArrived(this);
