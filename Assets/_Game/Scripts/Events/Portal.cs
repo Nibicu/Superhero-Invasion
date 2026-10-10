@@ -157,6 +157,17 @@ public class Portal : AttackableSite
         return sum;
     }
 
+    /// <summary>Сила следующей (ещё не пройденной) территории стороны team; 0 — всё пройдено.</summary>
+    public int NextWavePower(Team team)
+    {
+        int w = GetProgress(team);
+        if (w >= data.TerritoryCount) return 0;
+        int sum = 0;
+        foreach (GuardEntry g in data.waves[w].guards)
+            if (g != null && g.unit != null) sum += BattleCalculator.UnitPower(g.unit, BattleCalculator.GuardStats(g));
+        return sum;
+    }
+
     // ---------- Место нападения (AttackableSite) ----------
 
     public override string TargetName => data.title;

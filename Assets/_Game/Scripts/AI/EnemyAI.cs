@@ -4,12 +4,16 @@ using UnityEngine;
 /// <summary>
 /// Искусственный интеллект врага. Раз в thinkInterval секунд "думает":
 ///  1) собирает команды из свободных злодеев;
-///  2) отправляет свободные здоровые команды к самой выгодной цели.
-///     Объекты — главный приоритет (они дают большие бонусы). Миссии — для прокачки.
-///     Базу противника атакует, только если захватил больше половины объектов
-///     или база противника пустая (без гарнизона);
-///  3) отступает, если охрана цели оказалась сильнее (на верное поражение не идёт);
-///  4) тратит золото на одно действие: найм, постройку по плану, улучшение построек или базы.
+///  2) отправляет свободные здоровые команды к самой выгодной цели. Важность целей:
+///     портал и объект события → общая миссия → миссии злодеев → нападение на базу.
+///     Объект события тем ценнее, чем ближе конец события (артефакт получит последний владелец).
+///     На портал ходит и тогда, когда закрыть его сразу не получится — набирать прогресс по территориям.
+///     Базу противника атакует, если она пустая, если у неё мало HP или если наша команда
+///     точно сильнее гарнизона и дома остаётся ещё команда. Во время события и первые 2 минуты игры
+///     (мирное время) на базу не нападает;
+///  3) за полминуты до события не отправляет команды на долгие дела — готовится к событию;
+///  4) отступает, если охрана цели оказалась сильнее (на верное поражение не идёт);
+///  5) тратит золото на одно действие: найм, постройку по плану, улучшение построек или базы.
 /// ИИ пользуется теми же правилами, что и игрок (ResourceManager, MainBase,
 /// HeroManager, SquadManager) — никаких читов.
 /// </summary>
@@ -42,18 +46,34 @@ public class EnemyAI : MonoBehaviour
     [SerializeField] private bool keepGarrison = true;
     [Tooltip("Насколько ИИ хочет атаковать базу противника (ценность атаки)")]
     [SerializeField] private float baseAttackValue = 600f;
-    [Tooltip("Во сколько раз объекты ценнее остальных целей (объекты — главный приоритет)")]
+    [Tooltip("Во сколько раз объекты, портал и общая миссия ценнее остальных целей")]
     [SerializeField] private float objectPriority = 3f;
-    [Tooltip("Какую долю объектов карты нужно захватить, чтобы атаковать базу с гарнизоном (0.5 = больше половины)")]
-    [SerializeField, Range(0f, 1f)] private float objectsShareForBaseAttack = 0.5f;
+    [Tooltip("Если у базы противника HP не больше этого — ИИ старается её добить (даже при равных силах)")]
+    [SerializeField] private int finishBaseHp = 400;
+    [Tooltip("Мирное время: первые столько секунд игры ИИ не нападает на базу противника (даже пустую)")]
+    [SerializeField] private float baseAttackGrace = 120f;
+
+    [Header("События")]
+    [Tooltip("За сколько секунд до события ИИ перестаёт отправлять команды на долгие дела")]
+    [SerializeField] private float eventPrepTime = 35f;
+    [Tooltip("Ценность объекта события (растёт к концу события: последний владелец получит артефакт)")]
+    [SerializeField] private float eventObjectValue = 900f;
 
     private float timer;                                                        // До следующего решения
+    private float playTime;                                                     // Сколько секунд идёт игра (время карты)
     private readonly Dictionary<Squad, ISquadTarget> orders = new Dictionary<Squad, ISquadTarget>(); // Куда уже отправлены команды
 
     private ResourceManager RM => ResourceManager.Instance;
     private HeroManager HM => HeroManager.Instance;
     private SquadManager SM => SquadManager.Instance;
     private MainBase Base => MainBase.Get(team);
+    private EventManager EM => EventManager.Instance;
+
+    /// <summary>Скоро начнётся событие (затишье почти кончилось) — готовимся.</summary>
+    private bool EventSoon => EM != null && !EM.IsRunning && EM.TimeLeft < eventPrepTime;
+
+    /// <summary>Идёт событие.</summary>
+    private bool EventRunning => EM != null && EM.IsRunning;
 
     private void Start() => timer = startDelay;
 
@@ -61,6 +81,7 @@ public class EnemyAI : MonoBehaviour
     private void Update()
     {
         if (!aiEnabled || Base == null) return;
+        playTime += WorldTime.DeltaTime;
         timer -= WorldTime.DeltaTime;
         if (timer > 0f) return;
         timer = thinkInterval;
@@ -149,7 +170,13 @@ public class EnemyAI : MonoBehaviour
             if (site.TryGetDefendingTeam(out Team owner) && owner == team) continue; // это защита своего объекта
             if (!SM.CanRetreat(squad, out _)) continue; // бой уже начался — поздно
 
-            bool lose = BattleCalculator.Forecast(BattleCalculator.SquadPower(squad), site.DefenderPower) == BattleForecast.Lose;
+            int power = BattleCalculator.SquadPower(squad);
+            bool lose = BattleCalculator.Forecast(power, site.DefenderPower) == BattleForecast.Lose;
+            // Портал: смотрим на НАШИ непройденные территории; если следующую потянем — идём набирать прогресс
+            // Если едем перебивать противника (битва за флаг) — охрану не считаем, важна только его команда
+            if (site is Portal pt)
+                lose = !(pt.IsContested || (pt.IsUnderAttack && pt.AttackingTeam != team))
+                       && BattleCalculator.Forecast(power, pt.RemainingPower(team)) == BattleForecast.Lose && !CanFarmPortal(pt, power);
             // Битва за флаг: команда противника намного сильнее — тоже уходим
             SquadUnit foe = site.IsContested ? site.PlayerContestant : null;
             if (foe != null && foe.Squad.Owner != team &&
@@ -158,7 +185,8 @@ public class EnemyAI : MonoBehaviour
             bool badBaseAttack = site is MainBase mb && !MayAttackBase(mb);
             if (!lose && !badBaseAttack) continue;
             if (SM.TryRetreat(squad, out _))
-                Log($"команда {squad.Number} отступает от «{site.SiteName}»: охрана слишком сильная");
+                Log(badBaseAttack ? $"команда {squad.Number} отменяет нападение на «{site.SiteName}»"
+                                  : $"команда {squad.Number} отступает от «{site.SiteName}»: охрана слишком сильная");
         }
     }
 
@@ -176,16 +204,18 @@ public class EnemyAI : MonoBehaviour
             int attackPower = BattleCalculator.SquadPower(o.Attacker.Squad);
             int guards = BattleCalculator.GarrisonPower(o.Data);
             if (BattleCalculator.Forecast(attackPower, guards) == BattleForecast.Lose) continue; // охрана справится сама
+            // Объект события — главный: шлём самую сильную подходящую команду (и раненых чуть охотнее)
+            bool isEvent = EM != null && o == EM.EventObject;
 
             Squad best = null;
-            int bestPower = int.MaxValue;
+            int bestPower = isEvent ? int.MinValue : int.MaxValue;
             foreach (Squad s in SM.GetSquads(team))
             {
-                if (s.Status != SquadStatus.AtBase || orders.ContainsKey(s) || s.HpFraction < 0.4f) continue; // сильно раненых не шлём
+                if (s.Status != SquadStatus.AtBase || orders.ContainsKey(s) || s.HpFraction < (isEvent ? 0.3f : 0.4f)) continue; // сильно раненых не шлём
                 int p = BattleCalculator.SquadPower(s);
                 if (BattleCalculator.Forecast(attackPower, guards + p) == BattleForecast.Win) continue; // не удержим
                 if (SM.EstimateTravelTime(s, o) > o.PrepLeft - 1f) continue;                        // не успеем
-                if (p < bestPower) { bestPower = p; best = s; }
+                if (isEvent ? p > bestPower : p < bestPower) { bestPower = p; best = s; }
             }
             if (best != null && SM.SendSquad(best, o, out _))
             {
@@ -196,14 +226,37 @@ public class EnemyAI : MonoBehaviour
     }
 
     /// <summary>
-    /// Можно ли атаковать базу противника: у нас больше половины объектов карты
-    /// или база противника пустая (гарнизона нет).
+    /// Можно ли вообще думать о нападении на базу противника:
+    /// не во время события и не перед ним (есть цели важнее), и
+    /// база пустая, или у неё мало HP, или у нас есть вторая команда (одна остаётся дома).
+    /// Хватит ли сил конкретной команде — решает BaseAttackForecastOk.
     /// </summary>
     private bool MayAttackBase(MainBase enemyBase)
     {
-        int total = MapObject.All.Count;
-        bool majority = total > 0 && MapObject.CountOwnedBy(team) > total * objectsShareForBaseAttack;
-        return majority || enemyBase.DefenderPower <= 0;
+        if (playTime < baseAttackGrace) return false; // мирное время в начале игры
+        if (EventRunning || EventSoon) return false;
+        if (enemyBase.DefenderPower <= 0) return true;
+        if (enemyBase.Hp <= finishBaseHp) return true;
+        return SM.GetSquads(team).Count >= 2;
+    }
+
+    /// <summary>
+    /// Хватит ли команде сил на нападение: на пустую базу — всегда; добить базу с малым HP —
+    /// при равных силах; иначе — только если команда точно сильнее гарнизона.
+    /// </summary>
+    private bool BaseAttackForecastOk(MainBase enemyBase, int squadPower, out BattleForecast f)
+    {
+        f = BattleCalculator.Forecast(squadPower, enemyBase.DefenderPower);
+        if (enemyBase.DefenderPower <= 0) return true;
+        if (enemyBase.Hp <= finishBaseHp) return f != BattleForecast.Lose;
+        return f == BattleForecast.Win;
+    }
+
+    /// <summary>Хватит ли команде сил пройти хотя бы следующую территорию портала (прогресс сохранится).</summary>
+    private bool CanFarmPortal(Portal p, int squadPower)
+    {
+        int next = p.NextWavePower(team);
+        return next > 0 && p.GetProgress(team) + 1 < p.TerritoryCount && squadPower * 0.7f >= next;
     }
 
     /// <summary>
@@ -215,11 +268,13 @@ public class EnemyAI : MonoBehaviour
     {
         var ready = new List<Squad>();
         int atBase = 0;
+        // Во время события медлить нельзя — отправляем и немного раненые команды
+        float minHp = EventRunning ? Mathf.Min(minHpToSend, 0.5f) : minHpToSend;
         foreach (Squad s in SM.GetSquads(team))
         {
             if (s.Status != SquadStatus.AtBase) continue;
             atBase++;
-            if (s.HpFraction >= minHpToSend && !orders.ContainsKey(s)) ready.Add(s);
+            if (s.HpFraction >= minHp && !orders.ContainsKey(s)) ready.Add(s);
         }
         ready.Sort((a, b) => BattleCalculator.SquadPower(b).CompareTo(BattleCalculator.SquadPower(a)));
         bool needGarrison = keepGarrison && SM.GetSquads(team).Count >= 2;
@@ -252,6 +307,8 @@ public class EnemyAI : MonoBehaviour
                 if (m == null || m.Side != team || m.AssignedSquad != null || IsOrdered(m)) continue;
                 if (m.Data.GetSuccessChance(squad.Power) < minMissionChance) continue;
                 if (!m.CanAccept(squad, out _)) continue;
+                // Перед событием — только миссии, после которых команда успеет вернуться
+                if (EventSoon && SM.EstimateTravelTime(squad, m) * 2f + m.Data.duration > EM.TimeLeft + 15f) continue;
                 float value = m.Data.rewardGold + m.Data.rewardPlutonium * 15f
                               + (m.Data.levelUpTeam ? 300f : 0f) + (m.Data.unlockBuilding != null ? 500f : 0f);
                 float score = value / (Vector3.Distance(home, m.ApproachPoint) + 5f);
@@ -261,7 +318,7 @@ public class EnemyAI : MonoBehaviour
         // Общая миссия: награда как у объекта (золото, плутоний, артефакты), охрана по территориям.
         // Если её уже выполняет противник — вступаем в битву за флаг, только если успеем и не слабее его
         GlobalMission gm = GlobalMissionManager.Instance != null ? GlobalMissionManager.Instance.Current : null;
-        if (gm != null && !gm.IsCompleted && !IsOrdered(gm) && gm.CanAccept(squad, out _))
+        if (gm != null && !gm.IsCompleted && !IsOrdered(gm) && !EventSoon && gm.CanAccept(squad, out _))
         {
             bool join = gm.IsUnderAttack;
             bool ok = !join || (gm.CanJoin(team) && SM.EstimateTravelTime(squad, gm) <= gm.PrepLeft - 1f
@@ -273,7 +330,7 @@ public class EnemyAI : MonoBehaviour
                 float value = d.rewardGold + d.rewardPlutonium * 15f + d.rewardArtifacts * 400f;
                 if (forecast == BattleForecast.Equal) value *= 0.7f;
                 value *= objectPriority; // общая миссия ценна, как объект
-                if (join) value *= 1.3f; // заодно не дать награду противнику
+                if (join) value *= 1.6f; // перебить противника — заодно не дать ему награду
                 float score = value / (Vector3.Distance(home, gm.ApproachPoint) + 5f);
                 if (score > bestScore) { bestScore = score; best = gm; }
             }
@@ -288,11 +345,18 @@ public class EnemyAI : MonoBehaviour
             bool ok = !join || (portal.CanJoin(team) && SM.EstimateTravelTime(squad, portal) <= portal.PrepLeft - 1f
                       && BattleCalculator.Forecast(BattleCalculator.SquadPower(squad), BattleCalculator.SquadPower(portal.Attacker.Squad)) != BattleForecast.Lose);
             ok &= SM.EstimateTravelTime(squad, portal) + portal.PrepTime < portal.TimeLeft; // успеть до конца события
-            var forecast = BattleCalculator.Forecast(BattleCalculator.SquadPower(squad), portal.RemainingPower(team));
-            if (ok && forecast != BattleForecast.Lose)
+            int power = BattleCalculator.SquadPower(squad);
+            var forecast = BattleCalculator.Forecast(power, portal.RemainingPower(team));
+            // Закрыть сразу не выйдет — но следующую территорию потянем: идём набирать прогресс
+            bool farm = forecast == BattleForecast.Lose && !join && CanFarmPortal(portal, power);
+            // Противник уже готовится закрыть портал — вступаем в битву за флаг, даже если охрана нам
+            // не по силам: главное, чтобы наша команда была не слабее его (это проверено выше в ok)
+            if (ok && (join || forecast != BattleForecast.Lose || farm))
             {
                 float value = 1200f + portal.Data.rewardArtifacts * 400f;
                 if (forecast == BattleForecast.Equal) value *= 0.8f;
+                if (farm) value *= 0.5f;
+                if (join) value *= 1.5f; // не дать противнику закрыть портал без боя
                 value *= objectPriority;
                 float score = value / (Vector3.Distance(home, portal.ApproachPoint) + 5f);
                 if (score > bestScore) { bestScore = score; best = portal; }
@@ -318,6 +382,13 @@ public class EnemyAI : MonoBehaviour
                           + (d.unlocksFactoryUpgrades ? 400f : 0f) + (d.allowsHeroBoost ? 300f : 0f);
             if (o.HasOwner) value += 200f; // отобрать у противника — вдвойне полезно
 
+            // Объект события: успеть до конца; чем ближе конец, тем ценнее (артефакт — последнему владельцу)
+            if (EM != null && o == EM.EventObject)
+            {
+                if (SM.EstimateTravelTime(squad, o) + o.PrepTime + 3f > o.EventTimeLeft) continue;
+                value += eventObjectValue * (1f + 1.5f * EM.Progress);
+            }
+
             // Охрана объекта: на верное поражение не идём, на равный бой — неохотно
             var forecast = BattleCalculator.Forecast(BattleCalculator.SquadPower(squad), BattleCalculator.GarrisonPower(d));
             if (forecast == BattleForecast.Lose) continue;
@@ -328,13 +399,12 @@ public class EnemyAI : MonoBehaviour
             if (score > bestScore) { bestScore = score; best = o; }
         }
 
-        // База противника: только при большинстве объектов или если она пустая.
-        // Чем меньше у неё HP, тем заманчивее. На верное поражение не идём.
+        // База противника: пустая, с малым HP или наша команда точно сильнее гарнизона
+        // (и дома остаётся ещё команда). Чем меньше у неё HP, тем заманчивее.
         MainBase enemyBase = MainBase.Get(team == Team.Player ? Team.Enemy : Team.Player);
         if (enemyBase != null && !IsOrdered(enemyBase) && MayAttackBase(enemyBase) && enemyBase.CanAccept(squad, out _))
         {
-            var f = BattleCalculator.Forecast(BattleCalculator.SquadPower(squad), enemyBase.DefenderPower);
-            if (f != BattleForecast.Lose)
+            if (BaseAttackForecastOk(enemyBase, BattleCalculator.SquadPower(squad), out BattleForecast f))
             {
                 float value = baseAttackValue * (2f - (float)enemyBase.Hp / enemyBase.MaxHp);
                 if (f == BattleForecast.Equal) value *= 0.5f;
