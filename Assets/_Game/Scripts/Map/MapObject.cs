@@ -9,6 +9,9 @@ using UnityEngine.EventSystems;
 /// - Команда приезжает → подготовка к бою 20 с → бой с охраной (окно перед боем)
 ///   → при победе объект переходит к её стороне → бонусы получает новый владелец
 ///   (и теряет старый) → команда едет домой. Порядок нападения — в AttackableSite.
+/// Объект НЕАКТИВЕН, пока его не откроет событие (EventManager): неактивный объект ничей,
+/// серый, и захватить его нельзя. Во время события объект можно захватывать и отбивать;
+/// когда событие кончается, последний владелец получает артефакт, а объект снова ничей и неактивен.
 /// Данные (название, бонусы, охрана) — в MapObjectData.
 /// На объекте должен быть Collider2D для клика.
 /// </summary>
@@ -35,11 +38,24 @@ public class MapObject : AttackableSite, IIncomeSource
     private bool hasOwner;         // Захвачен ли кем-нибудь
     private Team owner;            // Владелец (если hasOwner)
     private bool incomeRegistered; // Зарегистрирован ли доход в ResourceManager
+    private bool isActive;         // Открыт ли объект событием (можно захватывать)
+    private SpriteRenderer[] sprites; // Все картинки объекта (для серого вида, когда неактивен)
+    private Color[] spriteColors;     // Их исходные цвета
+    private float labelTimer;         // Когда обновить подпись с таймером события
 
     // ---------- Свойства ----------
 
     public MapObjectData Data => data;
     public bool HasOwner => hasOwner;
+
+    /// <summary>Открыт ли объект событием (только тогда его можно захватить).</summary>
+    public bool IsActive => isActive;
+
+    /// <summary>Сколько секунд ещё идёт событие этого объекта (пишет EventManager).</summary>
+    public float EventTimeLeft { get; set; }
+
+    /// <summary>Владелец (имеет смысл, только если HasOwner).</summary>
+    public Team Owner => owner;
 
     /// <summary>Все объекты на карте.</summary>
     public static IReadOnlyList<MapObject> All => all;
@@ -163,6 +179,8 @@ public class MapObject : AttackableSite, IIncomeSource
     protected override bool CanBeAttackedBy(Team team, out string reason)
     {
         reason = null;
+        if (!isActive) { reason = "Объект неактивен — его откроет событие"; return false; }
+        if (EventTimeLeft <= 0f) { reason = "Событие заканчивается"; return false; }
         if (IsOwnedBy(team)) { reason = "Объект уже ваш"; return false; }
         return true;
     }
@@ -211,13 +229,62 @@ public class MapObject : AttackableSite, IIncomeSource
         incomeRegistered = false;
     }
 
-    private void Start() => UpdateVisuals();
+    private void Start()
+    {
+        sprites = GetComponentsInChildren<SpriteRenderer>(true);
+        spriteColors = new Color[sprites.Length];
+        for (int i = 0; i < sprites.Length; i++) spriteColors[i] = sprites[i].color;
+        UpdateVisuals();
+    }
+
+    /// <summary>Таймер подготовки (база) + раз в полсекунды подпись с таймером события.</summary>
+    protected override void Update()
+    {
+        base.Update();
+        if (!isActive) return;
+        labelTimer -= Time.deltaTime;
+        if (labelTimer > 0f) return;
+        labelTimer = 0.5f;
+        UpdateAttackVisuals();
+    }
+
+    // ---------- Событие ----------
+
+    /// <summary>Событие открыло объект: теперь его можно захватывать.</summary>
+    public void Activate()
+    {
+        isActive = true;
+        UpdateVisuals();
+    }
+
+    /// <summary>
+    /// Событие закончилось: объект снова ничей и неактивен (бонусы у владельца пропадают).
+    /// Возвращает, был ли у объекта владелец, и кто (lastOwner).
+    /// </summary>
+    public bool Deactivate(out Team lastOwner)
+    {
+        lastOwner = owner;
+        bool had = hasOwner;
+        if (hasOwner) ApplyEffects(owner, -1);
+        hasOwner = false;
+        isActive = false;
+        if (incomeRegistered && ResourceManager.Instance != null) ResourceManager.Instance.UnregisterSource(this);
+        incomeRegistered = false;
+        UpdateVisuals();
+        if (data.allowsHeroBoost && had) HeroManager.Instance.NotifyChanged(lastOwner);
+        return had;
+    }
 
     /// <summary>Клик по объекту — открыть окно объекта (во время нападения — только сообщение).</summary>
     private void OnMouseUpAsButton()
     {
         if (!enabled) return;
         if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) return;
+        if (!isActive)
+        {
+            if (MapObjectWindowUI.Instance != null) MapObjectWindowUI.Instance.Open(this);
+            return;
+        }
         if (IsUnderAttack && CanJoin(Team.Player))
         {
             // Враг готовится к захвату — можно успеть своей командой (будет битва за флаг)
@@ -301,12 +368,21 @@ public class MapObject : AttackableSite, IIncomeSource
     public Color OwnerColor => !hasOwner ? neutralColor : owner == Team.Player ? playerColor : enemyColor;
 
     /// <summary>Владелец словами.</summary>
-    public string OwnerText => !hasOwner ? "Нейтральный" : owner == Team.Player ? "<color=#7FB8FF>Наш</color>" : "<color=#FF7A7A>Враг</color>";
+    public string OwnerText => !isActive ? "<color=#D5DAE3>Неактивен</color>"
+        : !hasOwner ? "Нейтральный" : owner == Team.Player ? "<color=#7FB8FF>Наш</color>" : "<color=#FF7A7A>Враг</color>";
 
-    /// <summary>Перекрасить круг и флажок, обновить подпись.</summary>
+    /// <summary>Перекрасить круг и флажок, обновить подпись. Неактивный объект — серый и бледный.</summary>
     private void UpdateVisuals()
     {
-        Color c = OwnerColor;
+        if (sprites != null)
+            for (int i = 0; i < sprites.Length; i++)
+            {
+                if (sprites[i] == null) continue;
+                Color o = spriteColors[i];
+                float g = o.grayscale * 0.7f;
+                sprites[i].color = isActive ? o : new Color(g, g, g, o.a * 0.75f);
+            }
+        Color c = isActive ? OwnerColor : new Color(0.35f, 0.37f, 0.4f);
         if (zone != null) zone.color = new Color(c.r, c.g, c.b, 0.35f);
         if (flag != null) flag.color = c;
         UpdateAttackVisuals();
@@ -326,7 +402,10 @@ public class MapObject : AttackableSite, IIncomeSource
                 ? $"\n<size=60%><color={col}>{what} через {Mathf.CeilToInt(PrepLeft)} с</color></size>"
                 : $"\n<size=60%><color={col}>Идёт бой!</color></size>";
         }
-        if (label != null) label.text = $"{data.displayName}\n<size=70%>{OwnerText}</size>{attack}";
+        string evt = isActive && !IsUnderAttack
+            ? $"\n<size=60%><color=#FFD84A>Событие: {Mathf.FloorToInt(EventTimeLeft / 60f)}:{Mathf.FloorToInt(EventTimeLeft % 60f):00}</color></size>"
+            : "";
+        if (label != null) label.text = $"{data.displayName}\n<size=70%>{OwnerText}</size>{attack}{evt}";
 
         if (progressRoot != null) progressRoot.SetActive(IsUnderAttack);
         if (progressFill == null || !IsUnderAttack) return;

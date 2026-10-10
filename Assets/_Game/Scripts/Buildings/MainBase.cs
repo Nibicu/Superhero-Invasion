@@ -303,7 +303,10 @@ public class MainBase : AttackableSite, IIncomeSource
     }
 
     /// <summary>Нанести урон базе. 0 — конец игры.</summary>
-    public void TakeDamage(int damage)
+    public void TakeDamage(int damage) => TakeDamage(damage, null);
+
+    /// <summary>Нанести урон базе с причиной для сообщения (например, портал). 0 — конец игры.</summary>
+    public void TakeDamage(int damage, string reason)
     {
         if (hp <= 0) return;
         hp = Mathf.Max(0, hp - damage);
@@ -312,7 +315,8 @@ public class MainBase : AttackableSite, IIncomeSource
         HpChanged?.Invoke();
         Changed?.Invoke();
 
-        if (owner == Team.Player) ToastUI.Show($"Враг нанёс нашей базе {damage} урона! HP {hp}/{maxHp}");
+        if (reason != null) ToastUI.Show($"{reason}: {baseName} получила {damage} урона! HP {hp}/{maxHp}");
+        else if (owner == Team.Player) ToastUI.Show($"Враг нанёс нашей базе {damage} урона! HP {hp}/{maxHp}");
         else ToastUI.Show($"{baseName} получила {damage} урона! HP {hp}/{maxHp}");
 
         if (hp <= 0) GameOverUI.Show(owner != Team.Player);

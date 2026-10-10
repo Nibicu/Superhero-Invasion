@@ -128,6 +128,7 @@ public class BattleManager : MonoBehaviour
 
     private ArenaTint[] tints;            // Детали арены, которые красятся в цвет объекта
     private List<List<BattleUnit>> waves; // Охрана по территориям
+    private List<List<BattleUnit>> rivalWaves; // Охрана на половине врага (битва за флаг; обычно та же, что waves)
     private string siteName;              // За что бьёмся (название)
     private Action<BattleResult> onFinished; // Кого известить об итоге
     private bool contested;               // Битва за флаг (две команды)
@@ -234,9 +235,11 @@ public class BattleManager : MonoBehaviour
     /// <summary>
     /// Битва за флаг: наша команда ours (слева) и команда врага rivalUnits (справа)
     /// одновременно бьются с охраной guardWaves (у каждой — своя копия), потом — за флаг в центре.
+    /// rivalGuardWaves — если у врага своя охрана (портал: пройденные территории пустые); null — та же копия.
     /// </summary>
     public void StartContestedBattle(string title, Color color, List<BattleUnit> ours, List<BattleUnit> rivalUnits,
-                                     List<List<BattleUnit>> guardWaves, Action<BattleResult> finished)
+                                     List<List<BattleUnit>> guardWaves, Action<BattleResult> finished,
+                                     List<List<BattleUnit>> rivalGuardWaves = null)
     {
         if (IsRunning) return;
         if (barriers == null || barriers.Length < LaneTerritories * 2)
@@ -246,6 +249,7 @@ public class BattleManager : MonoBehaviour
         rivalLaneLength = LaneTerritories;
         totalTerritories = LaneTerritories * 2 + 1;
         BeginBattle(title, color, guardWaves, finished);
+        if (rivalGuardWaves != null) rivalWaves = rivalGuardWaves;
 
         heroMaxX = territoryWidth - 0.5f;
         rivalMinX = (totalTerritories - 1) * territoryWidth + 0.5f;
@@ -315,6 +319,7 @@ public class BattleManager : MonoBehaviour
     private void BeginBattle(string title, Color color, List<List<BattleUnit>> guardWaves, Action<BattleResult> finished)
     {
         waves = guardWaves;
+        rivalWaves = guardWaves;
         siteName = title;
         onFinished = finished;
         IsRunning = true;
@@ -358,9 +363,10 @@ public class BattleManager : MonoBehaviour
     /// </summary>
     private void SpawnGuardWave(int index, BattleFaction faction)
     {
-        if (waves == null || index >= waves.Count) return;
-        List<BattleUnit> wave = waves[index];
         bool mirror = faction == BattleFaction.RivalGuards;
+        List<List<BattleUnit>> source = mirror ? rivalWaves : waves;
+        if (source == null || index >= source.Count) return;
+        List<BattleUnit> wave = source[index];
         for (int j = 0; j < wave.Count; j++)
         {
             float x = index * territoryWidth + enemySpawnOffset + (j % 2) * 1.5f + j * 0.6f;
@@ -741,7 +747,9 @@ public class BattleManager : MonoBehaviour
             ourHp = RemainingHp(heroes),
             theirHp = defenseMode ? RemainingHp(rivals) : RemainingHp(guards),
             rivalHp = RemainingHp(rivals),
-            reinforcementHp = ReinforcementHp()
+            reinforcementHp = ReinforcementHp(),
+            ourTerritories = contested ? Mathf.Min(heroWave, LaneTerritories) : heroWave,
+            rivalTerritories = Mathf.Min(rivalWave, LaneTerritories)
         };
 
         // Сначала место боя применяет итог (захват, урон базе) и показывает окно итога,

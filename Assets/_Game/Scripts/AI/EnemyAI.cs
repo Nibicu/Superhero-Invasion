@@ -279,6 +279,26 @@ public class EnemyAI : MonoBehaviour
             }
         }
 
+        // Портал (событие): закрыть его — артефакт и урон базе противника, не закрыть — урон нам.
+        // Сила охраны — только ещё не пройденные нами территории
+        Portal portal = Portal.Instance;
+        if (portal != null && portal.IsOpen && !portal.IsClosed && !IsOrdered(portal) && portal.CanAccept(squad, out _))
+        {
+            bool join = portal.IsUnderAttack;
+            bool ok = !join || (portal.CanJoin(team) && SM.EstimateTravelTime(squad, portal) <= portal.PrepLeft - 1f
+                      && BattleCalculator.Forecast(BattleCalculator.SquadPower(squad), BattleCalculator.SquadPower(portal.Attacker.Squad)) != BattleForecast.Lose);
+            ok &= SM.EstimateTravelTime(squad, portal) + portal.PrepTime < portal.TimeLeft; // успеть до конца события
+            var forecast = BattleCalculator.Forecast(BattleCalculator.SquadPower(squad), portal.RemainingPower(team));
+            if (ok && forecast != BattleForecast.Lose)
+            {
+                float value = 1200f + portal.Data.rewardArtifacts * 400f;
+                if (forecast == BattleForecast.Equal) value *= 0.8f;
+                value *= objectPriority;
+                float score = value / (Vector3.Distance(home, portal.ApproachPoint) + 5f);
+                if (score > bestScore) { bestScore = score; best = portal; }
+            }
+        }
+
         // Объекты: не наши, никто из наших туда не едет
         foreach (MapObject o in MapObject.All)
         {

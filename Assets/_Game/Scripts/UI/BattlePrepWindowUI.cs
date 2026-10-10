@@ -218,9 +218,11 @@ public class BattlePrepWindowUI : MonoBehaviour
             // Битва за флаг: наша команда, команда врага и охрана (BattleManager продублирует её для каждой команды)
             List<BattleUnit> mine = AttackableSite.GetSquadUnits(site.PlayerContestant);
             List<BattleUnit> rival = AttackableSite.GetSquadUnits(site.EnemyContestant);
-            List<List<BattleUnit>> guardWaves = site.GetDefenderWaves();
+            // У каждой стороны своя копия охраны (у портала — без уже пройденных территорий)
+            List<List<BattleUnit>> guardWaves = site.GetContestWaves(Team.Player);
+            List<List<BattleUnit>> rivalWaves = site.GetContestWaves(Team.Enemy);
             site.OnManualBattleStarted();
-            BattleManager.Instance.StartContestedBattle(site.SiteName, site.SiteColor, mine, rival, guardWaves, site.OnContestedBattleFinished);
+            BattleManager.Instance.StartContestedBattle(site.SiteName, site.SiteColor, mine, rival, guardWaves, site.OnContestedBattleFinished, rivalWaves);
             return;
         }
         if (site.PlayerDefends && site.HasReinforcement)

@@ -26,6 +26,8 @@ public class MissionWindowUI : WindowUI
 
     private MissionMarker current;        // Какая миссия показана (или null)
     private GlobalMission currentGlobal;  // Какая общая миссия показана (или null)
+    private Portal currentPortal;         // Показан портал (или null)
+    private float portalRefresh;          // Когда перерисовать таймер портала
 
     protected override void Awake()
     {
@@ -41,10 +43,10 @@ public class MissionWindowUI : WindowUI
         AttackableSite.AttackChanged -= OnAttackChanged;
     }
 
-    /// <summary>На общую миссию напали — окно закрывается до конца боя.</summary>
+    /// <summary>На общую миссию или портал напали — окно закрывается до конца боя.</summary>
     private void OnAttackChanged(AttackableSite site)
     {
-        if (!IsOpen || currentGlobal == null || site != currentGlobal) return;
+        if (!IsOpen || site == null || (site != currentGlobal && site != currentPortal)) return;
         if (!site.IsUnderAttack) { Refresh(); return; }
         Close();
     }
@@ -54,6 +56,11 @@ public class MissionWindowUI : WindowUI
     {
         base.Update();
         if (IsOpen && current != null) RefreshStatus();
+        if (IsOpen && currentPortal != null)
+        {
+            portalRefresh -= Time.unscaledDeltaTime;
+            if (portalRefresh <= 0f) { portalRefresh = 0.5f; RefreshPortal(); }
+        }
     }
 
     /// <summary>Открыть окно миссии.</summary>
@@ -61,6 +68,7 @@ public class MissionWindowUI : WindowUI
     {
         current = marker;
         currentGlobal = null;
+        currentPortal = null;
         Open();
     }
 
@@ -69,7 +77,29 @@ public class MissionWindowUI : WindowUI
     {
         current = null;
         currentGlobal = mission;
+        currentPortal = null;
         Open();
+    }
+
+    /// <summary>Открыть окно портала.</summary>
+    public void OpenPortal(Portal portal)
+    {
+        current = null;
+        currentGlobal = null;
+        currentPortal = portal;
+        Open();
+    }
+
+    /// <summary>Соперник уже готовится к бою у портала — сразу список команд (битва за флаг).</summary>
+    public void OpenJoinPicker(Portal portal) => picker.OpenFor(portal, null);
+
+    /// <summary>Портал исчез — закрываем окно и список команд, если они про него.</summary>
+    public void OnPortalHidden(Portal portal)
+    {
+        if (currentPortal != portal) return;
+        currentPortal = null;
+        if (picker.IsOpen) picker.Close();
+        if (IsOpen) Close();
     }
 
     /// <summary>Соперник уже готовится к бою на общей миссии — сразу список команд (битва за флаг).</summary>
@@ -96,6 +126,7 @@ public class MissionWindowUI : WindowUI
     /// <summary>Перерисовать окно.</summary>
     public override void Refresh()
     {
+        if (currentPortal != null) { RefreshPortal(); return; }
         if (currentGlobal != null) { RefreshGlobal(); return; }
         if (current == null) return;
         MissionData d = current.Data;
@@ -159,9 +190,35 @@ public class MissionWindowUI : WindowUI
         sendText.text = "ОТПРАВИТЬ КОМАНДУ";
     }
 
+    /// <summary>Перерисовать окно портала: таймер, прогресс сторон, охрана, правила.</summary>
+    private void RefreshPortal()
+    {
+        Portal p = currentPortal;
+        PortalData d = p.Data;
+        header.color = d.color;
+        if (headerIcon != null) headerIcon.text = d.iconLetter;
+        titleText.text = $"СОБЫТИЕ: {d.title.ToUpper()}";
+        descText.text = d.description;
+
+        MainBase myBase = MainBase.Get(Team.Player);
+        string guard = myBase != null && myBase.HasRadar
+            ? $"<color=#FFFFFF>{d.TerritoryCount} территории, осталось пройти — сила {p.RemainingPower(Team.Player)}</color>"
+            : "<color=#8792A6>??? (нужен Радар)</color>";
+        detailsText.text = $"Пройдено: <color=#7FB8FF>мы {p.GetProgress(Team.Player)}/{p.TerritoryCount}</color>   <color=#FF7A7A>враг {p.GetProgress(Team.Enemy)}/{p.TerritoryCount}</color>\n" +
+                           $"Охрана: {guard}\n" +
+                           $"Закрывший получает артефакт, база соперника — {d.baseDamage} урона.\n" +
+                           $"Никто не закроет — {d.baseDamage} урона обеим базам.";
+        float t = p.TimeLeft;
+        statusText.text = p.IsClosed ? "Портал закрыт"
+            : $"<size=85%>Портал исчезнет через <color=#FFD84A>{Mathf.FloorToInt(t / 60f)}:{Mathf.FloorToInt(t % 60f):00}</color>. Прогресс по территориям сохраняется</size>";
+        sendButton.interactable = !p.IsUnderAttack && !p.IsClosed;
+        sendText.text = "ОТПРАВИТЬ КОМАНДУ";
+    }
+
     /// <summary>Нажата "ОТПРАВИТЬ КОМАНДУ".</summary>
     private void OnSendClicked()
     {
+        if (currentPortal != null) { picker.OpenFor(currentPortal, Close); return; }
         if (currentGlobal != null) { picker.OpenFor(currentGlobal, Close); return; }
         if (current != null) picker.OpenFor(current, Close);
     }

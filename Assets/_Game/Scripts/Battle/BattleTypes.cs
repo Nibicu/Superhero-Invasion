@@ -24,6 +24,8 @@ public struct BattleResult
     public float theirHp;  // Доля HP охраны/защитников после боя
     public float rivalHp;  // Доля HP вражеской команды (битва за флаг, защита с подкреплением)
     public float reinforcementHp; // Доля HP команды, пришедшей на защиту объекта (1 — если её не было)
+    public int ourTerritories;   // Сколько территорий охраны прошли наши (портал запоминает прогресс)
+    public int rivalTerritories; // Сколько территорий прошла команда врага (битва за флаг)
 }
 
 /// <summary>

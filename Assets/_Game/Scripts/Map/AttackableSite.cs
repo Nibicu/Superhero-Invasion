@@ -145,6 +145,9 @@ public abstract class AttackableSite : MonoBehaviour, ISquadTarget
     /// </summary>
     protected abstract string AttackerWonText(Team winner);
 
+    /// <summary>Добавка к окну итога, если нападающие стороны team проиграли (портал: "прогресс сохранён").</summary>
+    protected virtual string AttackerLostText(Team team) => "";
+
     /// <summary>Подготовка закончилась, сейчас начнётся бой (база выбирает гарнизон).</summary>
     protected virtual void OnBattlePhaseStarting() { }
 
@@ -159,6 +162,18 @@ public abstract class AttackableSite : MonoBehaviour, ISquadTarget
 
     /// <summary>Нападение закончилось (база забывает гарнизон).</summary>
     protected virtual void OnAttackEnded() { }
+
+    /// <summary>
+    /// Охрана для стороны side в битве за флаг (по 3 территории).
+    /// Обычно у обеих сторон одинаковая; портал отдаёт пустые территории, которые сторона уже прошла.
+    /// </summary>
+    public virtual List<List<BattleUnit>> GetContestWaves(Team side) => GetDefenderWaves();
+
+    /// <summary>Ручной бой или битва за флаг закончились — весь итог (портал запоминает пройденные территории).</summary>
+    protected virtual void OnBattleResult(BattleResult result) { }
+
+    /// <summary>Автобой команды squad закончился (won — победила ли охрану).</summary>
+    protected virtual void OnAutoResolved(Squad squad, bool won) { }
 
     // ---------- Подготовка к бою ----------
 
@@ -365,6 +380,7 @@ public abstract class AttackableSite : MonoBehaviour, ISquadTarget
         Squad squad = attacker.Squad;
         BattleForecast f = BattleCalculator.Forecast(BattleCalculator.SquadPower(squad), DefenderPower);
         bool won = BattleCalculator.RollAutoBattle(f);
+        OnAutoResolved(squad, won);
         ApplyDefenderAutoLoss(won ? 0.5f : 0.2f);
         float hp = Mathf.Max(BattleCalculator.MinHpAfterBattle, squad.HpFraction - BattleCalculator.AutoBattleHpLoss(f, won));
         Finish(won, hp);
@@ -422,6 +438,7 @@ public abstract class AttackableSite : MonoBehaviour, ISquadTarget
     public void OnManualBattleFinished(BattleResult result)
     {
         if (attacker == null) return;
+        OnBattleResult(result);
         bool defended = PlayerDefends;
         bool attackerWon = defended ? !result.win : result.win;
         SetDefenderHp(defended ? result.ourHp : result.theirHp, result);
@@ -432,6 +449,7 @@ public abstract class AttackableSite : MonoBehaviour, ISquadTarget
     public void OnContestedBattleFinished(BattleResult result)
     {
         if (!IsContested) return;
+        OnBattleResult(result);
         bool playerFirst = attacker.Squad.Owner == Team.Player;
         bool attackerWon = playerFirst ? result.win : !result.win;
         FinishContested(attackerWon,
@@ -493,7 +511,7 @@ public abstract class AttackableSite : MonoBehaviour, ISquadTarget
         else if (squad.Owner == Team.Player)
         {
             ToastUI.Show($"Бой за «{SiteName}» проигран. Команда {squad.Number} потеряла {lost}% HP");
-            BattleResultWindowUI.Show(false, $"Не удалось победить защитников «{SiteName}»." + SquadHpLine(squad));
+            BattleResultWindowUI.Show(false, $"Не удалось победить защитников «{SiteName}»." + AttackerLostText(squad.Owner) + SquadHpLine(squad));
         }
         unit.ReturnHome();
     }

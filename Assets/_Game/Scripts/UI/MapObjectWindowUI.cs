@@ -94,7 +94,14 @@ public class MapObjectWindowUI : WindowUI
 
         ownerText.text = $"Владелец: {current.OwnerText}";
         statusText.text = "";
-        if (current.IsOwnedBy(Team.Player))
+        if (!current.IsActive)
+        {
+            // Объект закрыт до события
+            statusText.text = "<color=#FFD84A>Объект неактивен. Его откроет событие — тогда за него можно бороться</color>";
+            captureButton.interactable = false;
+            captureText.text = "НЕАКТИВЕН";
+        }
+        else if (current.IsOwnedBy(Team.Player))
         {
             captureButton.interactable = false;
             captureText.text = "ОБЪЕКТ НАШ";
