@@ -241,6 +241,7 @@ public class MainBase : AttackableSite, IIncomeSource
                 data = h.Data,
                 stats = h.Stats,
                 hpFraction = d.HpFraction,
+                level = h.Level,
                 info = $"{UnitClasses.Name(h.Data.unitClass)}  •  Гарнизон (команда {d.Number})  •  Ур. {h.Level}  •  сила {BattleCalculator.HeroPower(h)}"
             });
         waves.Add(wave);

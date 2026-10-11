@@ -64,7 +64,7 @@ public class HeroInstance
     public void AddBoost() => Boosts++;
 
     /// <summary>Открыт ли навык на текущем уровне.</summary>
-    public bool IsSkillUnlocked(HeroSkill skill) => Level >= skill.unlockLevel;
+    public bool IsSkillUnlocked(int index) => index >= 0 && index < HeroData.SkillUnlockLevels.Length && Level >= HeroData.SkillUnlockLevels[index];
 
     /// <summary>Поднять уровень на 1 (цену и максимум проверяет HeroManager).</summary>
     public void LevelUp() => Level++;

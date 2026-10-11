@@ -82,7 +82,9 @@ public class FighterHealth : MonoBehaviour
         if (recentHits.Contains(hit.attackId)) return false;
         Remember(hit.attackId);
 
-        Current = Mathf.Max(0f, Current - hit.damage);
+        // Щит "Барьер" впитывает урон от Спец. атаки
+        float damage = hit.special ? fighter.AbsorbSpecial(hit.damage) : hit.damage;
+        Current = Mathf.Max(0f, Current - damage);
         Changed?.Invoke(this);
         if (fighter.View != null) fighter.View.FlashHit();
 
@@ -104,6 +106,10 @@ public class FighterHealth : MonoBehaviour
             stagger = 0;
             fighter.SetState(FighterState.KnockedDown);
             fighter.Movement.ApplyKnockback(hit.knockback * 1.6f);
+        }
+        else if (fighter.Kit != null && fighter.Kit.Unstoppable)
+        {
+            // Залп, кувырок и т.п.: обычный удар не прерывает (урон проходит), сбить с ног — может
         }
         else
         {

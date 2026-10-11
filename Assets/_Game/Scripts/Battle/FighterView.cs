@@ -55,6 +55,9 @@ public class FighterView : MonoBehaviour
     private float slamTimer;             // Сколько ещё видна волна
     private Vector2 slamSize;            // Размер волны
     private Color buffColor = new Color(1f, 0.85f, 0.25f); // Цвет ауры баффа
+    private string popText;              // Короткая надпись над головой ("МЕТКО!", "БАРЬЕР")
+    private Color popColor;              // Её цвет
+    private float popTimer;              // Сколько ещё видна
 
     private static readonly int StateParam = Animator.StringToHash("State");
 
@@ -108,6 +111,36 @@ public class FighterView : MonoBehaviour
         f.StateChanged += OnStateChanged;
         f.Combat.AttackStarted += OnAttackStarted;
         f.BuffChanged += OnBuffChanged;
+        f.StatusChanged += OnStatusChanged;
+    }
+
+    /// <summary>Короткая надпись над головой на полсекунды ("МЕТКО!", "БАРЬЕР").</summary>
+    public void Pop(string text, Color color)
+    {
+        popText = text;
+        popColor = color;
+        popTimer = 0.7f;
+        RefreshTag();
+    }
+
+    private void OnStatusChanged(Fighter f) => RefreshTag();
+
+    /// <summary>
+    /// Подпись над головой: имя, бафф, эффекты (стан, немота, щит) и короткая надпись.
+    /// </summary>
+    private void RefreshTag()
+    {
+        if (nameTag == null || fighter == null) return;
+        string t = fighter.Data.displayName;
+        if (fighter.HasBuff) t += $"\n<size=75%><color=#FFD84A>+{BoostNames.Get(fighter.BuffStat)}</color></size>";
+        string status = "";
+        if (fighter.IsStunned) status += "<color=#9FD0FF>СТАН</color> ";
+        if (fighter.IsSilenced) status += "<color=#C58BFF>НЕМОТА</color> ";
+        if (fighter.Shield > 0f) status += $"<color=#7FD8FF>ЩИТ {Mathf.CeilToInt(fighter.Shield)}</color>";
+        if (status != "") t += $"\n<size=70%>{status.Trim()}</size>";
+        if (popTimer > 0f && !string.IsNullOrEmpty(popText))
+            t += $"\n<size=80%><b><color=#{ColorUtility.ToHtmlStringRGB(popColor)}>{popText}</color></b></size>";
+        nameTag.text = t;
     }
 
     /// <summary>Зелёная вспышка — бойца вылечили.</summary>
@@ -125,10 +158,7 @@ public class FighterView : MonoBehaviour
     private void OnBuffChanged(Fighter f)
     {
         if (aura != null) aura.gameObject.SetActive(f.HasBuff);
-        if (nameTag != null)
-            nameTag.text = f.HasBuff
-                ? $"{f.Data.displayName}\n<size=75%><color=#FFD84A>+{BoostNames.Get(f.BuffStat)}</color></size>"
-                : f.Data.displayName;
+        RefreshTag();
     }
 
     /// <summary>Вспышка при попадании.</summary>
@@ -157,6 +187,11 @@ public class FighterView : MonoBehaviour
         if (visualRoot == null) return;
 
         UpdateEffects();
+        if (popTimer > 0f)
+        {
+            popTimer -= Time.deltaTime;
+            if (popTimer <= 0f) RefreshTag();
+        }
         int facing = fighter.Movement.Facing;
         visualRoot.localScale = new Vector3(facing, 1f, 1f);
         if (proceduralAnimation) AnimatePose(facing);
@@ -183,6 +218,28 @@ public class FighterView : MonoBehaviour
                 legSwing = Mathf.Sin(Time.time * 14f) * 0.09f;
                 offset.y = Mathf.Abs(Mathf.Sin(Time.time * 14f)) * 0.05f;
                 armAngle = -70f + Mathf.Sin(Time.time * 14f) * 20f;
+                break;
+            case FighterState.Attacking when fighter.Kit != null && fighter.Kit.Pose != KitPose.None:
+                // Позы личных скилов
+                float kt = fighter.Kit.ActionTime;
+                switch (fighter.Kit.Pose)
+                {
+                    case KitPose.Aim: // винтовка: обе руки вперёд, отдача
+                        armAngle = 0f;
+                        backArmAngle = 90f;
+                        armStretch = 1.4f;
+                        offset.x = -0.04f * facing * Mathf.Abs(Mathf.Sin(kt * Mathf.PI * 2f));
+                        break;
+                    case KitPose.Roll: // кувырок
+                        rotZ = -360f * Mathf.Clamp01(kt / 0.45f) * facing;
+                        offset.y = -0.2f;
+                        break;
+                    default: // Cast: руки вперёд
+                        armAngle = 10f;
+                        armStretch = 1.5f;
+                        backArmAngle = 60f;
+                        break;
+                }
                 break;
             case FighterState.Attacking:
                 float p = Mathf.Clamp01(t / fighter.attackDuration);
@@ -260,6 +317,7 @@ public class FighterView : MonoBehaviour
                 c = Color.Lerp(c, new Color(grey, grey, grey, c.a), deadFade);
                 c.a *= Mathf.Lerp(1f, 0.4f, deadFade);
             }
+            if (fighter.IsStunned && !dead) c = Color.Lerp(c, new Color(0.55f, 0.75f, 1f, c.a), 0.45f); // оглушён — голубоватый
             if (blink) c.a *= 0.4f;
             allParts[i].color = c;
         }
@@ -270,6 +328,7 @@ public class FighterView : MonoBehaviour
         if (fighter == null) return;
         fighter.StateChanged -= OnStateChanged;
         fighter.BuffChanged -= OnBuffChanged;
+        fighter.StatusChanged -= OnStatusChanged;
         if (fighter.Combat != null) fighter.Combat.AttackStarted -= OnAttackStarted;
     }
 }

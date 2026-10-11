@@ -153,6 +153,7 @@ public class MapObject : AttackableSite, IIncomeSource
                     data = g.unit,
                     stats = s,
                     hpFraction = 1f,
+                    level = g.level,
                     guard = true, // охрана объекта не отступает
                     info = owned
                         ? $"{UnitClasses.Name(g.unit.unitClass)}  •  Охрана объекта  •  Ур. {g.level}  •  сила {BattleCalculator.UnitPower(g.unit, s)}"

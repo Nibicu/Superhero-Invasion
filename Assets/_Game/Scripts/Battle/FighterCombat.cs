@@ -117,6 +117,7 @@ public class FighterCombat : MonoBehaviour
 
     /// <summary>Готов ли скил (перезарядка прошла, хватает энергии).</summary>
     public bool CanSkill => fighter.CanAct && skillTimer <= 0f && cooldownTimer <= 0f
+                            && fighter.Kit == null && !fighter.IsSilenced // свои скилы героя заменяют скил класса
                             && Energy >= fighter.Profile.skillCost
                             && (projectilePrefab != null || (fighter.Class != UnitClass.Mage && fighter.Class != UnitClass.Shooter));
 
@@ -203,7 +204,8 @@ public class FighterCombat : MonoBehaviour
     /// <summary>Авто атака: удар вплотную или выстрел (пуля / сгусток).</summary>
     private void DoAuto()
     {
-        int power = fighter.Stats.autoAttack;
+        float power = fighter.Stats.autoAttack;
+        if (fighter.Kit != null) power = fighter.Kit.ModifyAutoDamage(power); // пассивка (например, Меткий стрелок)
         if (autoMelee)
         {
             MeleeHit(power, false, 1, fighter.knockbackForce, fighter.meleeRange, true);
@@ -263,7 +265,8 @@ public class FighterCombat : MonoBehaviour
                 attackId = currentAttackId,
                 damage = CalcDamage(power, vsSpecial ? enemy.Stats.specialDefense : enemy.Stats.defense),
                 knockback = new Vector2(dir * fighter.knockbackForce * 1.6f, 0f),
-                stagger = 3
+                stagger = 3,
+                special = vsSpecial
             });
         }
     }
@@ -300,7 +303,8 @@ public class FighterCombat : MonoBehaviour
                 attackId = currentAttackId,
                 damage = CalcDamage(power, vsSpecial ? enemy.Stats.specialDefense : enemy.Stats.defense),
                 knockback = new Vector2(facing * knock, UnityEngine.Random.Range(-0.4f, 0.4f)),
-                stagger = stagger
+                stagger = stagger,
+                special = vsSpecial
             });
         }
 
@@ -312,6 +316,13 @@ public class FighterCombat : MonoBehaviour
             if (d.x * facing < -0.2f || Mathf.Abs(d.x) > range + 0.3f || Mathf.Abs(d.y) > fighter.depthTolerance) continue;
             box.Hit();
         }
+    }
+
+    /// <summary>Выстрел для личных скилов героя (каждый снаряд — отдельная атака).</summary>
+    public void FireShot(ShotInfo info)
+    {
+        currentAttackId = ++nextAttackId;
+        Shoot(info);
     }
 
     /// <summary>Выпустить снаряд в сторону взгляда.</summary>

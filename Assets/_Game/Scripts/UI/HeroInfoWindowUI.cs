@@ -19,6 +19,7 @@ public class HeroInfoWindowUI : WindowUI
     [SerializeField] private TMP_Text descText;       // Описание
     [SerializeField] private StatRowUI[] statRows;    // 9 строк характеристик
     [SerializeField] private TMP_Text skillsText;     // Навыки
+    [SerializeField] private ScrollRect skillsScroll; // Прокрутка навыков (текст длинный — крутится колесом мыши)
     [SerializeField] private TMP_Text captainText;    // Бонус командира
     [SerializeField] private Button actionButton;     // "НАНЯТЬ" / "ПРОКАЧАТЬ"
     [SerializeField] private TMP_Text actionText;     // Текст на кнопке
@@ -144,16 +145,37 @@ public class HeroInfoWindowUI : WindowUI
         // Навыки: открытые — белым, закрытые — серым с подписью уровня
         int level = hero != null ? hero.Level : 1;
         var sb = new StringBuilder();
-        ClassProfile cp = current.Profile;
-        sb.AppendLine($"<color=#FFD84A><b>{cp.skillName}</b></color> (скил класса, {cp.skillCost:0} энергии) — {cp.skillDescription}");
-        foreach (HeroSkill s in current.skills)
+        // Пассивный навык — работает всегда
+        HeroSkill passive = current.passive ?? new HeroSkill();
+        sb.AppendLine(passive.IsEmpty
+            ? "<color=#6B7385><b>Пассивный навык:</b> пока нет</color>"
+            : $"<color=#C58BFF><b>{passive.name}</b></color> (пассивный) — {passive.description}");
+        // 4 скила: открываются на 1, 2, 4 и 5 уровне
+        for (int i = 0; i < HeroData.SkillUnlockLevels.Length; i++)
         {
-            if (level >= s.unlockLevel)
-                sb.AppendLine($"<color=#FFFFFF><b>{s.name}</b></color> — {s.description}");
+            HeroSkill s = current.GetSkill(i);
+            int unlock = HeroData.SkillUnlockLevels[i];
+            string cd = s.cooldown > 0f ? $", перезарядка {s.cooldown:0} с" : "";
+            if (s.IsEmpty)
+                sb.AppendLine($"<color=#6B7385>Скил {i + 1} (ур. {unlock}): пока нет</color>");
+            else if (level >= unlock)
+                sb.AppendLine($"<color=#FFFFFF><b>{s.name}</b></color> <size=85%>(скил {i + 1}{cd})</size> — {s.description}");
             else
-                sb.AppendLine($"<color=#6B7385><b>{s.name}</b> (откроется на ур. {s.unlockLevel}) — {s.description}</color>");
+                sb.AppendLine($"<color=#6B7385><b>{s.name}</b> (откроется на ур. {unlock}{cd}) — {s.description}</color>");
+        }
+        // Пока своих скилов нет — в бою работает скил класса
+        if (!current.HasOwnSkills)
+        {
+            ClassProfile cp = current.Profile;
+            sb.AppendLine($"<color=#FFD84A><b>{cp.skillName}</b></color> <size=85%>(скил класса, пока нет своих)</size> — {cp.skillDescription}");
         }
         skillsText.text = sb.ToString().TrimEnd();
+        if (skillsScroll != null)
+        {
+            // Высота текста меняется — пересчитать и показать начало списка
+            LayoutRebuilder.ForceRebuildLayoutImmediate(skillsText.rectTransform);
+            skillsScroll.verticalNormalizedPosition = 1f;
+        }
         captainText.text = string.IsNullOrEmpty(current.captainBonus) ? "—" : current.captainBonus;
 
         // Кнопка

@@ -83,6 +83,7 @@ public class GlobalMission : AttackableSite
                     data = g.unit,
                     stats = s,
                     hpFraction = 1f,
+                    level = g.level,
                     guard = true, // охрана не отступает
                     info = $"{UnitClasses.Name(g.unit.unitClass)}  •  Территория {w + 1}  •  Ур. {g.level}  •  сила {BattleCalculator.UnitPower(g.unit, s)}"
                 });

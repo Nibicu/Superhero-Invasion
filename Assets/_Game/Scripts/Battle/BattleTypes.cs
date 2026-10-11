@@ -14,6 +14,7 @@ public struct BattleUnit
     public string info;       // Подпись для окна перед боем
     public bool reinforcement; // Боец из команды, пришедшей на защиту объекта (её HP запоминается отдельно)
     public bool guard;         // Охранник объекта (нейтральный юнит): не отступает при низком HP
+    public int level;          // Уровень героя (от него зависит, какие скилы открыты; 0 — считается 1)
 }
 
 /// <summary>Итог ручного боя — с точки зрения игрока ("наши" — бойцы слева).</summary>
@@ -113,6 +114,9 @@ public struct ShotInfo
     public float knockback;     // Сила отбрасывания
     public bool pierce;         // Пробивает насквозь (летит дальше после попадания)
     public bool hitsBoxes;      // Разбивает коробки (только авто атаки)
+    public float stun;          // Оглушение цели при попадании (сек, 0 — нет)
+    public float silence;       // Немота цели при попадании (сек, 0 — нет): нельзя применять скилы
+    public Color color;         // Цвет снаряда (прозрачный — цвет стрелявшего)
 }
 
 /// <summary>Данные одного попадания (удар или снаряд).</summary>
@@ -123,4 +127,5 @@ public struct HitInfo
     public float damage;      // Урон
     public Vector2 knockback; // Скорость отбрасывания (X — от атакующего, Y — по глубине)
     public int stagger;       // "Очки сбивания": набралось много подряд — боец падает
+    public bool special;      // Урон от Спец. атаки (его впитывает щит "Барьер")
 }

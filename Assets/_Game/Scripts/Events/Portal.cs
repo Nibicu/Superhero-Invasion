@@ -140,6 +140,7 @@ public class Portal : AttackableSite
                 data = g.unit,
                 stats = s,
                 hpFraction = 1f,
+                level = g.level,
                 guard = true, // охрана портала не отступает
                 info = $"{UnitClasses.Name(g.unit.unitClass)}  •  Территория {w + 1}  •  Ур. {g.level}  •  сила {BattleCalculator.UnitPower(g.unit, s)}"
             });

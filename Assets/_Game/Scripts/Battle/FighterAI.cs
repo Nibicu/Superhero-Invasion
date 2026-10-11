@@ -16,6 +16,8 @@ using UnityEngine;
 ///    - дальний (Стрелок): держится далеко, в основном авто атаки (пули), скил иногда;
 ///    - если враг подошёл вплотную, Маг, Поддержка и Стрелок бьют рукой, пока он не отлетит.
 /// 5) Противников рядом нет — команды идут к точке сбора (следующая территория или флаг), охрана стоит.
+/// Если у героя есть личные навыки (HeroKit, например Солдат) — каждое решение сначала спрашивает их:
+/// навык применён — ждём его конца; навык хочет держать дистанцию (PreferredRange) — встаём на неё.
 /// </summary>
 [DefaultExecutionOrder(-10)] // решает раньше, чем двигается FighterMovement
 [RequireComponent(typeof(Fighter))]
@@ -120,6 +122,13 @@ public class FighterAI : MonoBehaviour
         float hp = self.Health.Fraction;
         if (!retreating && hp <= profile.retreatAt && !self.IsGuard) retreating = true; // охрана объектов не отступает
         if (retreating && hp >= UnitClasses.ResumeAt) retreating = false;
+
+        // Личные навыки героя (если есть): применили — ждём, пока навык закончится
+        if (self.Kit != null && target != null && self.Kit.Think(target, retreating))
+        {
+            hasDestination = false;
+            return;
+        }
         if (retreating)
         {
             if (self.Class == UnitClass.Support && TryHeal(bm, true)) return; // Поддержка лечит себя на бегу
@@ -170,7 +179,25 @@ public class FighterAI : MonoBehaviour
             return;
         }
 
-        // 5) Бой по стилю класса
+        // 5) Личный навык хочет держать дистанцию (например, Солдат с готовым Залпом) — встаём на неё,
+        //    но если враг уже вплотную — дерёмся как обычно
+        if (self.Kit != null)
+        {
+            float keep = self.Kit.PreferredRange(target);
+            Vector2 dd = target.Position - self.Position;
+            bool inMelee = Mathf.Abs(dd.x) <= self.meleeRange * 1.1f && Mathf.Abs(dd.y) <= self.depthTolerance * 0.8f;
+            if (keep > 0f && !inMelee)
+            {
+                aimPoint = target.Position;
+                float side = dd.x >= 0 ? -1f : 1f;
+                destination = new Vector2(target.Position.x + side * keep, target.Position.y);
+                hasDestination = (destination - self.Position).magnitude > 0.15f;
+                if (!hasDestination) self.Movement.FaceTowards(target.Position.x);
+                return;
+            }
+        }
+
+        // 6) Бой по стилю класса
         if (profile.style == CombatStyle.Melee) FightMelee(bm, profile);
         else FightRanged(profile);
     }

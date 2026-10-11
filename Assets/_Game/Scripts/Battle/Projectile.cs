@@ -44,7 +44,7 @@ public class Projectile : MonoBehaviour
             visual.localPosition = new Vector3(0f, height, 0f);
             visual.localScale = new Vector3(dir * info.size * (info.pierce ? 1.6f : 1f), info.size, 1f); // "хвост" позади
         }
-        Color c = shooter.Data.color;
+        Color c = info.color.a > 0f ? info.color : shooter.Data.color;
         if (tinted != null)
             foreach (SpriteRenderer r in tinted)
                 if (r != null) r.color = new Color(Mathf.Lerp(c.r, 1f, 0.35f), Mathf.Lerp(c.g, 1f, 0.35f), Mathf.Lerp(c.b, 1f, 0.35f), r.color.a);
@@ -77,10 +77,14 @@ public class Projectile : MonoBehaviour
                 attackId = attackId,
                 damage = FighterCombat.CalcDamage(shot.power, shot.vsSpecial ? enemy.Stats.specialDefense : enemy.Stats.defense),
                 knockback = new Vector2(direction * shot.knockback, 0f),
-                stagger = shot.stagger
+                stagger = shot.stagger,
+                special = shot.vsSpecial
             };
             if (!enemy.Health.TakeHit(hit)) continue;
             alreadyHit.Add(enemy);
+            // Эффекты снаряда (Энерго оковы: стан и немота)
+            enemy.ApplyStun(shot.stun);
+            enemy.ApplySilence(shot.silence);
             if (!shot.pierce) { Destroy(gameObject); return; }
         }
 

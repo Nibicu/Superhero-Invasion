@@ -89,18 +89,31 @@ public struct HeroStats
     };
 }
 
-/// <summary>Навык героя. Открывается, когда герой достигает нужного уровня.</summary>
+/// <summary>Навык героя (пассивный или скил). Пустое название — навыка пока нет.</summary>
 [Serializable]
 public class HeroSkill
 {
-    [Tooltip("Название навыка")]
-    public string name = "Навык";
+    [Tooltip("Название навыка (пусто — навыка пока нет)")]
+    public string name = "";
 
-    [Tooltip("Что делает навык (используется в бою)")]
-    [TextArea(1, 3)] public string description = "";
+    [Tooltip("Что делает навык (для карточки героя)")]
+    [TextArea(1, 4)] public string description = "";
 
-    [Tooltip("С какого уровня героя навык открыт")]
-    [Min(1)] public int unlockLevel = 1;
+    [Tooltip("Перезарядка в секундах (0 — нет / пассивный навык)")]
+    [Min(0)] public float cooldown = 0f;
+
+    /// <summary>Навыка пока нет (не придуман).</summary>
+    public bool IsEmpty => string.IsNullOrWhiteSpace(name);
+}
+
+/// <summary>
+/// Чья боевая логика личных навыков используется в бою (у кого навыки ещё не сделаны — None:
+/// такой герой дерётся скилом своего класса).
+/// </summary>
+public enum HeroKitType
+{
+    None,    // Своих навыков пока нет — скил класса
+    Soldier  // Солдат: Меткий стрелок, Залп, Отступление, Барьер, Энерго оковы
 }
 
 /// <summary>
@@ -160,8 +173,26 @@ public class HeroData : ScriptableObject
         baseStats = UnitClasses.ScaledTemplate(unitClass, skillDamage, UnitClasses.StarPower(stars), stars);
     }
 
-    [Header("Навыки и бонус командира")]
-    public HeroSkill[] skills = { new HeroSkill() };
+    [Header("Навыки: 1 пассивный + 4 скила (открываются на 1, 2, 4 и 5 уровне)")]
+    [Tooltip("Чья боевая логика навыков работает в бою. None — своих навыков пока нет, работает скил класса")]
+    public HeroKitType kit = HeroKitType.None;
+
+    [Tooltip("Пассивный навык — работает всегда")]
+    public HeroSkill passive = new HeroSkill();
+
+    [Tooltip("4 скила по порядку: открываются на уровнях 1, 2, 4 и 5")]
+    public HeroSkill[] skills = { new HeroSkill(), new HeroSkill(), new HeroSkill(), new HeroSkill() };
+
+    /// <summary>С какого уровня открывается скил с номером i (0..3). На 3 уровне новых скилов нет.</summary>
+    public static readonly int[] SkillUnlockLevels = { 1, 2, 4, 5 };
+
+    /// <summary>Скил i (или пустой, если в файле меньше скилов).</summary>
+    public HeroSkill GetSkill(int i) => skills != null && i >= 0 && i < skills.Length && skills[i] != null ? skills[i] : new HeroSkill();
+
+    /// <summary>Есть ли у героя свои навыки в бою (тогда скил класса не используется).</summary>
+    public bool HasOwnSkills => kit != HeroKitType.None;
+
+    [Header("Бонус командира")]
 
     [Tooltip("Бонус команде, если этот герой — капитан")]
     [TextArea(1, 3)] public string captainBonus = "";

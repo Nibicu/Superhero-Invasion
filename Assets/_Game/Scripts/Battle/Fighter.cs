@@ -8,7 +8,10 @@ using UnityEngine;
 ///   FighterHealth   — здоровье, получение урона, смерть,
 ///   FighterCombat   — удары и снаряды,
 ///   FighterAI       — решает, куда идти и когда бить,
-///   FighterView     — внешний вид (цвета, позы, позже — настоящие анимации).
+///   FighterView     — внешний вид (цвета, позы, позже — настоящие анимации),
+///   HeroKit         — личные навыки героя (пассивка и 4 скила), если они уже сделаны.
+/// Состояния-эффекты: оглушение (стан — не ходит и не бьёт), немота (не применяет скилы),
+/// щит (впитывает урон от Спец. атаки).
 /// Состояния меняются только через SetState — он не даёт делать несовместимое
 /// (например, мёртвый не ходит и не бьёт).
 /// </summary>
@@ -93,6 +96,29 @@ public class Fighter : MonoBehaviour
     /// <summary>Охранник объекта (нейтральный юнит) — не отступает при низком HP.</summary>
     public bool IsGuard { get; set; }
 
+    /// <summary>Уровень героя (от него зависит, какие скилы открыты).</summary>
+    public int Level { get; private set; } = 1;
+
+    /// <summary>Личные навыки героя (null — своих навыков пока нет, работает скил класса).</summary>
+    public HeroKit Kit { get; private set; }
+
+    /// <summary>Оглушён: не ходит, не бьёт, не применяет скилы.</summary>
+    public bool IsStunned => stunTimer > 0f;
+
+    /// <summary>Немота: не может применять скилы (авто атаки можно).</summary>
+    public bool IsSilenced => silenceTimer > 0f;
+
+    /// <summary>Сколько урона от Спец. атаки ещё впитает щит (0 — щита нет).</summary>
+    public float Shield => shieldTimer > 0f ? shieldAmount : 0f;
+
+    /// <summary>Эффект (стан, немота, щит) начался или закончился — для подписи над головой.</summary>
+    public event Action<Fighter> StatusChanged;
+
+    private float stunTimer;     // Сколько ещё оглушён
+    private float silenceTimer;  // Сколько ещё немота
+    private float shieldTimer;   // Сколько ещё действует щит
+    private float shieldAmount;  // Сколько урона ещё впитает щит
+
     /// <summary>Действует ли временный бафф.</summary>
     public bool HasBuff => buffTimer > 0f;
 
@@ -126,7 +152,7 @@ public class Fighter : MonoBehaviour
     // ---------- Удобные проверки ----------
 
     /// <summary>Может ли боец сам что-то делать (ходить, начинать атаку).</summary>
-    public bool CanAct => State == FighterState.Idle || State == FighterState.Moving;
+    public bool CanAct => (State == FighterState.Idle || State == FighterState.Moving) && !IsStunned;
 
     /// <summary>Жив ли боец.</summary>
     public bool IsAlive => State != FighterState.Dead;
@@ -153,9 +179,10 @@ public class Fighter : MonoBehaviour
     /// faction — сторона в бою, hpFraction — с какой долей здоровья боец выходит (раненая команда),
     /// neutralLook — покрасить как нейтральную охрану.
     /// </summary>
-    public void Init(HeroData data, HeroStats stats, BattleFaction faction, float hpFraction, bool neutralLook = false)
+    public void Init(HeroData data, HeroStats stats, BattleFaction faction, float hpFraction, bool neutralLook = false, int level = 1)
     {
         Data = data;
+        Level = Mathf.Max(1, level);
         baseStats = stats;
         HomeX = transform.position.x;
         Faction = faction;
@@ -169,6 +196,53 @@ public class Fighter : MonoBehaviour
         if (View != null) View.Setup(this);
         SetState(FighterState.Idle);
     }
+
+    /// <summary>Подключить личные навыки героя (вызывает BattleManager после Init).</summary>
+    public void SetKit(HeroKit kit)
+    {
+        Kit = kit;
+        if (kit != null) kit.Setup(this);
+    }
+
+    // ---------- Эффекты ----------
+
+    /// <summary>Оглушить на seconds секунд (не ходит, не бьёт).</summary>
+    public void ApplyStun(float seconds)
+    {
+        if (seconds <= 0f || !IsAlive) return;
+        stunTimer = Mathf.Max(stunTimer, seconds);
+        StatusChanged?.Invoke(this);
+    }
+
+    /// <summary>Немота на seconds секунд (не применяет скилы).</summary>
+    public void ApplySilence(float seconds)
+    {
+        if (seconds <= 0f || !IsAlive) return;
+        silenceTimer = Mathf.Max(silenceTimer, seconds);
+        StatusChanged?.Invoke(this);
+    }
+
+    /// <summary>Щит на seconds секунд, впитывает amount урона от Спец. атаки.</summary>
+    public void AddShield(float amount, float seconds)
+    {
+        shieldAmount = amount;
+        shieldTimer = seconds;
+        StatusChanged?.Invoke(this);
+    }
+
+    /// <summary>Щит впитывает урон от Спец. атаки. Вернёт, сколько урона прошло сквозь щит.</summary>
+    public float AbsorbSpecial(float damage)
+    {
+        if (shieldTimer <= 0f || shieldAmount <= 0f) return damage;
+        float absorbed = Mathf.Min(shieldAmount, damage);
+        shieldAmount -= absorbed;
+        if (shieldAmount <= 0.01f) { shieldTimer = 0f; shieldAmount = 0f; } // щит пробит
+        StatusChanged?.Invoke(this);
+        return damage - absorbed;
+    }
+
+    /// <summary>Неуязвимость на seconds секунд (перекат).</summary>
+    public void SetInvulnerable(float seconds) => invulnerableTimer = Mathf.Max(invulnerableTimer, seconds);
 
     /// <summary>Временно усилить параметр (бафф из коробки). Новый бафф заменяет старый.</summary>
     public void ApplyBuff(BoostStat stat, float multiplier, float duration)
@@ -189,6 +263,9 @@ public class Fighter : MonoBehaviour
             if (buffTimer <= 0f) BuffChanged?.Invoke(this);
         }
         if (invulnerableTimer > 0f) invulnerableTimer -= Time.deltaTime;
+        TickStatus(ref stunTimer);
+        TickStatus(ref silenceTimer);
+        TickStatus(ref shieldTimer);
 
         if (State == FighterState.Hurt && StateTime >= hurtDuration)
             SetState(FighterState.Idle);
@@ -197,6 +274,14 @@ public class Fighter : MonoBehaviour
             SetState(FighterState.Idle);
             invulnerableTimer = getUpInvulnerability;
         }
+    }
+
+    /// <summary>Уменьшить таймер эффекта; закончился — сообщить внешнему виду.</summary>
+    private void TickStatus(ref float timer)
+    {
+        if (timer <= 0f) return;
+        timer -= Time.deltaTime;
+        if (timer <= 0f) { timer = 0f; StatusChanged?.Invoke(this); }
     }
 
     /// <summary>

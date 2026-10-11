@@ -382,7 +382,8 @@ public class BattleManager : MonoBehaviour
         Vector3 pos = arenaRoot.position + (Vector3)localPos;
         Fighter f = Instantiate(fighterPrefab, pos, Quaternion.identity, runtimeRoot);
         f.Combat.SetProjectilePrefab(projectilePrefab);
-        f.Init(u.data, u.stats, faction, u.hpFraction, neutralLook);
+        f.Init(u.data, u.stats, faction, u.hpFraction, neutralLook, u.level);
+        f.SetKit(HeroKit.Create(f, u.data.kit)); // личные навыки героя (если уже сделаны)
         f.Territory = territory;
         f.IsReinforcement = u.reinforcement;
         f.IsGuard = u.guard;

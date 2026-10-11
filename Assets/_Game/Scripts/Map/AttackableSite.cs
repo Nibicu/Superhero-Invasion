@@ -365,6 +365,7 @@ public abstract class AttackableSite : MonoBehaviour, ISquadTarget
                 data = h.Data,
                 stats = h.Stats,
                 hpFraction = s.HpFraction,
+                level = h.Level,
                 info = $"{UnitClasses.Name(h.Data.unitClass)}  •  Команда {s.Number}  •  Ур. {h.Level}  •  сила {BattleCalculator.HeroPower(h)}"
             });
         return list;
