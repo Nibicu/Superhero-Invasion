@@ -68,7 +68,9 @@ public class SquadUnit : MonoBehaviour
     /// <summary>Сколько секунд команда будет ехать от from до to по дорогам (оценка для ИИ).</summary>
     public float EstimateTravelTime(Squad squad, Vector3 from, Vector3 to)
     {
-        float length = Mathf.Abs(from.y) + Mathf.Abs(to.x - from.x) + Mathf.Abs(to.y);
+        float length = RoadNetwork.Instance != null
+            ? RoadNetwork.Instance.PathLength(from, to)
+            : Mathf.Abs(from.y) + Mathf.Abs(to.x - from.x) + Mathf.Abs(to.y);
         return length / Mathf.Max(0.1f, SpeedOf(squad));
     }
 
@@ -82,15 +84,19 @@ public class SquadUnit : MonoBehaviour
     }
 
     /// <summary>
-    /// Маршрут "по дорогам": сначала до главной дороги (y = 0),
-    /// по ней до нужного X, потом к точке назначения.
+    /// Маршрут по улицам (RoadNetwork): до ближайшей улицы, по улицам к улице цели, потом к цели.
+    /// Если сети дорог нет — по главной дороге (y = 0).
     /// </summary>
     private void BuildPath(Vector3 from, Vector3 to)
     {
         path.Clear();
-        path.Add(new Vector3(from.x, 0f, 0f));
-        path.Add(new Vector3(to.x, 0f, 0f));
-        path.Add(to);
+        if (RoadNetwork.Instance != null) path.AddRange(RoadNetwork.Instance.BuildPath(from, to));
+        else
+        {
+            path.Add(new Vector3(from.x, 0f, 0f));
+            path.Add(new Vector3(to.x, 0f, 0f));
+            path.Add(to);
+        }
         pathIndex = 0;
     }
 
