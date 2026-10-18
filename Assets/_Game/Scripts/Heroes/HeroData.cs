@@ -113,7 +113,8 @@ public class HeroSkill
 public enum HeroKitType
 {
     None,    // Своих навыков пока нет — скил класса
-    Soldier  // Солдат: Меткий стрелок, Залп, Отступление, Барьер, Энерго оковы
+    Soldier, // Солдат: Меткий стрелок, Залп, Отступление, Барьер, Энерго оковы
+    Stajor   // Стажёр: Храбрость, Волна, Блок, Силовые клинки, Парирование
 }
 
 /// <summary>
@@ -133,6 +134,9 @@ public class HeroData : ScriptableObject
 
     [Tooltip("Цвет круга-портрета (если нет спрайта)")]
     public Color color = Color.gray;
+
+    [Tooltip("Спрайты для боя (покой, ходьба, бег, атака). Пусто — спрайты по умолчанию (Data/Characters/Sprites_Default)")]
+    public CharacterSprites sprites;
 
     [Tooltip("Описание / история героя")]
     [TextArea(2, 5)] public string description = "";

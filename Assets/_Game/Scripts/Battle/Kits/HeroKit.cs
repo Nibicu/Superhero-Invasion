@@ -6,7 +6,8 @@ public enum KitPose
     None, // Обычные позы
     Aim,  // Целится и стреляет (обе руки вперёд)
     Roll, // Кувырок
-    Cast  // Применяет что-то руками (щит, оковы)
+    Cast, // Применяет что-то руками (щит, оковы, волна)
+    Block // Блок (Стажёр)
 }
 
 /// <summary>
@@ -37,7 +38,16 @@ public abstract class HeroKit : MonoBehaviour
     /// Идёт действие, которое обычный удар не прерывает (залп, кувырок).
     /// Урон проходит, а сбить с ног — по-прежнему можно.
     /// </summary>
-    public bool Unstoppable => (Pose == KitPose.Aim || Pose == KitPose.Roll) && self != null && self.State == FighterState.Attacking;
+    public bool Unstoppable => ActionUnstoppable && self != null && self.State == FighterState.Attacking;
+
+    /// <summary>Какие действия обычный удар не прерывает (залп, кувырок, блок; наследник может добавить свои).</summary>
+    protected virtual bool ActionUnstoppable => Pose == KitPose.Aim || Pose == KitPose.Roll || Pose == KitPose.Block;
+
+    /// <summary>Какой скил (0..3) сейчас показывать кадрами персонажа (-1 — никакой: обычные кадры).</summary>
+    public virtual int AnimSkill => -1;
+
+    /// <summary>Сейчас идёт блок: любой урон, отбрасывание, стан и немота не проходят.</summary>
+    public virtual bool IsBlocking => false;
 
     /// <summary>Создать навыки нужного героя (null — своих навыков пока нет).</summary>
     public static HeroKit Create(Fighter f, HeroKitType type)
@@ -45,6 +55,7 @@ public abstract class HeroKit : MonoBehaviour
         switch (type)
         {
             case HeroKitType.Soldier: return f.gameObject.AddComponent<SoldierKit>();
+            case HeroKitType.Stajor: return f.gameObject.AddComponent<StajorKit>();
             default: return null;
         }
     }
@@ -72,6 +83,15 @@ public abstract class HeroKit : MonoBehaviour
 
     /// <summary>Пассивка: изменить силу авто атаки (по умолчанию — без изменений).</summary>
     public virtual float ModifyAutoDamage(float power) => power;
+
+    /// <summary>Пассивка: изменить характеристики бойца (по умолчанию — без изменений).</summary>
+    public virtual HeroStats ModifyStats(HeroStats s) => s;
+
+    /// <summary>
+    /// Пришёл удар: вернёт true, если навык его остановил (блок, парирование) — тогда урона нет.
+    /// hit.auto — удар авто атакой (иначе скилом).
+    /// </summary>
+    public virtual bool TryBlock(HitInfo hit) => false;
 
     /// <summary>
     /// Решение ИИ: применить скил против target (retreating — боец отступает).

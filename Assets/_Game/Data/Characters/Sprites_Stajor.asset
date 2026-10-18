@@ -1,0 +1,68 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fb02b52e743cf1e4a86b3c91a63383a7, type: 3}
+  m_Name: Sprites_Stajor
+  m_EditorClassIdentifier: Assembly-CSharp::CharacterSprites
+  idle:
+  - {fileID: -1962182576291763028, guid: 9f72538bfa8d9464eb96ce15e9974532, type: 3}
+  - {fileID: 4019957270236659077, guid: 9f72538bfa8d9464eb96ce15e9974532, type: 3}
+  - {fileID: -351780137470030689, guid: 9f72538bfa8d9464eb96ce15e9974532, type: 3}
+  - {fileID: 6555183577981735741, guid: 9f72538bfa8d9464eb96ce15e9974532, type: 3}
+  walk:
+  - {fileID: -4284499468534800914, guid: 9f72538bfa8d9464eb96ce15e9974532, type: 3}
+  - {fileID: -3004471574804019646, guid: 9f72538bfa8d9464eb96ce15e9974532, type: 3}
+  - {fileID: -168940436497817962, guid: 9f72538bfa8d9464eb96ce15e9974532, type: 3}
+  - {fileID: 2971436844555450999, guid: 9f72538bfa8d9464eb96ce15e9974532, type: 3}
+  - {fileID: 1301458767538179330, guid: 9f72538bfa8d9464eb96ce15e9974532, type: 3}
+  - {fileID: -2733007342413312847, guid: 9f72538bfa8d9464eb96ce15e9974532, type: 3}
+  - {fileID: 2093212612818446307, guid: 9f72538bfa8d9464eb96ce15e9974532, type: 3}
+  run:
+  - {fileID: 6103029167860002433, guid: 9f72538bfa8d9464eb96ce15e9974532, type: 3}
+  - {fileID: 3022841371821304623, guid: 9f72538bfa8d9464eb96ce15e9974532, type: 3}
+  - {fileID: 8870491344173508473, guid: 9f72538bfa8d9464eb96ce15e9974532, type: 3}
+  - {fileID: -610577856769602741, guid: 9f72538bfa8d9464eb96ce15e9974532, type: 3}
+  - {fileID: 309781151978283231, guid: 9f72538bfa8d9464eb96ce15e9974532, type: 3}
+  - {fileID: -52942767129739930, guid: 9f72538bfa8d9464eb96ce15e9974532, type: 3}
+  - {fileID: -9149157089497920520, guid: 9f72538bfa8d9464eb96ce15e9974532, type: 3}
+  attack:
+  - {fileID: 5642715727758431656, guid: 9f72538bfa8d9464eb96ce15e9974532, type: 3}
+  skills:
+  - frames:
+    - {fileID: 4250145115720848261, guid: 9f72538bfa8d9464eb96ce15e9974532, type: 3}
+    - {fileID: -7697148019347868536, guid: 9f72538bfa8d9464eb96ce15e9974532, type: 3}
+    - {fileID: -7919027646248225219, guid: 9f72538bfa8d9464eb96ce15e9974532, type: 3}
+    effect:
+    - {fileID: -1109329464427505445, guid: 3875cbb424eaea043a45d943bedd7eb3, type: 3}
+    - {fileID: 95694677237277739, guid: 3875cbb424eaea043a45d943bedd7eb3, type: 3}
+    - {fileID: -1894385581395572220, guid: 3875cbb424eaea043a45d943bedd7eb3, type: 3}
+    - {fileID: 6690702892295115309, guid: 3875cbb424eaea043a45d943bedd7eb3, type: 3}
+    fps: 12
+  - frames:
+    - {fileID: -3068160621743040411, guid: 9f72538bfa8d9464eb96ce15e9974532, type: 3}
+    - {fileID: 7354172710135122426, guid: 9f72538bfa8d9464eb96ce15e9974532, type: 3}
+    - {fileID: -6163098181045728168, guid: 9f72538bfa8d9464eb96ce15e9974532, type: 3}
+    - {fileID: -4746226579019343710, guid: 9f72538bfa8d9464eb96ce15e9974532, type: 3}
+    effect: []
+    fps: 10
+  - frames:
+    - {fileID: 4543990483728818912, guid: 9f72538bfa8d9464eb96ce15e9974532, type: 3}
+    effect: []
+    fps: 10
+  - frames: []
+    effect: []
+    fps: 10
+  idleFps: 5
+  walkFps: 10
+  runFps: 14
+  scale: 1.7
+  feetBelowCenterPx: 32
+  offsetXPx: 0

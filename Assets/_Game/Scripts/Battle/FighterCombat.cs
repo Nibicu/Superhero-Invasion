@@ -220,7 +220,8 @@ public class FighterCombat : MonoBehaviour
             size = autoShotSize,
             stagger = 1,
             knockback = 2f,
-            hitsBoxes = true
+            hitsBoxes = true,
+            auto = true
         });
     }
 
@@ -304,7 +305,8 @@ public class FighterCombat : MonoBehaviour
                 damage = CalcDamage(power, vsSpecial ? enemy.Stats.specialDefense : enemy.Stats.defense),
                 knockback = new Vector2(facing * knock, UnityEngine.Random.Range(-0.4f, 0.4f)),
                 stagger = stagger,
-                special = vsSpecial
+                special = vsSpecial,
+                auto = boxes // коробки разбивает только авто атака
             });
         }
 
@@ -317,6 +319,12 @@ public class FighterCombat : MonoBehaviour
             box.Hit();
         }
     }
+
+    /// <summary>Новый номер атаки (для ударов личных скилов героя).</summary>
+    public static int NewAttackId() => ++nextAttackId;
+
+    /// <summary>Прервать текущую авто атаку или скил класса (удар не будет нанесён).</summary>
+    public void CancelAttack() => attackActive = false;
 
     /// <summary>Выстрел для личных скилов героя (каждый снаряд — отдельная атака).</summary>
     public void FireShot(ShotInfo info)

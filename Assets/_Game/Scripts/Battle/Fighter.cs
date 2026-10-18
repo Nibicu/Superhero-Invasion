@@ -70,7 +70,14 @@ public class Fighter : MonoBehaviour
     public HeroData Data { get; private set; }
 
     /// <summary>Характеристики с учётом уровня, усилений и временного баффа из коробки.</summary>
-    public HeroStats Stats => buffTimer > 0f ? baseStats.WithBoost(buffStat, buffMultiplier) : baseStats;
+    public HeroStats Stats
+    {
+        get
+        {
+            HeroStats s = buffTimer > 0f ? baseStats.WithBoost(buffStat, buffMultiplier) : baseStats;
+            return Kit != null ? Kit.ModifyStats(s) : s; // пассивки героя (например, Храбрость Стажёра)
+        }
+    }
 
     /// <summary>Класс бойца (Танк, Боец, Маг, Стрелок, Поддержка).</summary>
     public UnitClass Class => Data.unitClass;
@@ -209,7 +216,7 @@ public class Fighter : MonoBehaviour
     /// <summary>Оглушить на seconds секунд (не ходит, не бьёт).</summary>
     public void ApplyStun(float seconds)
     {
-        if (seconds <= 0f || !IsAlive) return;
+        if (seconds <= 0f || !IsAlive || (Kit != null && Kit.IsBlocking)) return; // блок Стажёра
         stunTimer = Mathf.Max(stunTimer, seconds);
         StatusChanged?.Invoke(this);
     }
@@ -217,7 +224,7 @@ public class Fighter : MonoBehaviour
     /// <summary>Немота на seconds секунд (не применяет скилы).</summary>
     public void ApplySilence(float seconds)
     {
-        if (seconds <= 0f || !IsAlive) return;
+        if (seconds <= 0f || !IsAlive || (Kit != null && Kit.IsBlocking)) return; // блок Стажёра
         silenceTimer = Mathf.Max(silenceTimer, seconds);
         StatusChanged?.Invoke(this);
     }

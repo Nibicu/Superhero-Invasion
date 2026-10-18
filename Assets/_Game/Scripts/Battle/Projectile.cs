@@ -30,6 +30,10 @@ public class Projectile : MonoBehaviour
     private int attackId;           // Номер атаки (защита от двойного урона)
     private float travelled;        // Сколько уже пролетел
     private readonly List<Fighter> alreadyHit = new List<Fighter>(); // Кого уже задел (для пробивающих)
+    private SpriteRenderer effect;  // Картинка-кадры снаряда (если у скила есть свои кадры)
+    private float clock;            // Время полёта (для кадров)
+
+    private const float EffectFps = 12f; // Скорость кадров снаряда
 
     /// <summary>Запустить снаряд.</summary>
     public void Launch(Fighter shooter, int dir, ShotInfo info, int id, float height)
@@ -43,6 +47,18 @@ public class Projectile : MonoBehaviour
         {
             visual.localPosition = new Vector3(0f, height, 0f);
             visual.localScale = new Vector3(dir * info.size * (info.pierce ? 1.6f : 1f), info.size, 1f); // "хвост" позади
+        }
+        // Свои кадры снаряда (волна Стажёра): обычная картинка прячется
+        if (info.frames != null && info.frames.Length > 0 && visual != null)
+        {
+            foreach (SpriteRenderer r in visual.GetComponentsInChildren<SpriteRenderer>(true))
+                r.enabled = false; // прячем все части обычного снаряда (тень на земле остаётся)
+            var go = new GameObject("Effect");
+            go.transform.SetParent(visual, false);
+            effect = go.AddComponent<SpriteRenderer>();
+            effect.sprite = info.frames[0];
+            effect.sortingOrder = 10;
+            return;
         }
         Color c = info.color.a > 0f ? info.color : shooter.Data.color;
         if (tinted != null)
@@ -62,6 +78,11 @@ public class Projectile : MonoBehaviour
         travelled += Mathf.Abs(step);
         transform.position = pos;
         if (sortingGroup != null) sortingGroup.sortingOrder = bm.DepthSortingOrder(pos.y) + 50;
+        if (effect != null)
+        {
+            clock += Time.deltaTime;
+            effect.sprite = CharacterSprites.Frame(shot.frames, clock, EffectFps);
+        }
 
         if (travelled > shot.range || !bm.IsInsideArenaX(pos.x)) { Destroy(gameObject); return; }
 
@@ -78,7 +99,8 @@ public class Projectile : MonoBehaviour
                 damage = FighterCombat.CalcDamage(shot.power, shot.vsSpecial ? enemy.Stats.specialDefense : enemy.Stats.defense),
                 knockback = new Vector2(direction * shot.knockback, 0f),
                 stagger = shot.stagger,
-                special = shot.vsSpecial
+                special = shot.vsSpecial,
+                auto = shot.auto
             };
             if (!enemy.Health.TakeHit(hit)) continue;
             alreadyHit.Add(enemy);

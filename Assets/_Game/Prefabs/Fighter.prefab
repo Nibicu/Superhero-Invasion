@@ -151,6 +151,9 @@ MonoBehaviour:
   speedPerStat: 0.02
   depthSpeedFactor: 0.7
   knockbackDrag: 10
+  runMultiplier: 1.8
+  runDuration: 1.6
+  runRecovery: 3.5
 --- !u!114 &6716874397692012574
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -163,6 +166,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fd4a900de36416141817b858d88a567e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FighterHealth
+  regenDelay: 3
+  regenRate: 0.5
 --- !u!114 &4673127420280988229
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -178,6 +183,18 @@ MonoBehaviour:
   hitMoment: 0.45
   projectilePrefab: {fileID: 0}
   projectileHeight: 1
+  energyRegenRate: 0.5
+  autoShotSpeed: 11
+  autoShotSize: 0.5
+  slamRadius: 2.4
+  slamDepth: 0.9
+  slamDamage: 0.9
+  strikeDamage: 2
+  mageShotDamage: 1.3
+  sniperDamage: 1.8
+  healPower: 1.5
+  healMaxHpPart: 0.06
+  healRange: 6
 --- !u!114 &5161712169723223276
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -201,8 +218,6 @@ MonoBehaviour:
   staggerToKnockdown: 3
   staggerResetTime: 1.5
   detectionRadius: 9
-  specialCooldown: 3.5
-  specialEnergyCost: 60
   projectileSpeed: 9
 --- !u!114 &2636642008002670978
 MonoBehaviour:
@@ -218,10 +233,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::FighterAI
   reactionTime: {x: 0.15, y: 0.35}
   preferredRangeFactor: 0.7
-  projectileMinRange: 2.5
-  projectileMaxRange: 7.5
-  projectileChance: 0.5
+  aimTolerance: 0.3
   separationRadius: 0.7
+  underAttackTime: 1.2
+  underAttackDistance: 1.3
+  kiteDistance: 5
+  runSafeDistance: 5
+  runMinDistance: 2
+  itemSearchRadius: 12
+  itemNearDistance: 2.5
 --- !u!114 &3947199492845797134
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -254,6 +274,9 @@ MonoBehaviour:
   sortingGroup: {fileID: 1295318395027031467}
   playerColor: {r: 0.25, g: 0.6, b: 1, a: 1}
   enemyColor: {r: 1, g: 0.3, b: 0.3, a: 1}
+  neutralColor: {r: 0.75, g: 0.75, b: 0.75, a: 1}
+  defaultSprites: {fileID: 11400000, guid: 80c499fdd7ce0fc4c87d26efe9f8a03d, type: 2}
+  staminaColor: {r: 1, g: 0.85, b: 0.3, a: 1}
   animator: {fileID: 0}
   proceduralAnimation: 1
 --- !u!210 &1295318395027031467
@@ -1577,6 +1600,7 @@ MonoBehaviour:
   width: 1.04
   playerColor: {r: 0.35, g: 0.85, b: 0.4, a: 1}
   enemyColor: {r: 0.95, g: 0.3, b: 0.3, a: 1}
+  neutralColor: {r: 0.95, g: 0.75, b: 0.25, a: 1}
 --- !u!1 &8360433650690107274
 GameObject:
   m_ObjectHideFlags: 0

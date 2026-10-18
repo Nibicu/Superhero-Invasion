@@ -40,6 +40,12 @@ public class FighterAI : MonoBehaviour
     [Tooltip("На каком расстоянии от ближайшего врага держится отступающий (недалеко, чтобы не потерять бой)")]
     [SerializeField] private float kiteDistance = 5f;
 
+    [Header("Бег")]
+    [Tooltip("Бежать можно, только если ближайший враг дальше этого (рядом с врагом — шагом). Отступающий бежит всегда")]
+    [SerializeField] private float runSafeDistance = 5f;
+    [Tooltip("Бежать, только если до точки, куда идём, дальше этого")]
+    [SerializeField] private float runMinDistance = 2f;
+
     [Header("Предметы")]
     [Tooltip("Как далеко боец замечает коробки и баффы, когда врагов рядом нет")]
     [SerializeField] private float itemSearchRadius = 12f;
@@ -56,6 +62,7 @@ public class FighterAI : MonoBehaviour
     private bool wantSkill;       // Решили применить скил
     private bool autoClose;       // Авто атака вплотную (Маг, Поддержка, Стрелок бьют рукой)
     private bool retreating;      // Режим отступления
+    private bool wantRun;         // Решили бежать к точке (а не идти)
     private float thinkTimer;
 
     /// <summary>Отступает ли сейчас (для отладки и интерфейса).</summary>
@@ -93,7 +100,7 @@ public class FighterAI : MonoBehaviour
         {
             Vector2 dir = destination - self.Position;
             if (dir.magnitude < 0.08f) hasDestination = false;
-            else self.Movement.Move(dir.normalized + Separation(bm) * 0.6f);
+            else self.Movement.Move(dir.normalized + Separation(bm) * 0.6f, wantRun && dir.magnitude > runMinDistance);
         }
     }
 
@@ -107,6 +114,25 @@ public class FighterAI : MonoBehaviour
         autoClose = false;
         healTarget = null;
         ClassProfile profile = self.Profile;
+        try { ThinkInner(bm, profile); }
+        finally { wantRun = ShouldRun(bm); }
+    }
+
+    /// <summary>
+    /// Бежать или идти: рядом враг — шагом; отступает с низким HP — бегом (оторваться и восстановиться);
+    /// иначе (врагов рядом нет, или ближний боец подбегает к далёкому врагу) — бегом, пока есть шкала бега.
+    /// </summary>
+    private bool ShouldRun(BattleManager bm)
+    {
+        if (!hasDestination || !self.Movement.CanRun) return false;
+        if (retreating) return true;
+        Fighter near = NearestOpponent(bm, runSafeDistance);
+        return near == null;
+    }
+
+    /// <summary>Само решение (без выбора "бежать или идти").</summary>
+    private void ThinkInner(BattleManager bm, ClassProfile profile)
+    {
 
         // Цель: старую бросаем, если она недоступна (за барьером), лежит или ушла далеко;
         // переключаемся на противника, который заметно ближе (кто рядом бьёт — тот и цель)

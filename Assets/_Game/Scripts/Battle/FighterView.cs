@@ -3,7 +3,10 @@ using UnityEngine;
 using UnityEngine.Rendering;
 
 /// <summary>
-/// Внешний вид бойца. Сейчас — "человечек из квадратов" с процедурными позами:
+/// Внешний вид бойца.
+/// СПРАЙТЫ: если у героя (HeroData.sprites) или по умолчанию (defaultSprites) есть спрайты персонажа —
+/// боец рисуется покадровой анимацией: покой, ходьба, бег, атака (CharacterSprites).
+/// Иначе — запасной "человечек из квадратов" с процедурными позами:
 /// ходьба (ноги), удар (рука вперёд), выстрел (обе руки), реакция на удар (вспышка, наклон),
 /// падение и смерть (лежит, смерть — серый и полупрозрачный).
 /// Перекрытие по глубине: кто ниже на экране — тот рисуется поверх (SortingGroup).
@@ -37,6 +40,12 @@ public class FighterView : MonoBehaviour
     [Tooltip("Цвет нейтральной охраны в битве за флаг")]
     [SerializeField] private Color neutralColor = new Color(0.75f, 0.75f, 0.75f);
 
+    [Header("Спрайты персонажа")]
+    [Tooltip("Спрайты по умолчанию — у всех героев, кому не нарисовали свои (Data/Characters/Sprites_Default)")]
+    [SerializeField] private CharacterSprites defaultSprites;
+    [Tooltip("Цвет шкалы бега под полоской HP")]
+    [SerializeField] private Color staminaColor = new Color(1f, 0.85f, 0.3f);
+
     [Header("Анимации (на будущее)")]
     [Tooltip("Animator с настоящими анимациями (необязательно)")]
     [SerializeField] private Animator animator;
@@ -55,6 +64,16 @@ public class FighterView : MonoBehaviour
     private float slamTimer;             // Сколько ещё видна волна
     private Vector2 slamSize;            // Размер волны
     private Color buffColor = new Color(1f, 0.85f, 0.25f); // Цвет ауры баффа
+    private CharacterSprites sheet;      // Спрайты персонажа (null — человечек из квадратов)
+    private SpriteRenderer spriteBody;   // Картинка персонажа (кадры анимации)
+    private Sprite[] currentFrames;      // Какая анимация сейчас играет
+    private float animClock;             // Время текущей анимации
+    private Transform staminaFill;       // Заполнение шкалы бега
+    private GameObject staminaRoot;      // Шкала бега (видна, только когда не полная)
+    private float staminaWidth = 1.04f;  // Полная ширина шкалы бега
+    /// <summary>Спрайты персонажа (null — человечек из квадратов). Скилы берут отсюда кадры снарядов.</summary>
+    public CharacterSprites Sheet => sheet;
+
     private string popText;              // Короткая надпись над головой ("МЕТКО!", "БАРЬЕР")
     private Color popColor;              // Её цвет
     private float popTimer;              // Сколько ещё видна
@@ -91,6 +110,11 @@ public class FighterView : MonoBehaviour
                 : f.Team == Team.Player ? new Color(0.75f, 0.88f, 1f) : new Color(1f, 0.75f, 0.75f);
         }
 
+        // Спрайты персонажа: свои у героя или по умолчанию
+        sheet = f.Data.sprites != null ? f.Data.sprites : defaultSprites;
+        if (sheet != null) SetupSprite();
+        SetupStaminaBar();
+
         allParts = visualRoot.GetComponentsInChildren<SpriteRenderer>(true); // только тело, без полоски HP
         baseColors = new Color[allParts.Length];
         for (int i = 0; i < allParts.Length; i++) baseColors[i] = allParts[i].color;
@@ -112,6 +136,106 @@ public class FighterView : MonoBehaviour
         f.Combat.AttackStarted += OnAttackStarted;
         f.BuffChanged += OnBuffChanged;
         f.StatusChanged += OnStatusChanged;
+    }
+
+    /// <summary>
+    /// Включить спрайты персонажа: части "человечка" прячутся, появляется картинка с кадрами.
+    /// Ноги — в точке бойца; полоска HP и имя опускаются к голове персонажа.
+    /// </summary>
+    private void SetupSprite()
+    {
+        foreach (Transform c in visualRoot) c.gameObject.SetActive(false);
+        var go = new GameObject("SpriteBody");
+        go.transform.SetParent(visualRoot, false);
+        spriteBody = go.AddComponent<SpriteRenderer>();
+        Sprite first = CharacterSprites.Frame(sheet.idle, 0f, 1f);
+        spriteBody.sprite = first;
+        spriteBody.sortingOrder = body != null ? body.sortingOrder : 4;
+        float ppu = first != null ? first.pixelsPerUnit : 32f;
+        float unit = sheet.scale / ppu; // единиц мира на 1 пиксель
+        go.transform.localScale = new Vector3(sheet.scale, sheet.scale, 1f);
+        go.transform.localPosition = new Vector3(sheet.offsetXPx * unit, sheet.feetBelowCenterPx * unit, 0f);
+
+        // Голова персонажа ниже, чем у "человечка" — опускаем полоску HP и имя
+        float top = first != null ? (first.rect.height / 2f + sheet.feetBelowCenterPx) * unit * 0.5f + 0.35f : 2.2f;
+        Transform bar = transform.Find("HealthBar"), tag = transform.Find("NameTag");
+        if (bar != null) bar.localPosition = new Vector3(bar.localPosition.x, Mathf.Min(bar.localPosition.y, top), 0f);
+        if (tag != null && bar != null) tag.localPosition = new Vector3(tag.localPosition.x, bar.localPosition.y + 0.28f, 0f);
+    }
+
+    /// <summary>Шкала бега под полоской HP (копия полоски, жёлтая и тоньше).</summary>
+    private void SetupStaminaBar()
+    {
+        Transform bar = transform.Find("HealthBar");
+        if (bar == null) return;
+        Transform bg = bar.Find("Bg"), fill = bar.Find("Fill");
+        if (bg == null || fill == null) return;
+        staminaRoot = new GameObject("StaminaBar");
+        staminaRoot.transform.SetParent(bar, false);
+        staminaRoot.transform.localPosition = new Vector3(0f, -0.13f, 0f);
+        Transform b = Instantiate(bg, staminaRoot.transform);
+        b.localPosition = Vector3.zero;
+        b.localScale = new Vector3(bg.localScale.x, bg.localScale.y * 0.55f, 1f);
+        staminaFill = Instantiate(fill, staminaRoot.transform);
+        staminaFill.localPosition = Vector3.zero;
+        staminaFill.localScale = new Vector3(fill.localScale.x, fill.localScale.y * 0.55f, 1f);
+        staminaWidth = fill.localScale.x;
+        var sr = staminaFill.GetComponent<SpriteRenderer>();
+        if (sr != null) sr.color = staminaColor;
+        staminaRoot.SetActive(false);
+    }
+
+    /// <summary>Шкала бега: видна, только пока не полная.</summary>
+    private void UpdateStaminaBar()
+    {
+        if (staminaRoot == null) return;
+        float s = fighter.Movement.Stamina;
+        bool show = fighter.IsAlive && s < 0.999f;
+        if (staminaRoot.activeSelf != show) staminaRoot.SetActive(show);
+        if (!show) return;
+        float w = staminaWidth * s;
+        staminaFill.localScale = new Vector3(w, staminaFill.localScale.y, 1f);
+        staminaFill.localPosition = new Vector3(-staminaWidth / 2f + w / 2f, 0f, 0f);
+    }
+
+    /// <summary>Кадр анимации по состоянию: покой, ходьба, бег, атака, скил.</summary>
+    private void UpdateSpriteFrame()
+    {
+        Sprite[] frames;
+        float fps;
+        bool once = false; // кадры скила играют один раз
+        SkillSprites skill = fighter.Kit != null && fighter.IsAlive ? sheet.GetSkill(fighter.Kit.AnimSkill) : null;
+        if (skill != null && skill.HasFrames)
+        {
+            frames = skill.frames;
+            fps = skill.fps;
+            once = true;
+        }
+        else switch (fighter.State)
+        {
+            case FighterState.Moving:
+                bool run = fighter.Movement.IsRunning && sheet.run != null && sheet.run.Length > 0;
+                frames = run ? sheet.run : sheet.walk;
+                fps = run ? sheet.runFps : sheet.walkFps;
+                break;
+            case FighterState.Attacking:
+                if (fighter.Kit != null && fighter.Kit.Pose == KitPose.Roll) { frames = sheet.run; fps = sheet.runFps * 1.5f; }
+                else { frames = sheet.attack; fps = 8f; }
+                break;
+            case FighterState.Idle:
+                frames = sheet.idle;
+                fps = sheet.idleFps;
+                break;
+            default: // реакция на удар, лежит, выбыл — первый кадр покоя (наклон и падение делает поза)
+                frames = sheet.idle;
+                fps = 0f;
+                break;
+        }
+        if (frames == null || frames.Length == 0) frames = sheet.idle;
+        if (frames != currentFrames) { currentFrames = frames; animClock = 0f; }
+        animClock += Time.deltaTime;
+        Sprite s = once ? CharacterSprites.FrameOnce(frames, animClock, fps) : CharacterSprites.Frame(frames, animClock, fps);
+        if (s != null) spriteBody.sprite = s;
     }
 
     /// <summary>Короткая надпись над головой на полсекунды ("МЕТКО!", "БАРЬЕР").</summary>
@@ -195,6 +319,8 @@ public class FighterView : MonoBehaviour
         int facing = fighter.Movement.Facing;
         visualRoot.localScale = new Vector3(facing, 1f, 1f);
         if (proceduralAnimation) AnimatePose(facing);
+        if (spriteBody != null) UpdateSpriteFrame();
+        UpdateStaminaBar();
         UpdateColors();
     }
 

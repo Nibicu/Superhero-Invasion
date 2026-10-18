@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fb02b52e743cf1e4a86b3c91a63383a7, type: 3}
+  m_Name: Sprites_Default
+  m_EditorClassIdentifier: Assembly-CSharp::CharacterSprites
+  idle:
+  - {fileID: 2968095196951234505, guid: b62f802508238674997b29c08320a3f6, type: 3}
+  - {fileID: -1045698598736924368, guid: b62f802508238674997b29c08320a3f6, type: 3}
+  - {fileID: -1013339833634019641, guid: b62f802508238674997b29c08320a3f6, type: 3}
+  - {fileID: 2317521268124976230, guid: b62f802508238674997b29c08320a3f6, type: 3}
+  walk:
+  - {fileID: 4050457253476021421, guid: b62f802508238674997b29c08320a3f6, type: 3}
+  - {fileID: 6576144678250701900, guid: b62f802508238674997b29c08320a3f6, type: 3}
+  - {fileID: -5887722576851582950, guid: b62f802508238674997b29c08320a3f6, type: 3}
+  - {fileID: 8626111853374633598, guid: b62f802508238674997b29c08320a3f6, type: 3}
+  - {fileID: -3583295638275156684, guid: b62f802508238674997b29c08320a3f6, type: 3}
+  - {fileID: 1448473471095095728, guid: b62f802508238674997b29c08320a3f6, type: 3}
+  - {fileID: 3867130499187670542, guid: b62f802508238674997b29c08320a3f6, type: 3}
+  run:
+  - {fileID: 4085698375983077295, guid: b62f802508238674997b29c08320a3f6, type: 3}
+  - {fileID: -2523195122492670199, guid: b62f802508238674997b29c08320a3f6, type: 3}
+  - {fileID: -7544200633927023752, guid: b62f802508238674997b29c08320a3f6, type: 3}
+  - {fileID: 4245973652476643017, guid: b62f802508238674997b29c08320a3f6, type: 3}
+  - {fileID: -5602272121401600539, guid: b62f802508238674997b29c08320a3f6, type: 3}
+  - {fileID: 7828034741520194593, guid: b62f802508238674997b29c08320a3f6, type: 3}
+  - {fileID: -2722265532042781016, guid: b62f802508238674997b29c08320a3f6, type: 3}
+  attack:
+  - {fileID: -867267371170194743, guid: b62f802508238674997b29c08320a3f6, type: 3}
+  idleFps: 5
+  walkFps: 10
+  runFps: 14
+  scale: 1.7
+  feetBelowCenterPx: 32
+  offsetXPx: 1.5
