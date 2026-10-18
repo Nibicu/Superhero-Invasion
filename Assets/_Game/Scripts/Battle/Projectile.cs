@@ -31,6 +31,7 @@ public class Projectile : MonoBehaviour
     private float travelled;        // Сколько уже пролетел
     private readonly List<Fighter> alreadyHit = new List<Fighter>(); // Кого уже задел (для пробивающих)
     private SpriteRenderer effect;  // Картинка-кадры снаряда (если у скила есть свои кадры)
+    private Color baseTint;         // Цвет снаряда (для мерцания)
     private float clock;            // Время полёта (для кадров)
 
     private const float EffectFps = 12f; // Скорость кадров снаряда
@@ -61,6 +62,7 @@ public class Projectile : MonoBehaviour
             return;
         }
         Color c = info.color.a > 0f ? info.color : shooter.Data.color;
+        baseTint = c;
         if (tinted != null)
             foreach (SpriteRenderer r in tinted)
                 if (r != null) r.color = new Color(Mathf.Lerp(c.r, 1f, 0.35f), Mathf.Lerp(c.g, 1f, 0.35f), Mathf.Lerp(c.b, 1f, 0.35f), r.color.a);
@@ -78,10 +80,13 @@ public class Projectile : MonoBehaviour
         travelled += Mathf.Abs(step);
         transform.position = pos;
         if (sortingGroup != null) sortingGroup.sortingOrder = bm.DepthSortingOrder(pos.y) + 50;
-        if (effect != null)
+        clock += Time.deltaTime;
+        if (effect != null) effect.sprite = CharacterSprites.Frame(shot.frames, clock, EffectFps);
+        if (shot.flicker.a > 0f && tinted != null) // мерцание между двумя цветами
         {
-            clock += Time.deltaTime;
-            effect.sprite = CharacterSprites.Frame(shot.frames, clock, EffectFps);
+            Color c = Color.Lerp(baseTint, shot.flicker, Mathf.PingPong(clock * 8f, 1f));
+            foreach (SpriteRenderer r in tinted)
+                if (r != null) r.color = new Color(c.r, c.g, c.b, r.color.a);
         }
 
         if (travelled > shot.range || !bm.IsInsideArenaX(pos.x)) { Destroy(gameObject); return; }

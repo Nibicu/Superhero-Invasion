@@ -46,6 +46,9 @@ public abstract class HeroKit : MonoBehaviour
     /// <summary>Какой скил (0..3) сейчас показывать кадрами персонажа (-1 — никакой: обычные кадры).</summary>
     public virtual int AnimSkill => -1;
 
+    /// <summary>Счётчик повторов анимации скила: изменился — кадры скила играют сначала (каждая пуля Залпа).</summary>
+    public int AnimCycle { get; protected set; }
+
     /// <summary>Сейчас идёт блок: любой урон, отбрасывание, стан и немота не проходят.</summary>
     public virtual bool IsBlocking => false;
 
@@ -56,6 +59,7 @@ public abstract class HeroKit : MonoBehaviour
         {
             case HeroKitType.Soldier: return f.gameObject.AddComponent<SoldierKit>();
             case HeroKitType.Stajor: return f.gameObject.AddComponent<StajorKit>();
+            case HeroKitType.Phantom: return f.gameObject.AddComponent<PhantomKit>();
             default: return null;
         }
     }

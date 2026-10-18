@@ -3,17 +3,17 @@ using UnityEngine;
 /// <summary>
 /// Солдат (класс Боец, ближний бой). Навыки:
 ///  ПАССИВКА "Меткий стрелок" — 20% шанс, что выстрел или авто атака нанесёт в 1.5 раза больше урона.
-///  1) "Залп" (ур. 1) — достаёт винтовку и стреляет 3 раза с интервалом 0.5 с (урон от Атаки).
-///     Средняя и дальняя дистанция: не применяет, пока враг вплотную или близко.
+///  1) "Залп" (ур. 1) — достаёт винтовку и стреляет 3 раза с интервалом 0.5 с (каждая пуля — 70% Атаки,
+///     отбрасывает). Анимация выстрела играет на каждую пулю. Не применяет, пока враг вплотную или близко.
 ///  2) "Отступление" (ур. 2) — кувырок. Пока Залп перезаряжается и враг вплотную — кувырок от врага.
 ///     Исключение: у врага меньше здоровья, чем у Солдата, — кувырок к врагу (добить).
-///  3) "Барьер" (ур. 4) — щит на 5 с, впитывает урон от Спец. атаки (только против Мага или Поддержки).
-///  4) "Энерго оковы" (ур. 5) — кольцо из перчаток: попало — враг оглушён и под немотой 2 с (без урона).
-/// Перезарядки — в файле героя (Data/Heroes/Hero_Soldier).
+///  3) "Барьер" (ур. 4) — щит прочностью 30% HP на 6 с (впитывает любой урон), вокруг Солдата — тёмно-зелёный шар.
+///  4) "Сверх человек" (ур. 5, пассивный) — пока HP меньше 40%, Реген HP +15.
+/// Перезарядки — в файле героя (Data/Heroes/Hero_Soldier). Кадры — в Data/Characters/Sprites_Soldier.
 /// </summary>
 public class SoldierKit : HeroKit
 {
-    private const int Volley = 0, Roll = 1, Barrier = 2, Shackles = 3; // номера скилов
+    private const int Volley = 0, Roll = 1, Barrier = 2, Superhuman = 3; // номера скилов
 
     [Header("Меткий стрелок (пассивка)")]
     [SerializeField] private float critChance = 0.2f;     // Шанс усиленного попадания
@@ -22,10 +22,12 @@ public class SoldierKit : HeroKit
     [Header("Залп")]
     [SerializeField] private int volleyShots = 3;           // Сколько выстрелов
     [SerializeField] private float volleyInterval = 0.5f;   // Интервал между выстрелами
-    [SerializeField] private float volleyDamage = 0.8f;     // Урон одной пули (доля Атаки)
+    [SerializeField] private float volleyDamage = 0.7f;     // Урон одной пули (доля Атаки)
+    [SerializeField] private float volleyKnockback = 4f;    // Сила отбрасывания пули
     [SerializeField] private float volleyMinRange = 2.4f;   // Ближе — "враг близко", залп нельзя
     [SerializeField] private float volleyMaxRange = 9f;     // Дальность пуль
     [SerializeField] private float volleyKeepRange = 5.5f;  // На какой дистанции Солдат держится, пока залп готов
+    [SerializeField] private float shotDelay = 0.125f;      // Через сколько после начала анимации вылетает пуля (кадр выстрела)
 
     [Header("Отступление")]
     [SerializeField] private float rollDistance = 3.2f;     // Длина кувырка от врага
@@ -33,23 +35,28 @@ public class SoldierKit : HeroKit
     [SerializeField] private float rollChaseMax = 6f;       // На каком расстоянии от слабого врага кувыркается к нему
 
     [Header("Барьер")]
-    [SerializeField] private float barrierHpPart = 0.25f;   // Плотность щита — доля макс. HP
-    [SerializeField] private float barrierTime = 5f;        // Сколько держится щит
+    [SerializeField] private float barrierHpPart = 0.3f;    // Прочность щита — доля макс. HP
+    [SerializeField] private float barrierTime = 6f;        // Сколько держится щит
+    [SerializeField] private float barrierRange = 4f;       // Ставит щит, когда враг ближе этого
 
-    [Header("Энерго оковы")]
-    [SerializeField] private float shacklesRange = 7f;      // Дальность кольца
-    [SerializeField] private float shacklesTime = 2f;       // Оглушение и немота (сек)
+    [Header("Сверх человек (пассивка)")]
+    [SerializeField] private float superhumanHp = 0.4f;     // Работает, пока HP меньше этой доли
+    [SerializeField] private int superhumanRegen = 15;      // Сколько Регена HP добавляет
 
     private const float KnockDrag = 10f; // Как быстро гаснет движение кувырка (как отбрасывание в FighterMovement)
     private const float AimTolerance = 0.35f; // Насколько точно встать на линию цели для выстрела
 
     private Fighter volleyTarget; // По кому идёт залп
     private int shotsFired;       // Сколько пуль уже выпущено
-    private bool castingShackles; // Текущее действие — Энерго оковы (а не Барьер)
-    private bool shacklesFired;   // Кольцо уже выпущено (в текущем действии)
+    private int cyclesStarted;    // Сколько раз уже начата анимация выстрела
+    private bool castingBarrier;  // Текущее действие — Барьер
     private float actionLength;   // Сколько длится текущее действие
 
-    // ---------- Пассивка ----------
+    // ---------- Внешний вид ----------
+
+    public override int AnimSkill => !ActionAlive ? -1 : Pose == KitPose.Aim ? Volley : castingBarrier ? Barrier : -1;
+
+    // ---------- Пассивки ----------
 
     /// <summary>Меткий стрелок: 20% шанс урона ×1.5 (для авто атак и пуль залпа).</summary>
     private float Marksman(float power)
@@ -60,6 +67,13 @@ public class SoldierKit : HeroKit
     }
 
     public override float ModifyAutoDamage(float power) => Marksman(power);
+
+    /// <summary>Сверх человек: пока HP меньше 40%, Реген HP +15.</summary>
+    public override HeroStats ModifyStats(HeroStats s)
+    {
+        if (IsUnlocked(Superhuman) && self.Health != null && self.Health.Fraction < superhumanHp) s.hpRegen += superhumanRegen;
+        return s;
+    }
 
     // ---------- Решение ----------
 
@@ -76,14 +90,10 @@ public class SoldierKit : HeroKit
         float close = self.meleeRange * 1.3f;
         bool enemyClose = NearestEnemyDistance() < volleyMinRange;
 
-        // 4) Энерго оковы — сковать цель на линии выстрела
-        if (IsReady(Shackles) && aligned && absX <= shacklesRange && !target.IsStunned && target.IsTargetable)
-            return StartShackles(target);
-
-        // 3) Барьер — только против Мага или Поддержки
-        if (IsReady(Barrier) && self.Shield <= 0f && absX <= self.detectionRadius
-            && (target.Class == UnitClass.Mage || target.Class == UnitClass.Support))
-            return StartBarrier(target);
+        // 3) Барьер — враг рядом, а Солдата уже бьют (или здоровья меньше 70%)
+        if (IsReady(Barrier) && self.Shield <= 0f && NearestEnemyDistance() <= barrierRange
+            && (self.Health.TimeSinceHit < 1.5f || self.Health.Fraction < 0.7f))
+            return StartBarrier();
 
         // 1) Залп — на средней/дальней дистанции, когда враг не близко
         if (IsReady(Volley) && aligned && !enemyClose && absX >= volleyMinRange && absX <= volleyMaxRange)
@@ -112,14 +122,16 @@ public class SoldierKit : HeroKit
 
     // ---------- Скилы ----------
 
-    /// <summary>Залп: 3 пули с интервалом.</summary>
+    /// <summary>Залп: 3 пули с интервалом, на каждую — своя анимация выстрела.</summary>
     private bool StartVolley(Fighter target)
     {
         if (!BeginAction(KitPose.Aim)) return false;
         StartCooldown(Volley);
+        castingBarrier = false;
         volleyTarget = target;
         shotsFired = 0;
-        actionLength = 0.2f + volleyInterval * (volleyShots - 1) + 0.25f;
+        cyclesStarted = 0;
+        actionLength = 0.075f + shotDelay + volleyInterval * (volleyShots - 1) + 0.25f;
         self.Movement.FaceTowards(target.Position.x);
         return true;
     }
@@ -129,6 +141,7 @@ public class SoldierKit : HeroKit
     {
         if (!BeginAction(KitPose.Roll)) return false;
         StartCooldown(Roll);
+        castingBarrier = false;
         actionLength = rollTime;
         self.SetInvulnerable(rollTime);
         float side = Mathf.Sign(target.Position.x - self.Position.x);
@@ -141,28 +154,15 @@ public class SoldierKit : HeroKit
         return true;
     }
 
-    /// <summary>Барьер: щит от Спец. атаки.</summary>
-    private bool StartBarrier(Fighter target)
+    /// <summary>Барьер: щит от любого урона.</summary>
+    private bool StartBarrier()
     {
         if (!BeginAction(KitPose.Cast)) return false;
         StartCooldown(Barrier);
-        actionLength = 0.3f;
-        castingShackles = false;
+        castingBarrier = true;
+        actionLength = 0.35f;
         self.AddShield(self.Health.Max * barrierHpPart, barrierTime);
-        if (self.View != null) self.View.Pop("БАРЬЕР", new Color(0.55f, 0.85f, 1f));
-        return true;
-    }
-
-    /// <summary>Энерго оковы: кольцо летит в цель.</summary>
-    private bool StartShackles(Fighter target)
-    {
-        if (!BeginAction(KitPose.Cast)) return false;
-        StartCooldown(Shackles);
-        actionLength = 0.4f;
-        castingShackles = true;
-        shacklesFired = false;
-        volleyTarget = target;
-        self.Movement.FaceTowards(target.Position.x);
+        if (self.View != null) self.View.Pop("БАРЬЕР", new Color(0.4f, 0.9f, 0.5f));
         return true;
     }
 
@@ -172,13 +172,18 @@ public class SoldierKit : HeroKit
     {
         base.Update();
         if (Pose == KitPose.None) return;
-        if (!ActionAlive) { Pose = KitPose.None; return; } // по Солдату попали — действие прервано
+        if (!ActionAlive) { Pose = KitPose.None; castingBarrier = false; return; } // по Солдату попали — действие прервано
         ActionTime += Time.deltaTime;
 
         if (Pose == KitPose.Aim)
         {
-            // Пули: первая через 0.2 с, дальше — с интервалом
-            float nextShot = 0.2f + shotsFired * volleyInterval;
+            // Анимация выстрела: через 0.075 с и дальше с интервалом; пуля — на кадре выстрела
+            if (cyclesStarted < volleyShots && ActionTime >= 0.075f + cyclesStarted * volleyInterval)
+            {
+                cyclesStarted++;
+                AnimCycle++;
+            }
+            float nextShot = 0.075f + shotDelay + shotsFired * volleyInterval;
             if (shotsFired < volleyShots && ActionTime >= nextShot)
             {
                 if (volleyTarget != null && volleyTarget.IsAlive) self.Movement.FaceTowards(volleyTarget.Position.x);
@@ -191,33 +196,16 @@ public class SoldierKit : HeroKit
                     range = volleyMaxRange,
                     size = 0.4f,
                     stagger = 1,
-                    knockback = 1.5f,
+                    knockback = volleyKnockback,
                     color = new Color(1f, 0.9f, 0.45f)
                 });
             }
-        }
-        else if (Pose == KitPose.Cast && castingShackles && !shacklesFired && ActionTime >= 0.15f) // кольцо оков
-        {
-            shacklesFired = true;
-            if (volleyTarget != null && volleyTarget.IsAlive) self.Movement.FaceTowards(volleyTarget.Position.x);
-            self.Combat.FireShot(new ShotInfo
-            {
-                power = 0f,
-                vsSpecial = false,
-                speed = 10f,
-                range = shacklesRange + 0.5f,
-                size = 1.1f,
-                stagger = 0,
-                knockback = 0f,
-                stun = shacklesTime,
-                silence = shacklesTime,
-                color = new Color(0.4f, 0.95f, 1f)
-            });
         }
 
         if (ActionTime >= actionLength)
         {
             volleyTarget = null;
+            castingBarrier = false;
             EndAction();
         }
     }

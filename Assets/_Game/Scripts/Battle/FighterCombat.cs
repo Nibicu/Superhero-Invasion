@@ -117,7 +117,7 @@ public class FighterCombat : MonoBehaviour
 
     /// <summary>Готов ли скил (перезарядка прошла, хватает энергии).</summary>
     public bool CanSkill => fighter.CanAct && skillTimer <= 0f && cooldownTimer <= 0f
-                            && fighter.Kit == null && !fighter.IsSilenced // свои скилы героя заменяют скил класса
+                            && fighter.Kit == null && !fighter.IsSilenced && !fighter.IsClone // свои скилы героя заменяют скил класса; клоны без скилов
                             && Energy >= fighter.Profile.skillCost
                             && (projectilePrefab != null || (fighter.Class != UnitClass.Mage && fighter.Class != UnitClass.Shooter));
 

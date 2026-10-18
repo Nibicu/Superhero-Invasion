@@ -36533,6 +36533,7 @@ MonoBehaviour:
   objectPriority: 3
   finishBaseHp: 400
   baseAttackGrace: 120
+  hireFirst: {fileID: 11400000, guid: 8e74f619b92967f45a5d7ff5c7b72447, type: 2}
   minSquadSize: 2
   allowRegroup: 1
   eventPrepTime: 35
@@ -36588,8 +36589,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EventManager
   order: 000000000000000001000000i
-  firstDelay: 300
-  quietTime: 300
+  firstDelay: 240
+  quietTime: 240
   eventDuration: 300
   spawnGlobalMission: 1
   portal: {fileID: 7969128750068696030}

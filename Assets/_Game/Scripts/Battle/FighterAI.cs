@@ -306,9 +306,11 @@ public class FighterAI : MonoBehaviour
             }
         }
 
-        // Встаём на свою дистанцию и на одну глубину с целью (слишком близко — отходим)
+        // Встаём на свою дистанцию и на одну глубину с целью (слишком близко — отходим).
+        // Дистанция 0 (Маг, Поддержка — ближний бой) — подходим вплотную, как Боец
         float side = d.x >= 0 ? -1f : 1f;
-        destination = new Vector2(target.Position.x + side * profile.preferredRange, target.Position.y);
+        float keep = profile.preferredRange > 0f ? profile.preferredRange : self.meleeRange * preferredRangeFactor;
+        destination = new Vector2(target.Position.x + side * keep, target.Position.y);
         hasDestination = (destination - self.Position).magnitude > 0.15f;
     }
 

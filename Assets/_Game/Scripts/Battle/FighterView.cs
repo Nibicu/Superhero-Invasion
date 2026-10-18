@@ -43,6 +43,10 @@ public class FighterView : MonoBehaviour
     [Header("Спрайты персонажа")]
     [Tooltip("Спрайты по умолчанию — у всех героев, кому не нарисовали свои (Data/Characters/Sprites_Default)")]
     [SerializeField] private CharacterSprites defaultSprites;
+    [Tooltip("Цвет шара щита вокруг бойца (Барьер Солдата), прозрачность 15%")]
+    [SerializeField] private Color shieldBubbleColor = new Color(0.05f, 0.35f, 0.12f, 0.15f);
+    [Tooltip("Насколько затемнён клон (Фантом): цвет, на который умножается картинка")]
+    [SerializeField] private Color cloneTint = new Color(0.22f, 0.22f, 0.28f, 1f);
     [Tooltip("Цвет шкалы бега под полоской HP")]
     [SerializeField] private Color staminaColor = new Color(1f, 0.85f, 0.3f);
 
@@ -67,6 +71,8 @@ public class FighterView : MonoBehaviour
     private CharacterSprites sheet;      // Спрайты персонажа (null — человечек из квадратов)
     private SpriteRenderer spriteBody;   // Картинка персонажа (кадры анимации)
     private Sprite[] currentFrames;      // Какая анимация сейчас играет
+    private int animCycle;               // Последний повтор анимации скила (HeroKit.AnimCycle)
+    private SpriteRenderer shieldBubble; // Шар щита вокруг бойца
     private float animClock;             // Время текущей анимации
     private Transform staminaFill;       // Заполнение шкалы бега
     private GameObject staminaRoot;      // Шкала бега (видна, только когда не полная)
@@ -132,6 +138,8 @@ public class FighterView : MonoBehaviour
             slamRing.gameObject.SetActive(false);
         }
 
+        SetupShieldBubble();
+
         f.StateChanged += OnStateChanged;
         f.Combat.AttackStarted += OnAttackStarted;
         f.BuffChanged += OnBuffChanged;
@@ -161,6 +169,32 @@ public class FighterView : MonoBehaviour
         Transform bar = transform.Find("HealthBar"), tag = transform.Find("NameTag");
         if (bar != null) bar.localPosition = new Vector3(bar.localPosition.x, Mathf.Min(bar.localPosition.y, top), 0f);
         if (tag != null && bar != null) tag.localPosition = new Vector3(tag.localPosition.x, bar.localPosition.y + 0.28f, 0f);
+    }
+
+    /// <summary>Шар щита: круг вокруг бойца (тот же круглый спрайт, что у кружка команды), почти прозрачный.</summary>
+    private void SetupShieldBubble()
+    {
+        if (teamRing == null) return;
+        var go = new GameObject("ShieldBubble");
+        go.transform.SetParent(transform, false);
+        go.transform.localPosition = new Vector3(0f, 0.85f, 0f); // центр — на уровне груди
+        shieldBubble = go.AddComponent<SpriteRenderer>();
+        shieldBubble.sprite = teamRing.sprite;
+        shieldBubble.color = shieldBubbleColor;
+        shieldBubble.sortingOrder = (body != null ? body.sortingOrder : 4) + 20; // поверх персонажа
+        float w = teamRing.sprite != null ? teamRing.sprite.bounds.size.x : 1f;
+        float size = 2f / Mathf.Max(0.01f, w); // шар диаметром ~2 единицы
+        go.transform.localScale = new Vector3(size, size, 1f);
+        go.SetActive(false);
+    }
+
+    /// <summary>Это клон (Фантом): затемнить картинку и подписать имя.</summary>
+    public void MarkClone()
+    {
+        if (baseColors != null)
+            for (int i = 0; i < baseColors.Length; i++)
+                baseColors[i] = new Color(baseColors[i].r * cloneTint.r, baseColors[i].g * cloneTint.g, baseColors[i].b * cloneTint.b, baseColors[i].a);
+        RefreshTag();
     }
 
     /// <summary>Шкала бега под полоской HP (копия полоски, жёлтая и тоньше).</summary>
@@ -210,6 +244,7 @@ public class FighterView : MonoBehaviour
             frames = skill.frames;
             fps = skill.fps;
             once = true;
+            if (fighter.Kit.AnimCycle != animCycle) { animCycle = fighter.Kit.AnimCycle; currentFrames = null; } // повтор (каждая пуля)
         }
         else switch (fighter.State)
         {
@@ -255,7 +290,7 @@ public class FighterView : MonoBehaviour
     private void RefreshTag()
     {
         if (nameTag == null || fighter == null) return;
-        string t = fighter.Data.displayName;
+        string t = fighter.Data.displayName + (fighter.IsClone ? " (клон)" : "");
         if (fighter.HasBuff) t += $"\n<size=75%><color=#FFD84A>+{BoostNames.Get(fighter.BuffStat)}</color></size>";
         string status = "";
         if (fighter.IsStunned) status += "<color=#9FD0FF>СТАН</color> ";
@@ -320,6 +355,11 @@ public class FighterView : MonoBehaviour
         visualRoot.localScale = new Vector3(facing, 1f, 1f);
         if (proceduralAnimation) AnimatePose(facing);
         if (spriteBody != null) UpdateSpriteFrame();
+        if (shieldBubble != null)
+        {
+            bool on = fighter.Shield > 0f && fighter.IsAlive;
+            if (shieldBubble.gameObject.activeSelf != on) shieldBubble.gameObject.SetActive(on);
+        }
         UpdateStaminaBar();
         UpdateColors();
     }

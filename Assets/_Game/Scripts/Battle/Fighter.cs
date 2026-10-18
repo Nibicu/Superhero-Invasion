@@ -115,7 +115,10 @@ public class Fighter : MonoBehaviour
     /// <summary>Немота: не может применять скилы (авто атаки можно).</summary>
     public bool IsSilenced => silenceTimer > 0f;
 
-    /// <summary>Сколько урона от Спец. атаки ещё впитает щит (0 — щита нет).</summary>
+    /// <summary>Клон (Фантом): без скилов, его HP не считается в итоге боя, исчезает вместе с хозяином.</summary>
+    public bool IsClone { get; set; }
+
+    /// <summary>Сколько урона ещё впитает щит (0 — щита нет).</summary>
     public float Shield => shieldTimer > 0f ? shieldAmount : 0f;
 
     /// <summary>Эффект (стан, немота, щит) начался или закончился — для подписи над головой.</summary>
@@ -229,7 +232,7 @@ public class Fighter : MonoBehaviour
         StatusChanged?.Invoke(this);
     }
 
-    /// <summary>Щит на seconds секунд, впитывает amount урона от Спец. атаки.</summary>
+    /// <summary>Щит на seconds секунд, впитывает amount любого урона.</summary>
     public void AddShield(float amount, float seconds)
     {
         shieldAmount = amount;
@@ -237,8 +240,8 @@ public class Fighter : MonoBehaviour
         StatusChanged?.Invoke(this);
     }
 
-    /// <summary>Щит впитывает урон от Спец. атаки. Вернёт, сколько урона прошло сквозь щит.</summary>
-    public float AbsorbSpecial(float damage)
+    /// <summary>Щит впитывает урон. Вернёт, сколько урона прошло сквозь щит.</summary>
+    public float AbsorbShield(float damage)
     {
         if (shieldTimer <= 0f || shieldAmount <= 0f) return damage;
         float absorbed = Mathf.Min(shieldAmount, damage);
@@ -247,6 +250,9 @@ public class Fighter : MonoBehaviour
         StatusChanged?.Invoke(this);
         return damage - absorbed;
     }
+
+    /// <summary>Исчезнуть из боя (клон, когда хозяин выбыл).</summary>
+    public void Vanish() => SetState(FighterState.Dead);
 
     /// <summary>Неуязвимость на seconds секунд (перекат).</summary>
     public void SetInvulnerable(float seconds) => invulnerableTimer = Mathf.Max(invulnerableTimer, seconds);

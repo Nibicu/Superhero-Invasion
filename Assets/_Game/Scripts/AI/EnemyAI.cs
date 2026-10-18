@@ -56,6 +56,10 @@ public class EnemyAI : MonoBehaviour
     [Tooltip("Мирное время: первые столько секунд игры ИИ не нападает на базу противника (даже пустую)")]
     [SerializeField] private float baseAttackGrace = 120f;
 
+    [Header("Для тестов")]
+    [Tooltip("Этого героя ИИ нанимает первым, как только хватит денег (пусто — как обычно, самого сильного)")]
+    [SerializeField] private HeroData hireFirst;
+
     [Header("Перестройка команд")]
     [Tooltip("Новую команду ИИ создаёт, только если для неё есть хотя бы столько свободных героев")]
     [SerializeField] private int minSquadSize = 2;
@@ -223,7 +227,7 @@ public class EnemyAI : MonoBehaviour
         {
             if (!o.CanReinforce(team) || IsOrdered(o)) continue;
             int attackPower = BattleCalculator.SquadPower(o.Attacker.Squad);
-            int guards = BattleCalculator.GarrisonPower(o.Data);
+            int guards = o.GuardPower; // у захваченного объекта охраны нет
             if (BattleCalculator.Forecast(attackPower, guards) == BattleForecast.Lose) continue; // охрана справится сама
             // Объект события — главный: шлём самую сильную подходящую команду (и раненых чуть охотнее)
             bool isEvent = EM != null && o == EM.EventObject;
@@ -558,7 +562,7 @@ public class EnemyAI : MonoBehaviour
             }
 
             // Охрана объекта: на верное поражение не идём, на равный бой — неохотно
-            var forecast = BattleCalculator.Forecast(BattleCalculator.SquadPower(squad), BattleCalculator.GarrisonPower(d));
+            var forecast = BattleCalculator.Forecast(BattleCalculator.SquadPower(squad), o.DefenderPower);
             if (forecast == BattleForecast.Lose) continue;
             if (forecast == BattleForecast.Equal) value *= 0.7f;
             value *= objectPriority; // объекты — главный приоритет
@@ -597,7 +601,10 @@ public class EnemyAI : MonoBehaviour
     private bool TryHire()
     {
         HeroData best = null;
-        foreach (HeroData h in HM.GetRoster(team))
+        // Для тестов: нужный герой — первым
+        if (hireFirst != null && HM.CanHire(team, hireFirst, out _) && RM.CanAfford(team, hireFirst.hireCost))
+            best = hireFirst;
+        else foreach (HeroData h in HM.GetRoster(team))
         {
             if (!HM.CanHire(team, h, out _) || !RM.CanAfford(team, h.hireCost)) continue;
             if (best == null || h.stars > best.stars || (h.stars == best.stars && h.hireCost > best.hireCost)) best = h;

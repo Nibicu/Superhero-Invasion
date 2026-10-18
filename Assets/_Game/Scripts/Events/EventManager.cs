@@ -11,8 +11,8 @@ public enum GameEventKind
 
 /// <summary>
 /// Расписание событий (объект Managers). Игра идёт по кругу:
-///  затишье (quietTime, 5 мин) → событие (eventDuration, 5 мин) → затишье → ...
-///  Посередине затишья (через 2:30) появляется общая миссия (GlobalMissionManager).
+///  затишье (quietTime, 4 мин) → событие (eventDuration, 5 мин) → затишье → ...
+///  Посередине затишья (через 2:00) появляется общая миссия (GlobalMissionManager).
 /// События идут по порядку из списка order: "объект, объект, портал" и снова сначала.
 /// Событие "Объект": открывается случайный неактивный объект; по окончании последний
 ///  владелец получает артефакт, а объект снова ничей и неактивен.
@@ -29,9 +29,9 @@ public class EventManager : MonoBehaviour
     [Tooltip("Порядок событий (повторяется по кругу)")]
     [SerializeField] private GameEventKind[] order = { GameEventKind.Object, GameEventKind.Object, GameEventKind.Portal };
     [Tooltip("Сколько секунд затишья перед первым событием")]
-    [SerializeField] private float firstDelay = 300f;
+    [SerializeField] private float firstDelay = 240f;
     [Tooltip("Сколько секунд затишья между событиями")]
-    [SerializeField] private float quietTime = 300f;
+    [SerializeField] private float quietTime = 240f;
     [Tooltip("Сколько секунд длится событие")]
     [SerializeField] private float eventDuration = 300f;
     [Tooltip("Создавать общую миссию посередине затишья")]

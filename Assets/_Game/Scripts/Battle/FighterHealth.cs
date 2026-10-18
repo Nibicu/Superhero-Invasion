@@ -85,8 +85,8 @@ public class FighterHealth : MonoBehaviour
         // Личные навыки: блок или парирование — удар не проходит (ни урона, ни отбрасывания)
         if (fighter.Kit != null && fighter.Kit.TryBlock(hit)) return true;
 
-        // Щит "Барьер" впитывает урон от Спец. атаки
-        float damage = hit.special ? fighter.AbsorbSpecial(hit.damage) : hit.damage;
+        // Щит "Барьер" впитывает урон
+        float damage = fighter.AbsorbShield(hit.damage);
         Current = Mathf.Max(0f, Current - damage);
         Changed?.Invoke(this);
         if (fighter.View != null) fighter.View.FlashHit();

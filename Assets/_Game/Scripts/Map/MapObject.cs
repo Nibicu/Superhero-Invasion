@@ -94,7 +94,10 @@ public class MapObject : AttackableSite, IIncomeSource
 
     /// <summary>Защитники объекта — его охрана из MapObjectData + команда подкрепления (если пришла).</summary>
     public override int DefenderPower =>
-        BattleCalculator.GarrisonPower(data) + (Reinforcement != null ? BattleCalculator.SquadPower(Reinforcement.Squad) : 0);
+        GuardPower + (Reinforcement != null ? BattleCalculator.SquadPower(Reinforcement.Squad) : 0);
+
+    /// <summary>Сила охраны объекта: у нейтрального — охрана из MapObjectData, у захваченного охраны нет (0).</summary>
+    public int GuardPower => hasOwner ? 0 : BattleCalculator.GarrisonPower(data);
 
     /// <summary>На защиту объекта владелец может прислать команду.</summary>
     public override bool AllowsReinforcement => true;
@@ -109,17 +112,14 @@ public class MapObject : AttackableSite, IIncomeSource
     /// <summary>
     /// Защитники по территориям (для боя и окна перед боем):
     ///  - нейтральный объект — охрана по волнам, обычно 3 территории;
-    ///  - захваченный объект — вся охрана на 1 территории (как гарнизон базы),
-    ///    а если пришло подкрепление — оно на 2-й территории.
+    ///  - захваченный объект — охраны больше нет (её убирают после захвата):
+    ///    защищает только команда подкрепления, если владелец её прислал. Никого — объект берут без боя.
     /// </summary>
     public override List<List<BattleUnit>> GetDefenderWaves()
     {
         var waves = new List<List<BattleUnit>>();
         if (!hasOwner) return GuardWaves();
 
-        var guardsAll = new List<BattleUnit>();
-        foreach (List<BattleUnit> w in GuardWaves()) guardsAll.AddRange(w);
-        waves.Add(guardsAll);
         if (Reinforcement != null)
         {
             List<BattleUnit> squad = GetSquadUnits(Reinforcement);

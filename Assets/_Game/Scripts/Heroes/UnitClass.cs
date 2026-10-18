@@ -69,7 +69,7 @@ public static class UnitClasses
         new ClassProfile // Маг
         {
             name = "Маг", style = CombatStyle.Mid, retreatAt = 0.25f,
-            autoRange = 4.5f, preferredRange = 4.0f, defaultDamage = DamageType.Special,
+            autoRange = 0f, preferredRange = 0f, defaultDamage = DamageType.Special, // авто атака вплотную (ближний бой у всех, кроме Стрелка)
             skillName = "Энергетический снаряд", skillDescription = "Большой снаряд: сильный урон, отбрасывает врага",
             skillCost = 40f, skillCooldown = 2.5f, skillChance = 0.75f
         },
@@ -83,7 +83,7 @@ public static class UnitClasses
         new ClassProfile // Поддержка
         {
             name = "Поддержка", style = CombatStyle.Mid, retreatAt = 0.20f,
-            autoRange = 4.5f, preferredRange = 4.5f, defaultDamage = DamageType.Special,
+            autoRange = 0f, preferredRange = 0f, defaultDamage = DamageType.Special, // авто атака вплотную
             skillName = "Лечение", skillDescription = "Лечит союзника с самым низким здоровьем (или себя)",
             skillCost = 50f, skillCooldown = 5f, skillChance = 1f
         },

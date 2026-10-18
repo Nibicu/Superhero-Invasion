@@ -376,14 +376,37 @@ public class BattleManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Клон бойца (Фантом): тот же персонаж с характеристиками stats, на той же стороне, в точке worldPos.
+    /// Без личных навыков и скилов.
+    /// </summary>
+    public Fighter SpawnClone(Fighter owner, HeroStats stats, Vector3 worldPos)
+    {
+        var u = new BattleUnit { data = owner.Data, stats = stats, hpFraction = 1f, level = owner.Level, guard = owner.IsGuard };
+        Vector3 pos = ClampToArena(owner, worldPos);
+        Fighter f = Spawn(u, owner.Faction, owner.NeutralLook, pos - arenaRoot.position, owner.Territory, false);
+        f.IsClone = true;
+        if (f.View != null) f.View.MarkClone();
+        return f;
+    }
+
+    /// <summary>Случайная точка на полу арены рядом с бойцом (не дальше radius по X), куда он может встать.</summary>
+    public Vector3 RandomPointNear(Fighter f, float radius)
+    {
+        Vector3 p = f.transform.position;
+        p.x += UnityEngine.Random.Range(-radius, radius);
+        p.y = arenaRoot.position.y + UnityEngine.Random.Range(floorMinY + 0.4f, floorMaxY - 0.4f);
+        return ClampToArena(f, p);
+    }
+
     /// <summary>Создать бойца в точке localPos (координаты арены) и внести его в списки сторон.</summary>
-    private Fighter Spawn(BattleUnit u, BattleFaction faction, bool neutralLook, Vector2 localPos, int territory = -1)
+    private Fighter Spawn(BattleUnit u, BattleFaction faction, bool neutralLook, Vector2 localPos, int territory = -1, bool withKit = true)
     {
         Vector3 pos = arenaRoot.position + (Vector3)localPos;
         Fighter f = Instantiate(fighterPrefab, pos, Quaternion.identity, runtimeRoot);
         f.Combat.SetProjectilePrefab(projectilePrefab);
         f.Init(u.data, u.stats, faction, u.hpFraction, neutralLook, u.level);
-        f.SetKit(HeroKit.Create(f, u.data.kit)); // личные навыки героя (если уже сделаны)
+        if (withKit) f.SetKit(HeroKit.Create(f, u.data.kit)); // личные навыки героя (если уже сделаны)
         f.Territory = territory;
         f.IsReinforcement = u.reinforcement;
         f.IsGuard = u.guard;
@@ -772,11 +795,16 @@ public class BattleManager : MonoBehaviour
         return list.Count > 0 ? RemainingHp(list) : 1f;
     }
 
-    /// <summary>Сколько здоровья (доля) осталось у бойцов (выбывшие — 0), не меньше минимума.</summary>
+    /// <summary>Сколько здоровья (доля) осталось у бойцов (выбывшие — 0), не меньше минимума. Клоны не считаются.</summary>
     private static float RemainingHp(List<Fighter> list)
     {
         float cur = 0f, max = 0f;
-        foreach (Fighter f in list) { max += f.Health.Max; cur += f.IsAlive ? f.Health.Current : 0f; }
+        foreach (Fighter f in list)
+        {
+            if (f.IsClone) continue;
+            max += f.Health.Max;
+            cur += f.IsAlive ? f.Health.Current : 0f;
+        }
         return Mathf.Max(BattleCalculator.MinHpAfterBattle, max > 0 ? cur / max : 0f);
     }
 
