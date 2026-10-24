@@ -209,7 +209,10 @@ public class MainBase : AttackableSite, IIncomeSource
     public override Color SiteColor => baseColor;
 
     /// <summary>Атакующие встают перед базой со стороны центра карты.</summary>
-    public override Vector3 ApproachPoint => transform.position + new Vector3(transform.position.x > 0 ? -2.6f : 2.6f, 0f, 0f);
+    public override Vector3 ApproachPoint =>
+        RoadNetwork.Instance != null && RoadNetwork.Instance.HasGrid
+            ? RoadNetwork.Instance.NearestRoad(transform.position + new Vector3(transform.position.x > 0 ? -2.6f : 2.6f, 0f, 0f)) // карта-картинка: на дороге
+            : transform.position + new Vector3(transform.position.x > 0 ? -2.6f : 2.6f, 0f, 0f);
 
     /// <summary>Сила гарнизона (0 — база пустая).</summary>
     public override int DefenderPower

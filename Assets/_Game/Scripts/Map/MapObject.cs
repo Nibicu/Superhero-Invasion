@@ -170,6 +170,8 @@ public class MapObject : AttackableSite, IIncomeSource
     {
         get
         {
+            if (RoadNetwork.Instance != null && RoadNetwork.Instance.HasGrid)
+                return RoadNetwork.Instance.NearestRoad(transform.position); // карта-картинка: на дороге у здания
             Vector3 p = transform.position;
             p.y -= Mathf.Sign(p.y) * 1.8f;
             return p;

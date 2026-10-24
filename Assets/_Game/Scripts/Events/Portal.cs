@@ -204,7 +204,10 @@ public class Portal : AttackableSite
     }
 
     /// <summary>Портал стоит на главной дороге — команды встают сбоку от него, чтобы не закрывать его.</summary>
-    public override Vector3 ApproachPoint => transform.position + new Vector3(-1.4f, -0.5f, 0f);
+    public override Vector3 ApproachPoint =>
+        RoadNetwork.Instance != null && RoadNetwork.Instance.HasGrid
+            ? RoadNetwork.Instance.NearestRoad(transform.position + new Vector3(-1.4f, -0.5f, 0f)) // карта-картинка: на дороге
+            : transform.position + new Vector3(-1.4f, -0.5f, 0f);
 
     /// <summary>Нападать можно, пока портал открыт, не закрыт и время не вышло.</summary>
     protected override bool CanBeAttackedBy(Team team, out string reason)

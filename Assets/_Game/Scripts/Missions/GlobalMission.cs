@@ -98,6 +98,8 @@ public class GlobalMission : AttackableSite
     {
         get
         {
+            if (RoadNetwork.Instance != null && RoadNetwork.Instance.HasGrid)
+                return RoadNetwork.Instance.NearestRoad(transform.position); // карта-картинка: на дороге
             Vector3 p = transform.position;
             p.y -= Mathf.Sign(p.y) * 1.3f;
             return p;

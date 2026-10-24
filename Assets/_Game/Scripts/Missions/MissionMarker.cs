@@ -51,6 +51,8 @@ public class MissionMarker : MonoBehaviour, ISquadTarget
     {
         get
         {
+            if (RoadNetwork.Instance != null && RoadNetwork.Instance.HasGrid)
+                return RoadNetwork.Instance.NearestRoad(transform.position); // карта-картинка: миссия на дороге
             Vector3 p = transform.position;
             p.y -= Mathf.Sign(p.y) * 1.0f;
             return p;

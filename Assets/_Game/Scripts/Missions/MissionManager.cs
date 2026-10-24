@@ -121,10 +121,19 @@ public class MissionManager : MonoBehaviour
     /// <summary>Найти точку, далёкую от дороги, объектов, баз и других миссий (её берёт и общая миссия).</summary>
     public bool TryFindFreePoint(out Vector3 pos)
     {
+        bool onGrid = RoadNetwork.Instance != null && RoadNetwork.Instance.HasGrid;
         for (int attempt = 0; attempt < 40; attempt++)
         {
-            pos = new Vector3(Random.Range(areaMin.x, areaMax.x), Random.Range(areaMin.y, areaMax.y), 0f);
-            if (Mathf.Abs(pos.y) < minDistanceFromRoad) continue;
+            if (onGrid)
+            {
+                // Карта-картинка: миссия — на одной из улиц города
+                if (!RoadNetwork.Instance.TryRandomRoadPoint(areaMin, areaMax, out pos)) continue;
+            }
+            else
+            {
+                pos = new Vector3(Random.Range(areaMin.x, areaMax.x), Random.Range(areaMin.y, areaMax.y), 0f);
+                if (Mathf.Abs(pos.y) < minDistanceFromRoad) continue;
+            }
             if (IsNear(pos)) continue;
             return true;
         }

@@ -14,10 +14,11 @@ public struct RoadLine
 }
 
 /// <summary>
-/// Сеть дорог карты: горизонтальные и вертикальные улицы.
-/// Команды ездят по ней (SquadUnit.BuildPath): от точки — к ближайшей горизонтальной улице,
-/// по ней — до вертикальной улицы, которая ведёт к улице цели, потом к цели.
-/// Стоит на объекте Map, данные заполняются вместе с картой.
+/// Сеть дорог карты. Два варианта:
+///  - СЕТКА (RoadGrid, карта-картинка изометрического города): путь ищется по клеткам асфальта;
+///  - запасной: горизонтальные и вертикальные улицы — от точки к ближайшей горизонтальной улице,
+///    по ней до вертикальной, которая ведёт к улице цели, потом к цели.
+/// Стоит на объекте Map.
 /// </summary>
 public class RoadNetwork : MonoBehaviour
 {
@@ -28,6 +29,21 @@ public class RoadNetwork : MonoBehaviour
     [SerializeField] private RoadLine[] horizontal = new RoadLine[0];
     [Tooltip("Вертикальные улицы (соединяют горизонтальные)")]
     [SerializeField] private RoadLine[] vertical = new RoadLine[0];
+    [Tooltip("Сетка дорог карты-картинки (если задана — улицы выше не используются)")]
+    [SerializeField] private RoadGrid grid;
+
+    /// <summary>Дороги заданы сеткой (карта-картинка).</summary>
+    public bool HasGrid => grid != null && grid.IsValid;
+
+    /// <summary>Ближайшая точка дороги (без сетки — сама точка).</summary>
+    public Vector3 NearestRoad(Vector3 p) => HasGrid ? grid.NearestRoadPoint(p) : p;
+
+    /// <summary>Случайная точка на дороге внутри прямоугольника (только для сетки).</summary>
+    public bool TryRandomRoadPoint(Vector2 min, Vector2 max, out Vector3 pos)
+    {
+        pos = Vector3.zero;
+        return HasGrid && grid.TryRandomRoadPoint(min, max, out pos);
+    }
 
     private void Awake() => Instance = this;
 
@@ -62,6 +78,7 @@ public class RoadNetwork : MonoBehaviour
     /// </summary>
     public List<Vector3> BuildPath(Vector3 from, Vector3 to)
     {
+        if (HasGrid) return grid.FindPath(from, to);
         var path = new List<Vector3>();
         if (horizontal == null || horizontal.Length == 0)
         {
@@ -95,6 +112,7 @@ public class RoadNetwork : MonoBehaviour
     /// <summary>Длина маршрута по улицам (для оценки времени в пути).</summary>
     public float PathLength(Vector3 from, Vector3 to)
     {
+        if (HasGrid) return grid.PathLength(from, to);
         float len = 0f;
         Vector3 prev = from;
         foreach (Vector3 p in BuildPath(from, to)) { len += Vector3.Distance(prev, p); prev = p; }
