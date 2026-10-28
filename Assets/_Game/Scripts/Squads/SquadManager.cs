@@ -4,9 +4,9 @@ using UnityEngine;
 
 /// <summary>
 /// Управляет командами обеих сторон.
-/// Правила (GDD): максимум 5 команд, в команде капитан + до 4 героев,
-/// можно и одного капитана. Один герой — только в одной команде.
-/// Менять состав и распускать можно только команду, стоящую на базе.
+/// Правила: в команде капитан + до 3 героев (можно и одного капитана). Один герой — только в одной команде.
+/// Игрок собирает команду, когда отправляет героев к цели (TryCreateAndSend); вернувшись на базу,
+/// команда распадается — герои снова свободны. Раненые герои лечатся, пока они дома.
 /// </summary>
 [DefaultExecutionOrder(-80)]
 public class SquadManager : MonoBehaviour
@@ -14,13 +14,13 @@ public class SquadManager : MonoBehaviour
     /// <summary>Единственный экземпляр — доступен из любого скрипта.</summary>
     public static SquadManager Instance { get; private set; }
 
-    [Tooltip("Сколько команд можно создать")]
-    [SerializeField] private int maxSquads = 5;
+    [Tooltip("Сколько команд может быть одновременно")]
+    [SerializeField] private int maxSquads = 20;
     [Tooltip("Сколько героев в команде кроме капитана")]
-    [SerializeField] private int maxMembers = 4;
+    [SerializeField] private int maxMembers = 3;
 
     [Header("Лечение")]
-    [Tooltip("Какую долю здоровья команда восстанавливает за секунду, стоя на базе (0.02 = 2%)")]
+    [Tooltip("Какую долю здоровья герой восстанавливает за секунду, пока он дома (0.02 = 2%)")]
     [SerializeField] private float healPerSecond = 0.02f;
 
     [Header("Фишки команд на карте")]
@@ -50,18 +50,42 @@ public class SquadManager : MonoBehaviour
         if (Instance == this) Instance = null;
     }
 
-    /// <summary>Команды на базе понемногу лечатся (после проваленной миссии).</summary>
+    /// <summary>Раненые герои понемногу лечатся, пока они дома.</summary>
     private void Update()
     {
-        Heal(playerSquads);
-        Heal(enemySquads);
+        if (HeroManager.Instance == null) return;
+        Heal(Team.Player);
+        Heal(Team.Enemy);
     }
 
-    private void Heal(List<Squad> squads)
+    /// <summary>Лечение героев стороны, которые дома.</summary>
+    private void Heal(Team team)
     {
-        foreach (Squad s in squads)
-            if (s.Status == SquadStatus.AtBase && s.HpFraction < 1f)
-                s.HpFraction = Mathf.Min(1f, s.HpFraction + healPerSecond * WorldTime.DeltaTime);
+        float step = healPerSecond * WorldTime.DeltaTime;
+        foreach (HeroInstance h in HeroManager.Instance.GetHeroes(team))
+            if (h.IsAtHome && h.HpFraction < 1f) h.HpFraction = Mathf.Min(1f, h.HpFraction + step);
+    }
+
+    /// <summary>Герои стороны, которые сейчас дома (по порядку иерархии).</summary>
+    public List<HeroInstance> GetHeroesAtHome(Team team)
+    {
+        var list = new List<HeroInstance>();
+        foreach (HeroInstance h in HeroManager.Instance.GetHeroes(team))
+            if (h.IsAtHome) list.Add(h);
+        return list;
+    }
+
+    /// <summary>
+    /// Собрать команду из героев, которые дома, и сразу отправить её к цели.
+    /// Не получилось отправить — команда не создаётся.
+    /// </summary>
+    public bool TryCreateAndSend(Team team, HeroInstance captain, IList<HeroInstance> heroes, ISquadTarget target, out Squad squad, out string error)
+    {
+        if (!TryCreateSquad(team, captain, heroes, out squad, out error)) return false;
+        if (SendSquad(squad, target, out error)) return true;
+        Disband(squad);
+        squad = null;
+        return false;
     }
 
     /// <summary>Команды стороны (по порядку номеров).</summary>
@@ -169,13 +193,22 @@ public class SquadManager : MonoBehaviour
         return unitPrefab.EstimateTravelTime(squad, home.transform.position, target.ApproachPoint);
     }
 
-    /// <summary>Фишка вернулась на базу — команда снова свободна (вызывает SquadUnit).</summary>
+    /// <summary>Фишка вернулась на базу — команда распадается, герои снова свободны (вызывает SquadUnit).</summary>
     public void OnUnitReturned(SquadUnit unit)
     {
         units.Remove(unit.Squad);
-        SetStatus(unit.Squad, SquadStatus.AtBase);
         if (unit.Squad.Owner == Team.Player)
             ToastUI.Show($"Команда {unit.Squad.Number} вернулась на базу");
+        Disband(unit.Squad);
+    }
+
+    /// <summary>Распустить команду без проверок (вернулась домой, не уехала).</summary>
+    private void Disband(Squad squad)
+    {
+        SetHeroesStatus(squad, HeroStatus.Free);
+        List(squad.Owner).Remove(squad);
+        Renumber(squad.Owner);
+        NotifyChanged(squad.Owner);
     }
 
     /// <summary>

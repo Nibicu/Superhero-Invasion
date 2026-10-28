@@ -147,8 +147,8 @@ public class BaseWindowUI : MonoBehaviour
         string stars = b.MaxHeroStars == 1 ? "1 звезды" : $"{b.MaxHeroStars} звёзд";
         Squad garrison = b.FindDefender();
         string garrisonText = garrison != null
-            ? $"Гарнизон: команда {garrison.Number} (сила {BattleCalculator.SquadPower(garrison)})"
-            : "<color=#FF7A7A>Гарнизона нет</color>";
+            ? $"Защитники: {garrison.Size} (сила {BattleCalculator.SquadPower(garrison)})"
+            : "<color=#FF7A7A>Защитников нет</color>";
         subtitleText.text =
             $"HP: <color=#6EE07A>{b.Hp}/{b.MaxHp}</color>  •  {garrisonText}  •  " +
             $"Доход: <color=#FFD84A>+{incomeGold}</color>  •  " +

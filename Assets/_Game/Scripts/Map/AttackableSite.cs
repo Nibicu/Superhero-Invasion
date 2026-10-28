@@ -269,7 +269,11 @@ public abstract class AttackableSite : MonoBehaviour, ISquadTarget
 
         UpdateAttackVisuals();
         AttackChanged?.Invoke(this);
+        OnPrepStarted();
     }
+
+    /// <summary>Началась подготовка к бою (нападающие приехали). База здесь даёт выбрать защитников.</summary>
+    protected virtual void OnPrepStarted() { }
 
     /// <summary>Можно ли команде отступить отсюда (только пока идёт подготовка).</summary>
     public bool CanRetreat(SquadUnit unit) =>

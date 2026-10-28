@@ -61,7 +61,11 @@ public class MainBase : AttackableSite, IIncomeSource
     [SerializeField] private float barWidth = 3.4f;
 
     private int hp;           // Текущее здоровье
-    private Squad defender;   // Гарнизон, выбранный к началу боя (null — до боя или база пустая)
+    private Squad defender;   // Защитники, выбранные к началу боя (null — до боя или база пустая)
+    private List<HeroInstance> chosenDefenders; // Кого игрок выбрал защищать базу (null — выбор по умолчанию)
+
+    /// <summary>Сколько героев может защищать базу.</summary>
+    public const int MaxDefenders = 4;
     private bool battleStarted; // Подготовка кончилась, гарнизон выбран
 
     private int level = 1;                                                 // Текущий уровень базы
@@ -182,21 +186,42 @@ public class MainBase : AttackableSite, IIncomeSource
     public event Action HpChanged;
 
     /// <summary>
-    /// Гарнизон — самая сильная команда стороны, которая сейчас стоит на базе.
-    /// Команды в пути, на захвате, на миссии и возвращающиеся базу не защищают.
+    /// Защитники базы — до 4 героев, которые сейчас дома (герои на заданиях базу не защищают).
+    /// Игрок может выбрать их сам в момент нападения (окно выбора защитников);
+    /// иначе у игрока — первые по иерархии, у врага (ИИ) — самые сильные.
+    /// Возвращает временную команду из защитников (null — дома никого).
     /// </summary>
     public Squad FindDefender()
     {
         if (SquadManager.Instance == null) return null;
-        Squad best = null;
-        int bestPower = -1;
-        foreach (Squad s in SquadManager.Instance.GetSquads(owner))
+        List<HeroInstance> home = SquadManager.Instance.GetHeroesAtHome(owner);
+        var picked = new List<HeroInstance>();
+        if (chosenDefenders != null)
+            foreach (HeroInstance h in chosenDefenders)
+                if (home.Contains(h) && picked.Count < MaxDefenders) picked.Add(h);
+        if (picked.Count == 0)
         {
-            if (s.Status != SquadStatus.AtBase) continue;
-            int p = BattleCalculator.SquadPower(s);
-            if (p > bestPower) { bestPower = p; best = s; }
+            if (owner == Team.Enemy) home.Sort((a, b) => BattleCalculator.HeroPower(b).CompareTo(BattleCalculator.HeroPower(a)));
+            for (int i = 0; i < home.Count && picked.Count < MaxDefenders; i++) picked.Add(home[i]);
         }
-        return best;
+        if (picked.Count == 0) return null;
+        return new Squad(owner, picked[0], picked.GetRange(1, picked.Count - 1));
+    }
+
+    /// <summary>Игрок выбрал защитников базы (до 4 героев, которые дома).</summary>
+    public void SetDefenders(List<HeroInstance> heroes)
+    {
+        chosenDefenders = heroes != null ? new List<HeroInstance>(heroes) : null;
+        Changed?.Invoke();
+    }
+
+    /// <summary>Нападение на нашу базу: если дома больше 4 героев — игрок выбирает, кто защищает.</summary>
+    protected override void OnPrepStarted()
+    {
+        chosenDefenders = null;
+        if (owner != Team.Player || SquadManager.Instance == null) return;
+        if (SquadManager.Instance.GetHeroesAtHome(owner).Count > MaxDefenders && DefenderPickerUI.Instance != null)
+            DefenderPickerUI.Instance.OpenFor(this);
     }
 
     /// <summary>Кто защищает базу: до начала боя — текущий сильнейший, после — выбранный гарнизон.</summary>
@@ -243,9 +268,9 @@ public class MainBase : AttackableSite, IIncomeSource
             {
                 data = h.Data,
                 stats = h.Stats,
-                hpFraction = d.HpFraction,
+                hpFraction = h.HpFraction,
                 level = h.Level,
-                info = $"{UnitClasses.Name(h.Data.unitClass)}  •  Гарнизон (команда {d.Number})  •  Ур. {h.Level}  •  сила {BattleCalculator.HeroPower(h)}"
+                info = $"{UnitClasses.Name(h.Data.unitClass)}  •  Защитник базы  •  Ур. {h.Level}  •  сила {BattleCalculator.HeroPower(h)}"
             });
         waves.Add(wave);
         return waves;
@@ -295,6 +320,7 @@ public class MainBase : AttackableSite, IIncomeSource
     protected override void OnAttackEnded()
     {
         defender = null;
+        chosenDefenders = null;
         battleStarted = false;
     }
 

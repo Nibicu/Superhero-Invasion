@@ -16,6 +16,9 @@ public class SquadInfoWindowUI : WindowUI
     [SerializeField] private TMP_Text titleText;          // "КОМАНДА 2" / "ВРАЖЕСКАЯ КОМАНДА 1"
     [SerializeField] private Transform listParent;        // Куда складывать строки героев
     [SerializeField] private BattleUnitRowUI rowTemplate; // Шаблон строки (выключен)
+    [Tooltip("Кнопка «ОТСТУПИТЬ» (только для своей команды на задании)")]
+    [SerializeField] private UnityEngine.UI.Button retreatButton;
+    [SerializeField] private TMP_Text retreatText;        // Текст на кнопке
 
     private readonly List<GameObject> rows = new List<GameObject>(); // Созданные строки
     private Squad current;                                           // Какая команда показана
@@ -25,6 +28,39 @@ public class SquadInfoWindowUI : WindowUI
         base.Awake();
         Instance = this;
         rowTemplate.gameObject.SetActive(false);
+        if (retreatButton != null) retreatButton.onClick.AddListener(Retreat);
+    }
+
+    /// <summary>Пока окно открыто — обновлять кнопку «Отступить» (бой может начаться в любой момент).</summary>
+    protected override void Update()
+    {
+        base.Update();
+        if (IsOpen) UpdateRetreat();
+    }
+
+    /// <summary>Кнопка «Отступить»: видна у своей команды, нажать можно, пока бой не начался.</summary>
+    private void UpdateRetreat()
+    {
+        if (retreatButton == null || current == null) return;
+        bool mine = current.Owner == Team.Player;
+        retreatButton.gameObject.SetActive(mine);
+        if (!mine) return;
+        bool can = SquadManager.Instance.CanRetreat(current, out string reason);
+        retreatButton.interactable = can;
+        if (retreatText != null) retreatText.text = can ? "ОТСТУПИТЬ" : reason.ToUpper();
+    }
+
+    /// <summary>Команда отступает и едет на базу.</summary>
+    private void Retreat()
+    {
+        if (current == null) return;
+        int number = current.Number;
+        if (SquadManager.Instance.TryRetreat(current, out string error))
+        {
+            ToastUI.Show($"Команда {number} отступает и возвращается на базу");
+            Close();
+        }
+        else ToastUI.Show(error);
     }
 
     protected override void OnDestroy()

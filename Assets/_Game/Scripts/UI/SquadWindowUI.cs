@@ -1,11 +1,13 @@
+using System;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Окно создания (и изменения) команды.
-/// Сверху: большая ячейка капитана и 4 маленькие ячейки героев.
+/// Окно команды. Главный режим — "собрать команду под цель" (OpenForTarget): игрок нажал на объект,
+/// миссию или событие, выбирает капитана и до 3 героев из тех, кто дома, и жмёт "ОТПРАВИТЬ".
+/// Сверху: большая ячейка капитана и маленькие ячейки героев (лишние ячейки прячутся).
 /// Снизу: список свободных героев. Клик по герою из списка —
 /// первый станет капитаном, следующие займут свободные ячейки.
 /// Клик по занятой ячейке — убрать героя.
@@ -36,6 +38,8 @@ public class SquadWindowUI : WindowUI
     private HeroInstance captain;                           // Выбранный капитан
     private readonly HeroInstance[] members = new HeroInstance[4]; // Выбранные герои (null = пусто)
     private Squad editing;                                  // Какую команду меняем (null — создаём новую)
+    private ISquadTarget target;                            // Куда отправить собранную команду (null — просто создать)
+    private Action onSent;                                  // Что сделать после отправки (закрыть окно цели)
     private readonly List<HeroListItemUI> items = new List<HeroListItemUI>(); // Созданные карточки
 
     /// <summary>Подписываем кнопки, прячем шаблон.</summary>
@@ -73,15 +77,31 @@ public class SquadWindowUI : WindowUI
             return;
         }
         editing = null;
+        target = null;
         captain = null;
         for (int i = 0; i < members.Length; i++) members[i] = null;
         Open();
     }
 
+    /// <summary>Собрать команду и отправить к цели (объект, миссия, событие). sent — вызовется после отправки.</summary>
+    public void OpenForTarget(ISquadTarget squadTarget, Action sent)
+    {
+        editing = null;
+        target = squadTarget;
+        onSent = sent;
+        captain = null;
+        for (int i = 0; i < members.Length; i++) members[i] = null;
+        Open();
+    }
+
+    /// <summary>Сколько героев можно взять кроме капитана.</summary>
+    private int MemberLimit => Mathf.Min(members.Length, SquadManager.Instance.MaxMembers);
+
     /// <summary>Открыть окно существующей команды (посмотреть / изменить / распустить).</summary>
     public void OpenSquad(Squad squad)
     {
         editing = squad;
+        target = null;
         captain = squad.Captain;
         for (int i = 0; i < members.Length; i++)
             members[i] = i < squad.Members.Count ? squad.Members[i] : null;
@@ -95,22 +115,25 @@ public class SquadWindowUI : WindowUI
     {
         bool canEdit = editing == null || editing.Status == SquadStatus.AtBase;
 
-        titleText.text = editing == null ? "НОВАЯ КОМАНДА" : $"КОМАНДА {editing.Number}";
+        titleText.text = target != null ? $"КОМАНДА НА: {target.TargetName.ToUpper()}"
+            : editing == null ? "НОВАЯ КОМАНДА" : $"КОМАНДА {editing.Number}";
 
         // Ячейки
         captainSlot.Show(captain, canEdit, () => { captain = null; Refresh(); });
         for (int i = 0; i < memberSlots.Length; i++)
         {
             int index = i; // копия для лямбды
+            memberSlots[i].gameObject.SetActive(i < MemberLimit); // в команде капитан + до 3 героев
             memberSlots[i].Show(members[i], canEdit, () => { members[index] = null; Refresh(); });
         }
 
         // Итоги
         int count = captain != null ? 1 : 0;
         int hp = captain != null ? captain.Stats.hp : 0;
+        int power = captain != null ? BattleCalculator.HeroPower(captain) : 0;
         foreach (HeroInstance m in members)
-            if (m != null) { count++; hp += m.Stats.hp; }
-        summaryText.text = $"Героев: {count} / {members.Length + 1}   •   Здоровье команды: {hp}";
+            if (m != null) { count++; hp += m.Stats.hp; power += BattleCalculator.HeroPower(m); }
+        summaryText.text = $"Героев: {count} / {MemberLimit + 1}   •   Здоровье: {hp}   •   Сила: {power}";
         captainBonusText.text = captain != null && !string.IsNullOrEmpty(captain.Data.captainBonus)
             ? $"Бонус капитана: <color=#FFD84A>{captain.Data.captainBonus}</color>"
             : "Бонус капитана: —";
@@ -118,11 +141,12 @@ public class SquadWindowUI : WindowUI
         // Подсказка
         if (!canEdit) hintText.text = "Команда на задании — менять состав нельзя";
         else if (captain == null) hintText.text = "Нажмите на героя внизу — он станет капитаном";
+        else if (target != null) hintText.text = "Добавьте ещё героев или отправляйте. Клик по ячейке — убрать героя";
         else hintText.text = "Добавьте ещё героев или создайте команду. Клик по ячейке — убрать героя";
 
         // Кнопки
         confirmButton.interactable = canEdit && captain != null;
-        confirmText.text = editing == null ? "СОЗДАТЬ\nКОМАНДУ" : "СОХРАНИТЬ";
+        confirmText.text = target != null ? "ОТПРАВИТЬ" : editing == null ? "СОЗДАТЬ\nКОМАНДУ" : "СОХРАНИТЬ";
         UpdateDisbandButton();
 
         RebuildList(canEdit);
@@ -199,8 +223,8 @@ public class SquadWindowUI : WindowUI
         }
         else
         {
-            int free = System.Array.IndexOf(members, null);
-            if (free < 0)
+            int free = Array.IndexOf(members, null);
+            if (free < 0 || free >= MemberLimit)
             {
                 ToastUI.Show("Команда заполнена — уберите кого-нибудь");
                 return;
@@ -215,6 +239,22 @@ public class SquadWindowUI : WindowUI
     {
         SquadManager sm = SquadManager.Instance;
         string error;
+        if (target != null)
+        {
+            // Собрать команду и сразу отправить
+            var heroes = new List<HeroInstance>();
+            foreach (HeroInstance m in members) if (m != null) heroes.Add(m);
+            if (sm.TryCreateAndSend(Team.Player, captain, heroes, target, out Squad sent, out error))
+            {
+                ToastUI.Show($"Команда {sent.Number} выехала: {target.TargetName}");
+                Action after = onSent;
+                Close();
+                after?.Invoke();
+                return;
+            }
+            ToastUI.Show(error);
+            return;
+        }
         if (editing == null)
         {
             if (sm.TryCreateSquad(Team.Player, captain, members, out Squad squad, out error))

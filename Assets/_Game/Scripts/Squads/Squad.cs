@@ -13,13 +13,13 @@ public enum SquadStatus
 }
 
 /// <summary>
-/// Команда героев: капитан + до 4 героев.
-/// Именно команды отправляются на захват объектов и миссии.
-/// Создаётся и меняется только через SquadManager.
+/// Команда героев: капитан + до 3 героев.
+/// Собирается, когда игрок отправляет героев к цели (объект, миссия, событие),
+/// и распадается, когда возвращается на базу. Создаётся и меняется только через SquadManager.
 /// </summary>
 public class Squad
 {
-    /// <summary>Номер команды (1..5) — показывается на аватарке.</summary>
+    /// <summary>Номер команды (1..N) — показывается на фишке.</summary>
     public int Number { get; set; }
 
     /// <summary>Чья команда.</summary>
@@ -28,14 +28,29 @@ public class Squad
     /// <summary>Капитан (обязателен). Его портрет — аватарка команды.</summary>
     public HeroInstance Captain { get; private set; }
 
-    /// <summary>Остальные герои (0–4, без капитана).</summary>
+    /// <summary>Остальные герои (0–3, без капитана).</summary>
     public IReadOnlyList<HeroInstance> Members => members;
 
     /// <summary>Чем занята команда.</summary>
     public SquadStatus Status { get; set; } = SquadStatus.AtBase;
 
-    /// <summary>Доля здоровья команды 0..1 (пока битв нет — всегда 1).</summary>
-    public float HpFraction { get; set; } = 1f;
+    /// <summary>
+    /// Доля здоровья команды 0..1 — среднее здоровье героев (по их макс. HP).
+    /// Если задать — у всех героев команды станет такая доля здоровья.
+    /// </summary>
+    public float HpFraction
+    {
+        get
+        {
+            float cur = 0f, max = 0f;
+            foreach (HeroInstance h in AllHeroes) { max += h.Stats.hp; cur += h.Stats.hp * h.HpFraction; }
+            return max > 0f ? cur / max : 1f;
+        }
+        set
+        {
+            foreach (HeroInstance h in AllHeroes) h.HpFraction = Mathf.Clamp01(value);
+        }
+    }
 
     private readonly List<HeroInstance> members = new List<HeroInstance>(); // Герои кроме капитана
 

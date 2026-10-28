@@ -4,8 +4,9 @@ using TMPro;
 using UnityEngine;
 
 /// <summary>
-/// Окно "Кого отправить?" — список команд игрока для отправки к цели
-/// (объект карты или миссия). Команды не на базе показаны, но кнопка выключена.
+/// "Кого отправить?" — все окна целей (объект, миссия, событие, база врага) вызывают OpenFor.
+/// Теперь команда собирается прямо под цель: OpenFor открывает окно команды (SquadWindowUI) в режиме
+/// "собрать и отправить". Старый список готовых команд остаётся запасным (если окно команды не задано).
 /// </summary>
 public class SquadPickerUI : WindowUI
 {
@@ -13,6 +14,8 @@ public class SquadPickerUI : WindowUI
     [SerializeField] private Transform listParent;        // Куда складывать строки
     [SerializeField] private SquadPickRowUI rowTemplate;  // Шаблон строки (выключен)
     [SerializeField] private TMP_Text emptyText;          // "Нет команд..."
+    [Tooltip("Окно сбора команды под цель (если задано — список готовых команд не используется)")]
+    [SerializeField] private SquadWindowUI teamBuilder;
 
     private readonly List<SquadPickRowUI> rows = new List<SquadPickRowUI>(); // Созданные строки
     private ISquadTarget target; // Куда отправляем
@@ -63,6 +66,16 @@ public class SquadPickerUI : WindowUI
         if (squadTarget is AttackableSite site && site.IsUnderAttack && !site.CanJoin(Team.Player) && !site.CanReinforce(Team.Player))
         {
             ToastUI.Show(site.AttackStatusText());
+            return;
+        }
+        if (teamBuilder != null)
+        {
+            if (SquadManager.Instance.GetFreeHeroes(Team.Player).Count == 0)
+            {
+                ToastUI.Show("Все герои заняты — дождитесь, пока кто-нибудь вернётся на базу");
+                return;
+            }
+            teamBuilder.OpenForTarget(squadTarget, sent);
             return;
         }
         target = squadTarget;

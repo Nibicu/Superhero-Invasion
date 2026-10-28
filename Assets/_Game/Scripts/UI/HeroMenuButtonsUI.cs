@@ -22,7 +22,7 @@ public class HeroMenuButtonsUI : MonoBehaviour
     private void Awake()
     {
         rosterButton.onClick.AddListener(rosterWindow.Open);
-        myHeroesButton.onClick.AddListener(myHeroesWindow.Open);
+        if (myHeroesButton != null && myHeroesWindow != null) myHeroesButton.onClick.AddListener(myHeroesWindow.Open); // кнопки больше нет — герои в ряду внизу
         if (inventoryButton != null)
             inventoryButton.onClick.AddListener(() => { if (ArtifactWindowUI.Instance != null) ArtifactWindowUI.Instance.OpenInventory(); });
     }
@@ -55,7 +55,7 @@ public class HeroMenuButtonsUI : MonoBehaviour
     private void UpdateCounter()
     {
         HeroManager hm = HeroManager.Instance;
-        myHeroesCounter.text = $"{hm.GetHeroes(Team.Player).Count}/{hm.GetHeroLimit(Team.Player)}";
+        if (myHeroesCounter != null) myHeroesCounter.text = $"{hm.GetHeroes(Team.Player).Count}/{hm.GetHeroLimit(Team.Player)}";
         if (inventoryCounter != null && ArtifactManager.Instance != null)
             inventoryCounter.text = ArtifactManager.Instance.GetStash(Team.Player).Count.ToString();
     }

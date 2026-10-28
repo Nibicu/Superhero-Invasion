@@ -29,6 +29,12 @@ public class HeroInstance
     /// <summary>Чем занят герой.</summary>
     public HeroStatus Status { get; set; } = HeroStatus.Free;
 
+    /// <summary>Доля здоровья героя 0..1 (раненый герой лечится, пока он дома).</summary>
+    public float HpFraction { get; set; } = 1f;
+
+    /// <summary>Герой дома (не в команде, которая уехала на задание).</summary>
+    public bool IsAtHome => Status != HeroStatus.OnMission;
+
     /// <summary>Создать нанятого героя 1 уровня.</summary>
     public HeroInstance(HeroData data, Team owner)
     {
