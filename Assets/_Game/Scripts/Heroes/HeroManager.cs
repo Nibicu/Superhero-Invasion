@@ -28,7 +28,9 @@ public class HeroManager : MonoBehaviour
 
     [Header("Лимиты и прокачка")]
     [Tooltip("Сколько героев можно держать в начале игры (без Резервных комнат)")]
-    [SerializeField] private int baseHeroLimit = 4;
+    [SerializeField] private int baseHeroLimit = 6;
+    [Tooltip("Больше этого героев не бывает никогда (со всеми постройками и бонусами)")]
+    [SerializeField] private int maxHeroLimit = 20;
     [Tooltip("Максимальный уровень героя")]
     [SerializeField] private int maxHeroLevel = 5;
     [Tooltip("Цена прокачки уровня героя в плутонии (нужна Лаборатория на базе)")]
@@ -51,8 +53,12 @@ public class HeroManager : MonoBehaviour
     /// <summary>Максимальный уровень героя.</summary>
     public int MaxHeroLevel => maxHeroLevel;
 
-    /// <summary>Запоминаем себя.</summary>
-    private void Awake() => Instance = this;
+    /// <summary>Запоминаем себя. Если игру начали из меню (Песочница) — сторона игрока из выбора в меню.</summary>
+    private void Awake()
+    {
+        Instance = this;
+        if (GameSetup.IsSet) playerSide = GameSetup.PlayerSide;
+    }
 
     /// <summary>Убираем ссылку при выходе.</summary>
     private void OnDestroy()
@@ -111,7 +117,7 @@ public class HeroManager : MonoBehaviour
         MainBase b = MainBase.Get(team);
         int bonus = b != null ? b.HeroCapacityBonus : 0;
         int extra = team == Team.Player ? playerExtraLimit : enemyExtraLimit;
-        return baseHeroLimit + bonus + extra;
+        return Mathf.Min(maxHeroLimit, baseHeroLimit + bonus + extra);
     }
 
     /// <summary>Добавить места для героев (Военная база на Шаге 5). Можно передать минус, чтобы забрать.</summary>
@@ -166,6 +172,17 @@ public class HeroManager : MonoBehaviour
         list.Add(new HeroInstance(data, team));
         HeroesChanged?.Invoke(team);
         return true;
+    }
+
+    /// <summary>
+    /// Иерархия: переставить героя на место newIndex в списке стороны (порядок в ряду героев).
+    /// </summary>
+    public void MoveHero(Team team, HeroInstance hero, int newIndex)
+    {
+        var list = team == Team.Player ? playerHeroes : enemyHeroes;
+        if (!list.Remove(hero)) return;
+        list.Insert(Mathf.Clamp(newIndex, 0, list.Count), hero);
+        HeroesChanged?.Invoke(team);
     }
 
     // ---------- Прокачка ----------

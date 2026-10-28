@@ -53,8 +53,17 @@ public class MissionData : ScriptableObject
     [Tooltip("Миссия появляется только до первого успешного выполнения")]
     public bool oneTime = false;
 
-    /// <summary>Сторона, которой видна миссия (герои — игрок, злодеи — враг).</summary>
-    public Team SideTeam => side == MissionSide.Heroes ? Team.Player : Team.Enemy;
+    /// <summary>Сторона, которой видна миссия: та команда, что играет за героев (или за злодеев).</summary>
+    public Team SideTeam
+    {
+        get
+        {
+            Side mine = side == MissionSide.Heroes ? Side.Heroes : Side.Villains;
+            bool playerIsHeroes = HeroManager.Instance == null || HeroManager.Instance.GetSide(Team.Player) == Side.Heroes;
+            bool playerSide = (mine == Side.Heroes) == playerIsHeroes;
+            return playerSide ? Team.Player : Team.Enemy;
+        }
+    }
 
     /// <summary>Шанс успеха для команды с силой power (0..1). Сила не ниже рекомендуемой — 100%.</summary>
     public float GetSuccessChance(int power)

@@ -27,7 +27,7 @@ public class ResourceManager : MonoBehaviour
     public static ResourceManager Instance { get; private set; }
 
     [Header("Стартовые ресурсы (у обеих сторон одинаковые)")]
-    [SerializeField] private int startGold = 1000;
+    [SerializeField] private int startGold = 1500;
     [SerializeField] private int startPlutonium = 0;
 
     [Header("Доход")]

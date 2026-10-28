@@ -597,6 +597,9 @@ public class EnemyAI : MonoBehaviour
 
     // ---------- Деньги ----------
 
+    /// <summary>Драфт перед игрой: нанять одного героя (карта стоит, поэтому вызывает DraftUI). Вернёт false, если больше некого.</summary>
+    public bool DraftHire() => TryHire();
+
     /// <summary>Нанять самого сильного доступного героя, на которого хватает денег.</summary>
     private bool TryHire()
     {
