@@ -208,6 +208,14 @@ public class MainBase : AttackableSite, IIncomeSource
         return new Squad(owner, picked[0], picked.GetRange(1, picked.Count - 1));
     }
 
+    /// <summary>Защитники базы в текущем бою (для опыта и жизней).</summary>
+    protected override IEnumerable<HeroInstance> DefenderHeroes()
+    {
+        Squad d = CurrentDefender;
+        if (d != null)
+            foreach (HeroInstance h in d.AllHeroes) yield return h;
+    }
+
     /// <summary>Игрок выбрал защитников базы (до 4 героев, которые дома).</summary>
     public void SetDefenders(List<HeroInstance> heroes)
     {
@@ -411,7 +419,7 @@ public class MainBase : AttackableSite, IIncomeSource
     /// </summary>
     public bool CanBuildType(BuildingData d)
     {
-        if (d == null) return false;
+        if (d == null || d.hidden) return false; // скрытые постройки (Лаборатория) пока не строятся
         if (!d.availableFromStart && !unlocked.Contains(d)) return false;
         return d.allowMultiple || !HasBuilding(d);
     }
@@ -457,10 +465,17 @@ public class MainBase : AttackableSite, IIncomeSource
 
     // ---------- Действия игрока ----------
 
+    /// <summary>Строить и улучшать можно только в тактической паузе (и на драфте).</summary>
+    private static bool BuildLocked(out string error)
+    {
+        error = PhaseManager.Instance != null && !PhaseManager.Instance.CanBuild ? "Строить и улучшать можно только в тактической паузе" : null;
+        return error != null;
+    }
+
     /// <summary>Улучшить базу. Если нельзя — вернёт false и причину в error.</summary>
     public bool TryUpgradeBase(out string error)
     {
-        error = null;
+        if (BuildLocked(out error)) return false;
         if (IsUnderAttack) { error = UnderAttackError; return false; }
         if (IsMaxLevel) { error = "База уже максимального уровня"; return false; }
         if (!ResourceManager.Instance.TrySpend(owner, UpgradeCost))
@@ -477,7 +492,7 @@ public class MainBase : AttackableSite, IIncomeSource
     /// <summary>Построить здание в пустой открытой ячейке.</summary>
     public bool TryBuild(int index, BuildingData data, out string error)
     {
-        error = null;
+        if (BuildLocked(out error)) return false;
         if (IsUnderAttack) { error = UnderAttackError; return false; }
         if (!IsSlotOpen(index)) { error = "Ячейка ещё закрыта"; return false; }
         if (slots[index] != null) { error = "Ячейка занята"; return false; }
@@ -514,6 +529,7 @@ public class MainBase : AttackableSite, IIncomeSource
     /// <summary>Улучшить постройку в ячейке.</summary>
     public bool TryUpgradeBuilding(int index, out string error)
     {
+        if (BuildLocked(out error)) return false;
         if (!CanUpgradeBuilding(index, out error)) return false;
         if (IsUnderAttack) { error = UnderAttackError; return false; }
         BuildingInstance b = slots[index];

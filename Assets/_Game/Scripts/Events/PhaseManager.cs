@@ -32,6 +32,9 @@ public class PhaseManager : MonoBehaviour
     [Tooltip("Тактическая пауза между фазами")]
     [SerializeField] private float pauseDuration = 120f;
 
+    [Tooltip("За сколько секунд до конца фазы нельзя отправлять команды (защищаться можно всегда)")]
+    [SerializeField] private float dispatchLockTime = 20f;
+
     [Header("Отладка")]
     [Tooltip("Клавиша E — сразу закончить текущую фазу")]
     [SerializeField] private bool debugCheats = true;
@@ -56,6 +59,18 @@ public class PhaseManager : MonoBehaviour
     /// <summary>Можно ли сейчас нанимать героев (драфт или тактическая пауза).</summary>
     public bool CanHire => Phase == GamePhase.Draft || Phase == GamePhase.Pause;
 
+    /// <summary>Строить и улучшать базу можно только в тактической паузе (и на драфте).</summary>
+    public bool CanBuild => Phase == GamePhase.Draft || Phase == GamePhase.Pause;
+
+    /// <summary>
+    /// Время фазы вышло, но команды ещё не вернулись: фаза ждёт, пока все герои и злодеи будут дома.
+    /// </summary>
+    public bool WaitingForSquads { get; private set; }
+
+    /// <summary>Нельзя отправлять команды: до конца фазы меньше 20 с (или фаза уже ждёт возвращения команд).</summary>
+    public bool DispatchLocked => (Phase == GamePhase.Missions || Phase == GamePhase.Event) && TimeLeft <= dispatchLockTime
+                                  || Phase == GamePhase.Pause || Phase == GamePhase.Draft;
+
     /// <summary>Фаза сменилась.</summary>
     public event Action Changed;
 
@@ -79,13 +94,15 @@ public class PhaseManager : MonoBehaviour
                 if (!DraftUI.IsRunning) BeginMissions(); // драфт закончился (или выключен)
                 break;
             case GamePhase.Missions:
-                TimeLeft -= WorldTime.DeltaTime;
-                if (TimeLeft <= 0f) BeginPause(GamePhase.Event);
+                TimeLeft = Mathf.Max(0f, TimeLeft - WorldTime.DeltaTime);
+                WaitingForSquads = TimeLeft <= 0f && !AllHome();
+                if (TimeLeft <= 0f && !WaitingForSquads) BeginPause(GamePhase.Event);
                 break;
             case GamePhase.Event:
                 TimeLeft = Mathf.Max(0f, TimeLeft - WorldTime.DeltaTime);
                 bool eventOver = !eventStarted || EventManager.Instance == null || !EventManager.Instance.IsRunning;
-                if (TimeLeft <= 0f && eventOver) BeginPause(GamePhase.Missions);
+                WaitingForSquads = TimeLeft <= 0f && (!eventOver || !AllHome());
+                if (TimeLeft <= 0f && !WaitingForSquads) BeginPause(GamePhase.Missions);
                 break;
             case GamePhase.Pause:
                 TimeLeft -= Time.unscaledDeltaTime;
@@ -94,9 +111,21 @@ public class PhaseManager : MonoBehaviour
         }
     }
 
+    /// <summary>Все команды обеих сторон дома и нигде не идёт нападение.</summary>
+    private static bool AllHome()
+    {
+        SquadManager sm = SquadManager.Instance;
+        if (sm != null)
+            foreach (Team t in new[] { Team.Player, Team.Enemy })
+                foreach (Squad s in sm.GetSquads(t))
+                    if (s.Status != SquadStatus.AtBase) return false;
+        return !MainBase.AnyUnderAttack(out _);
+    }
+
     /// <summary>Начать фазу миссий.</summary>
     private void BeginMissions()
     {
+        if (Phase != GamePhase.Draft && HeroManager.Instance != null) HeroManager.Instance.OnPhaseStarted();
         Phase = GamePhase.Missions;
         TimeLeft = Duration = missionsDuration;
         ToastUI.Show($"ФАЗА МИССИЙ — {Mathf.RoundToInt(missionsDuration / 60f)} мин. Выполняйте миссии и задания фракции");
@@ -106,6 +135,7 @@ public class PhaseManager : MonoBehaviour
     /// <summary>Начать фазу события (портал или объект — по очереди).</summary>
     private void BeginEvent()
     {
+        if (HeroManager.Instance != null) HeroManager.Instance.OnPhaseStarted();
         Phase = GamePhase.Event;
         TimeLeft = Duration = eventDuration;
         eventStarted = EventManager.Instance != null && EventManager.Instance.StartNext(eventDuration);
@@ -116,6 +146,7 @@ public class PhaseManager : MonoBehaviour
     /// <summary>Тактическая пауза: карта стоит, ИИ делает свои покупки, открывается окно паузы.</summary>
     private void BeginPause(GamePhase next)
     {
+        WaitingForSquads = false;
         Phase = GamePhase.Pause;
         NextPhase = next;
         TimeLeft = Duration = pauseDuration;
@@ -132,6 +163,7 @@ public class PhaseManager : MonoBehaviour
         if (Phase != GamePhase.Pause) return;
         WorldTime.Paused = false;
         if (TacticalPauseUI.Instance != null) TacticalPauseUI.Instance.Hide();
+        if (GlobalMissionManager.Instance != null) GlobalMissionManager.Instance.OnPauseEnded(); // "перезарядка" заданий фракции
         if (NextPhase == GamePhase.Event) BeginEvent();
         else BeginMissions();
     }

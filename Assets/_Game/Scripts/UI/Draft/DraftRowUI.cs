@@ -22,6 +22,7 @@ public class DraftRowUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDr
     private LayoutElement layout;      // Чтобы на время перетаскивания выйти из раскладки
     private Vector3 dragOffset;        // Сдвиг строки от курсора при захвате
     private Color normalColor;         // Обычный цвет фона
+    private bool glow;                 // Строка светится (герой готов повысить звезду)
 
     /// <summary>Герой этой строки.</summary>
     public HeroInstance Hero { get; private set; }
@@ -36,9 +37,34 @@ public class DraftRowUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDr
         indexText.text = (index + 1).ToString();
         portrait.Show(hero.Data);
         nameText.text = hero.Data.displayName;
-        infoText.text = $"{UnitClasses.Name(hero.Data.unitClass)}  •  <color=#FFD84A>{hero.Data.stars} зв.</color>";
+        infoText.text = $"{UnitClasses.Name(hero.Data.unitClass)}  •  <color=#FFD84A>{hero.StarsText}</color>";
         layout = GetComponent<LayoutElement>();
         normalColor = background.color;
+    }
+
+    /// <summary>Герой готов повысить звезду (5 уровень): строка светится, клик — карточка героя с кнопкой.</summary>
+    public void MarkStarReady()
+    {
+        glow = true;
+        infoText.text += "  •  <color=#FFE066><b>ЗВЕЗДА ГОТОВА!</b></color>";
+    }
+
+    /// <summary>Свечение строки (мягко пульсирует золотым).</summary>
+    private void Update()
+    {
+        if (!glow) return;
+        float k = 0.35f + 0.35f * Mathf.Sin(Time.unscaledTime * 5f);
+        background.color = Color.Lerp(normalColor, new Color(1f, 0.85f, 0.2f, 1f), k);
+    }
+
+    /// <summary>Отметить строку: лидер (первый в иерархии) — жёлтая ячейка и подпись "ЛИДЕР".</summary>
+    public void MarkLeader()
+    {
+        nameText.text += "  <color=#2A1E00><b>ЛИДЕР</b></color>";
+        nameText.color = new Color(0.16f, 0.12f, 0f);
+        infoText.text = infoText.text.Replace("#FFD84A", "#7A4A00"); // Звёзды тёмным, иначе жёлтое на жёлтом
+        infoText.color = new Color(0.25f, 0.2f, 0.05f);
+        background.color = normalColor = new Color(1f, 0.82f, 0.25f, 0.95f);
     }
 
     /// <summary>Отметить строку: герой в запасе ("не в команде").</summary>

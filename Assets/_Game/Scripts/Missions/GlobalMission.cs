@@ -144,6 +144,11 @@ public class GlobalMission : AttackableSite
                 got.Add($"<color=#7FE0FF>герой {hero.Data.displayName} ({hero.Data.stars} зв.){(HeroManager.Instance.IsReserve(hero) ? " — в запасе" : "")}</color>");
         }
         rewardText = string.Join(",  ", got);
+        if (team != LaunchedBy && manager != null)
+        {
+            manager.OnMissionFailed(this); // выполнил соперник — задание начавшего провалено
+            return;
+        }
 
         if (team == Team.Player) ToastUI.Show($"Задание «{Title}» выполнено!");
         else ToastUI.Show($"Враг выполнил задание «{Title}»");
@@ -159,10 +164,35 @@ public class GlobalMission : AttackableSite
 
     // ---------- Жизненный цикл ----------
 
+    /// <summary>Задание фракции — больше опыта за победу.</summary>
+    protected override int WinXp => 50;
+
+    /// <summary>Своя команда проиграла бой за своё задание — задание пропадает (следующая пауза — без задания).</summary>
+    protected override void OnAttackerLost(Squad squad)
+    {
+        if (completed || squad.Owner != LaunchedBy || manager == null) return;
+        completed = true;
+        manager.OnMissionFailed(this);
+    }
+
+    private bool shown = true; // Видно ли задание игроку сейчас
+
+    /// <summary>Задание врага игрок видит, только когда у него идёт подготовка к бою.</summary>
+    private void UpdateVisibility()
+    {
+        bool visible = GlobalMissionManager.IsVisibleTo(this, Team.Player);
+        if (visible == shown) return;
+        shown = visible;
+        foreach (Renderer r in GetComponentsInChildren<Renderer>(true)) r.enabled = visible;
+        foreach (Collider2D c in GetComponentsInChildren<Collider2D>(true)) c.enabled = visible;
+        if (visible && LaunchedBy != Team.Player) ToastUI.Show($"Враг начал подготовку к бою за «{Title}»! Успейте помешать — бой через {Mathf.CeilToInt(PrepLeft)} с");
+    }
+
     /// <summary>Пульсация и таймер подготовки.</summary>
     protected override void Update()
     {
         base.Update();
+        UpdateVisibility();
         if (pulse != null)
             pulse.localScale = Vector3.one * (1f + 0.1f * Mathf.Sin(Time.time * 3f));
     }

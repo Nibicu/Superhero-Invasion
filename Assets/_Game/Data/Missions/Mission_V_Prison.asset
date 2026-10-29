@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 770d6a9599b3b264b8158c900e70a665, type: 3}
   m_Name: Mission_V_Prison
   m_EditorClassIdentifier: Assembly-CSharp::MissionData
+  hidden: 0
   title: "\u041F\u043E\u0431\u0435\u0433 \u0438\u0437 \u0442\u044E\u0440\u044C\u043C\u044B"
   description: "\u0412 \u0442\u044E\u0440\u044C\u043C\u0435 \u0441\u0442\u0440\u043E\u0433\u043E\u0433\u043E \u0440\u0435\u0436\u0438\u043C\u0430 \u0441\u0438\u0434\u044F\u0442 \u043D\u0430\u0448\u0438 \u0441\u0442\u0430\u0440\u044B\u0435 \u0434\u0440\u0443\u0437\u044C\u044F. \u041E\u0441\u0432\u043E\u0431\u043E\u0434\u0438\u043C \u0438\u0445 \u2014 \u0438 \u043E\u043D\u0438 \u043D\u0430\u0443\u0447\u0430\u0442 \u043A\u043E\u043C\u0430\u043D\u0434\u0443 \u043F\u0430\u0440\u0435 \u0442\u0440\u044E\u043A\u043E\u0432."
   side: 1
@@ -21,6 +22,6 @@ MonoBehaviour:
   requiredPower: 800
   rewardGold: 600
   rewardPlutonium: 0
-  levelUpTeam: 1
+  levelUpTeam: 0
   unlockBuilding: {fileID: 0}
   oneTime: 0

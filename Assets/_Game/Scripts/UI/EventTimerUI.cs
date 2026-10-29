@@ -54,6 +54,15 @@ public class EventTimerUI : MonoBehaviour
     private void ShowPhase(PhaseManager pm, EventManager em)
     {
         string time = $"<color=#FFD84A>{Format(pm.TimeLeft)}</color>";
+        if (pm.WaitingForSquads)
+        {
+            text.text = "ЖДЁМ ВОЗВРАЩЕНИЯ КОМАНД…  <size=80%><color=#9AA4B5>• фаза кончится, когда все будут на базах</color></size>";
+            if (fill != null) fill.fillAmount = 1f;
+            if (background != null) background.color = pauseColor;
+            return;
+        }
+        if (pm.DispatchLocked && pm.Phase != GamePhase.Pause && pm.Phase != GamePhase.Draft)
+            time += "  <size=75%><color=#FF7A7A>отправка закрыта</color></size>";
         string nextEvent = em.KindName(em.Kind);
         switch (pm.Phase)
         {

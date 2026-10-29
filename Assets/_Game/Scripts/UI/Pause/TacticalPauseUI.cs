@@ -38,6 +38,11 @@ public class TacticalPauseUI : MonoBehaviour
     [SerializeField] private Transform missionList;            // Карточки заданий
     [SerializeField] private FactionMissionCardUI cardTemplate; // Шаблон карточки (выключен)
 
+    [Header("Побеждённые герои")]
+    [SerializeField] private TMP_Text defeatedHeader;     // "ПОБЕЖДЁННЫЕ ГЕРОИ"
+    [SerializeField] private Transform defeatedList;      // Строки побеждённых
+    [SerializeField] private GameObject defeatedTemplate; // Шаблон строки: текст + кнопка (выключен)
+
     [Header("Окна")]
     [SerializeField] private RosterWindowUI roster;     // Покупка героев
     [SerializeField] private HeroInfoWindowUI heroInfo; // Карточка героя
@@ -54,6 +59,7 @@ public class TacticalPauseUI : MonoBehaviour
         Instance = this;
         rowTemplate.gameObject.SetActive(false);
         cardTemplate.gameObject.SetActive(false);
+        if (defeatedTemplate != null) defeatedTemplate.SetActive(false);
         readyButton.onClick.AddListener(() => { if (PhaseManager.Instance != null) PhaseManager.Instance.Ready(); });
         buyButton.onClick.AddListener(() => roster.Open());
         inventoryButton.onClick.AddListener(() => { if (ArtifactWindowUI.Instance != null) ArtifactWindowUI.Instance.OpenInventory(); });
@@ -100,6 +106,7 @@ public class TacticalPauseUI : MonoBehaviour
     public void Hide()
     {
         root.SetActive(false);
+        if (baseWindow != null) baseWindow.Close();
         if (roster != null && roster.IsOpen) roster.Close();
         if (heroInfo != null && heroInfo.IsOpen) heroInfo.Close();
     }
@@ -138,8 +145,33 @@ public class TacticalPauseUI : MonoBehaviour
             spawned.Add(row.gameObject);
             HeroData data = heroes[i].Data;
             row.Setup(i, heroes[i], true, OnRowDropped, () => heroInfo.ShowHero(data));
+            if (i == 0) row.MarkLeader(); // первый в иерархии — лидер (перетащите героя наверх, чтобы сменить)
             if (hm.IsReserve(heroes[i])) row.MarkReserve();
+            if (hm.StarReady(heroes[i])) row.MarkStarReady(); // 5 уровень — можно повысить звезду
         }
+
+        // Побеждённые герои: ждут 2 фазы, потом их можно восстановить за двойную цену
+        IReadOnlyList<HeroManager.DefeatedHero> defeated = hm.GetDefeated(Team.Player);
+        if (defeatedHeader != null) defeatedHeader.gameObject.SetActive(defeated.Count > 0);
+        if (defeatedTemplate != null)
+            foreach (HeroManager.DefeatedHero d in defeated)
+            {
+                GameObject go = Instantiate(defeatedTemplate, defeatedList);
+                go.SetActive(true);
+                spawned.Add(go);
+                bool can = hm.CanRestore(d, out string reason);
+                int cost = hm.RestoreCost(d);
+                go.GetComponentInChildren<TMP_Text>().text = $"{d.hero.Data.displayName}  <size=80%><color=#9AA4B5>ур. {d.hero.Level}</color></size>";
+                Button restore = go.GetComponentInChildren<Button>();
+                restore.interactable = can;
+                restore.GetComponentInChildren<TMP_Text>().text = can ? $"ВОССТАНОВИТЬ {cost}" : reason.ToUpper();
+                HeroManager.DefeatedHero captured = d;
+                restore.onClick.AddListener(() =>
+                {
+                    if (HeroManager.Instance.TryRestore(captured, out string err)) ToastUI.Show($"{captured.hero.Data.displayName} снова в строю!");
+                    else ToastUI.Show(err);
+                });
+            }
 
         // База
         MainBase b = MainBase.Get(Team.Player);
@@ -155,7 +187,7 @@ public class TacticalPauseUI : MonoBehaviour
         GlobalMission mine = gmm.LaunchedBy(Team.Player), theirs = gmm.LaunchedBy(Team.Enemy);
         missionsStatus.text =
             (mine != null ? $"Ваше задание: <color=#7FB8FF>{mine.Title}</color>" : "Ваше задание: <color=#9AA4B5>не выбрано</color>") + "\n" +
-            (theirs != null ? $"Враг выполняет: <color=#FF7A7A>{theirs.Title}</color>" : "Враг: <color=#9AA4B5>задания нет</color>");
+            (theirs != null && GlobalMissionManager.IsVisibleTo(theirs, Team.Player) ? $"Враг выполняет: <color=#FF7A7A>{theirs.Title}</color>" : "Враг: <color=#9AA4B5>неизвестно</color>");
         foreach (GlobalMissionData d in gmm.Pool)
         {
             FactionMissionCardUI card = Instantiate(cardTemplate, missionList);
@@ -163,8 +195,8 @@ public class TacticalPauseUI : MonoBehaviour
             spawned.Add(card.gameObject);
             bool can = gmm.CanLaunch(Team.Player, d, out _);
             string state = mine != null && mine.Data == d ? "Ваше — идёт"
-                : theirs != null && theirs.Data == d ? "Идёт у врага"
-                : mine != null ? "Одно задание за раз" : "Недоступно";
+                : gmm.OnCooldown(Team.Player) ? "Провалено — ждите паузу"
+                : mine != null ? "Одно задание за раз" : "Сейчас недоступно";
             GlobalMissionData captured = d;
             card.Setup(d, can, state, () => gmm.Launch(Team.Player, captured));
         }

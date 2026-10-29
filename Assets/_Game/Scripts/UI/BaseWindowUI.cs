@@ -111,8 +111,12 @@ public class BaseWindowUI : MonoBehaviour
 
         buildMenu.Close();
         root.SetActive(true);
+        transform.SetAsLastSibling(); // поверх окна тактической паузы
         Refresh();
     }
+
+    /// <summary>Можно ли сейчас строить (только в тактической паузе).</summary>
+    private static bool CanBuildNow => PhaseManager.Instance == null || PhaseManager.Instance.CanBuild;
 
     /// <summary>Закрыть окно.</summary>
     public void Close()
@@ -152,7 +156,8 @@ public class BaseWindowUI : MonoBehaviour
         subtitleText.text =
             $"HP: <color=#6EE07A>{b.Hp}/{b.MaxHp}</color>  •  {garrisonText}  •  " +
             $"Доход: <color=#FFD84A>+{incomeGold}</color>  •  " +
-            $"Ячейки: {b.OpenSlots}/{MainBase.MaxSlots}  •  Найм до {stars}";
+            $"Ячейки: {b.OpenSlots}/{MainBase.MaxSlots}  •  Найм до {stars}" +
+            (!readOnly && !CanBuildNow ? "\n<size=85%><color=#FFB84A>Строить и улучшать можно только в тактической паузе</color></size>" : "");
 
         // Своя база — кнопка улучшения; база врага — кнопка атаки
         upgradeButton.gameObject.SetActive(true);
@@ -160,6 +165,10 @@ public class BaseWindowUI : MonoBehaviour
         {
             upgradeButton.interactable = b.Hp > 0;
             upgradeText.text = $"АТАКОВАТЬ БАЗУ\n<size=80%>урон {b.DamagePerAttack} • охрана: сила {(garrison != null ? BattleCalculator.SquadPower(garrison) : 0)}</size>";
+        }
+        else if (!CanBuildNow)
+        {
+            upgradeButton.gameObject.SetActive(false); // в игре — только смотреть, строить в паузе
         }
         else
         {
@@ -178,7 +187,7 @@ public class BaseWindowUI : MonoBehaviour
         }
 
         for (int i = 0; i < slotViews.Length; i++)
-            slotViews[i].Setup(b, i, readOnly, this);
+            slotViews[i].Setup(b, i, readOnly || !CanBuildNow, this);
 
         buildMenu.Refresh();
     }

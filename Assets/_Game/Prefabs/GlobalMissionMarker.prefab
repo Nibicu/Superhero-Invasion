@@ -610,7 +610,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5d89a8010e60ac04a93a28389a59ab9d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GlobalMission
-  prepTime: 20
+  prepTime: 35
   glow: {fileID: 7105479728737327590}
   circle: {fileID: 4252810468562875492}
   letter: {fileID: 4056057801233395007}

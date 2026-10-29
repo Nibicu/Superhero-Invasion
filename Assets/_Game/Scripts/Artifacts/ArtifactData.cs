@@ -14,7 +14,7 @@ public enum ArtifactEffect
     None,          // Ничего (для вещей)
     HeroLimit,     // +amount к лимиту найма героев (навсегда)
     BaseIncome,    // +amount золота к доходу главной базы (навсегда)
-    FreeHeroLevel  // Бесплатно +1 уровень выбранному герою (без Лаборатории)
+    FreeHeroLevel  // +100 опыта (= +1 уровень) выбранному герою
 }
 
 /// <summary>
@@ -64,7 +64,7 @@ public class ArtifactData : ScriptableObject
             {
                 case ArtifactEffect.HeroLimit: return $"+{amount} к лимиту найма героев (навсегда)";
                 case ArtifactEffect.BaseIncome: return $"+{amount} золота к доходу базы (навсегда)";
-                case ArtifactEffect.FreeHeroLevel: return "+1 уровень выбранному герою (без Лаборатории)";
+                case ArtifactEffect.FreeHeroLevel: return "+100 опыта (+1 уровень) выбранному герою";
                 default: return "";
             }
         }

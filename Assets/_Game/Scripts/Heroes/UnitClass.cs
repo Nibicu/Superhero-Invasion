@@ -96,7 +96,7 @@ public static class UnitClasses
     public static string Name(UnitClass c) => Get(c).name;
 
     /// <summary>Название типа урона скилов.</summary>
-    public static string DamageName(DamageType t) => t == DamageType.Attack ? "Атака" : "Спец. атака";
+    public static string DamageName(DamageType t) => t == DamageType.Attack ? "Сила атаки" : "Магия";
 
     /// <summary>
     /// Шаблон характеристик класса для героя 1★ 1 уровня (сила около 200–240).

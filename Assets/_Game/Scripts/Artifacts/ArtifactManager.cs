@@ -96,7 +96,8 @@ public class ArtifactManager : MonoBehaviour
                 break;
             case ArtifactEffect.FreeHeroLevel:
                 if (hero == null || hero.Owner != team) { error = "Выберите героя"; return false; }
-                if (!HeroManager.Instance.FreeLevelUp(hero)) { error = "У героя уже максимальный уровень"; return false; }
+                if (hero.Level >= HeroManager.Instance.MaxHeroLevel) { error = "У героя уже максимальный уровень"; return false; }
+                HeroManager.Instance.GiveXp(hero, HeroInstance.XpPerLevel); // +100 опыта = +1 уровень
                 break;
             default:
                 error = "Артефакт ничего не делает";
@@ -136,6 +137,14 @@ public class ArtifactManager : MonoBehaviour
             if (hero.Slots[i] == null) return TryEquip(hero, i, data, out error);
         error = "У героя заняты все 3 ячейки — снимите что-нибудь в карточке героя";
         return false;
+    }
+
+    /// <summary>Снять все вещи с героя в инвентарь (герой побеждён).</summary>
+    public void ReturnAll(HeroInstance hero)
+    {
+        for (int i = 0; i < HeroInstance.SlotCount; i++)
+            if (hero.Slots[i] != null) { Stash(hero.Owner).Add(hero.Slots[i]); hero.Slots[i] = null; }
+        NotifyChanged(hero.Owner);
     }
 
     /// <summary>Снять вещь из ячейки героя обратно в инвентарь.</summary>

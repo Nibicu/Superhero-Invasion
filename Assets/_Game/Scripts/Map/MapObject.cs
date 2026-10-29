@@ -72,14 +72,6 @@ public class MapObject : AttackableSite, IIncomeSource
         return n;
     }
 
-    /// <summary>Владеет ли сторона хоть одним объектом, разрешающим усиление героев (Институт).</summary>
-    public static bool TeamCanBoostHeroes(Team team)
-    {
-        foreach (MapObject o in all)
-            if (o.IsOwnedBy(team) && o.data.allowsHeroBoost) return true;
-        return false;
-    }
-
     // IIncomeSource: постоянного дохода больше нет — объект даёт разовую награду в конце события
     Team IIncomeSource.Owner => owner;
     public int GoldIncome => 0;

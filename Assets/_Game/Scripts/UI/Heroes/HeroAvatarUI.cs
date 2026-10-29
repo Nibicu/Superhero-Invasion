@@ -15,6 +15,7 @@ public class HeroAvatarUI : MonoBehaviour
     [SerializeField] private Image selection;         // Рамка выбора (выбор защитников)
     [SerializeField] private TMP_Text statusText;     // "В пути" / номер команды
     [SerializeField] private Button button;           // Клик по аватарке
+    [SerializeField] private TMP_Text livesText;      // Сколько жизней (рядом со значком сердца)
 
     private bool reserve; // Герой в запасе ("не в команде")
 
@@ -45,6 +46,7 @@ public class HeroAvatarUI : MonoBehaviour
         if (Hero == null) return;
         hpFill.fillAmount = Hero.HpFraction;
         hpFill.color = Color.Lerp(new Color(0.9f, 0.25f, 0.25f), new Color(0.35f, 0.85f, 0.4f), Hero.HpFraction);
+        if (livesText != null) livesText.text = Hero.Lives.ToString();
         bool away = !Hero.IsAtHome;
         dim.gameObject.SetActive(away || reserve);
         if (statusText != null)

@@ -13,7 +13,7 @@ public enum BuildingType
     Radar,        // Радар — позволяет смотреть базу, объекты и команды врага
     ReserveRooms, // Резервные комнаты — увеличивают лимит героев
     Barracks,     // Бараки — разрешают нанимать героев 2 и 3 звёзд
-    Laboratory    // Лаборатория — прокачка уровня героев за плутоний
+    Laboratory    // Лаборатория — прокачка уровня героев за плутоний (сейчас скрыта)
 }
 
 /// <summary>
@@ -56,6 +56,9 @@ public class BuildingLevel
 [CreateAssetMenu(menuName = "Супергеройское бюро/Постройка", fileName = "Building_")]
 public class BuildingData : ScriptableObject
 {
+    [Tooltip("Скрыть постройку из игры (не удаляя файл) — например, Лаборатория, пока для неё нет дела")]
+    public bool hidden = false;
+
     [Header("Внешний вид")]
     [Tooltip("Название, которое видит игрок")]
     public string displayName = "Постройка";

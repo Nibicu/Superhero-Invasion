@@ -115,7 +115,7 @@ public class EnemyAI : MonoBehaviour
         DispatchSquads();
 
         // Плутоний тратится отдельно: прокачка в Лаборатории, потом усиление (если есть Институт)
-        if (!TryLevelUpHero()) TryBoostHero();
+        // Прокачка уровня за плутоний и усиление убраны — герои растут за счёт опыта
 
         // Артефакты из инвентаря: активируемые — сразу использовать, вещи — надеть на сильных героев
         UseArtifacts();
@@ -299,7 +299,7 @@ public class EnemyAI : MonoBehaviour
         if (o != null && o.IsActive && !o.IsOwnedBy(team) && o.EventTimeLeft > 40f) list.Add(o);
         if (GlobalMissionManager.Instance != null)
             foreach (GlobalMission g in GlobalMissionManager.Instance.Active)
-                if (!g.IsCompleted) list.Add(g);
+                if (!g.IsCompleted && GlobalMissionManager.IsVisibleTo(g, team)) list.Add(g);
         return list;
     }
 
@@ -493,7 +493,7 @@ public class EnemyAI : MonoBehaviour
         if (GlobalMissionManager.Instance != null)
         foreach (GlobalMission gm in GlobalMissionManager.Instance.Active)
         {
-        if (gm.IsCompleted || IsOrdered(gm) || !gm.CanAccept(squad, out _)) continue;
+        if (gm.IsCompleted || IsOrdered(gm) || !gm.CanAccept(squad, out _) || !GlobalMissionManager.IsVisibleTo(gm, team)) continue;
         {
             bool join = gm.IsUnderAttack;
             bool ok = !join || (gm.CanJoin(team) && SM.EstimateTravelTime(squad, gm) <= gm.PrepLeft - 1f
@@ -609,8 +609,15 @@ public class EnemyAI : MonoBehaviour
     public void OnTacticalPause()
     {
         for (int i = 0; i < 10 && TryHire(); i++) { }
-        for (int i = 0; i < 10 && TryLevelUpHero(); i++) { }
-        for (int i = 0; i < 10 && TryBoostHero(); i++) { }
+        // Побеждённых героев — восстановить, если хватает денег
+        foreach (HeroManager.DefeatedHero d in new List<HeroManager.DefeatedHero>(HM.GetDefeated(team)))
+            if (HM.CanRestore(d, out _) && RM.CanAfford(team, HM.RestoreCost(d))) HM.TryRestore(d, out _);
+        for (int i = 0; i < 10 && (TryBuild() || TryUpgradeBuildings() || TryUpgradeBase()); i++) { } // строить можно только в паузе
+        // Повысить звезду героям 5 уровня (сильнейшим первыми), пока хватает плутония
+        var heroes = new List<HeroInstance>(HM.GetHeroes(team));
+        heroes.Sort((a, b) => BattleCalculator.HeroPower(b).CompareTo(BattleCalculator.HeroPower(a)));
+        foreach (HeroInstance h in heroes)
+            if (HM.CanStarUp(h, out _) && RM.CanAfford(team, 0, HM.StarUpCost)) HM.TryStarUp(h, out _);
         UseArtifacts();
         GlobalMissionManager gmm = GlobalMissionManager.Instance;
         if (gmm == null || gmm.HasLaunched(team)) return;
@@ -699,34 +706,6 @@ public class EnemyAI : MonoBehaviour
         if (Base.IsMaxLevel || FreeSlot() >= 0 || !RM.CanAfford(team, Base.UpgradeCost)) return false;
         if (!Base.TryUpgradeBase(out _)) return false;
         Log($"улучшил базу до ур. {Base.Level}");
-        return true;
-    }
-
-    /// <summary>Усилить самого сильного героя за плутоний (нужен захваченный Институт).</summary>
-    private bool TryBoostHero()
-    {
-        HeroInstance best = null;
-        foreach (HeroInstance h in HM.GetHeroes(team))
-        {
-            if (!HM.CanBoost(h, out _) || !RM.CanAfford(team, 0, HM.GetBoostCost(h))) continue;
-            if (best == null || HeroPower(h) > HeroPower(best)) best = h;
-        }
-        if (best == null || !HM.TryBoost(best, out _)) return false;
-        Log($"усилил {best.Data.displayName} (усилений: {best.Boosts})");
-        return true;
-    }
-
-    /// <summary>Прокачать в Лаборатории (за плутоний) самого сильного героя, которого ещё можно прокачать.</summary>
-    private bool TryLevelUpHero()
-    {
-        HeroInstance best = null;
-        foreach (HeroInstance h in HM.GetHeroes(team))
-        {
-            if (!HM.CanLevelUp(h, out _) || !RM.CanAfford(team, 0, HM.GetLevelUpCost(h))) continue;
-            if (best == null || HeroPower(h) > HeroPower(best)) best = h;
-        }
-        if (best == null || !HM.TryLevelUp(best, out _)) return false;
-        Log($"прокачал {best.Data.displayName} до ур. {best.Level}");
         return true;
     }
 

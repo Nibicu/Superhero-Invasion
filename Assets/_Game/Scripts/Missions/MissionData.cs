@@ -16,6 +16,9 @@ public enum MissionSide
 [CreateAssetMenu(menuName = "Супергеройское бюро/Миссия", fileName = "Mission_")]
 public class MissionData : ScriptableObject
 {
+    [Tooltip("Скрыть миссию из игры (не удаляя файл)")]
+    public bool hidden = false;
+
     [Header("Описание")]
     [Tooltip("Название миссии")]
     public string title = "Миссия";
@@ -78,7 +81,6 @@ public class MissionData : ScriptableObject
         var sb = new StringBuilder();
         if (rewardGold > 0) sb.Append($"<color=#FFD84A>+{rewardGold} золота</color>   ");
         if (rewardPlutonium > 0) sb.Append($"<color=#C58BFF>+{rewardPlutonium} плутония</color>   ");
-        if (levelUpTeam) sb.Append("<color=#6EE07A>+1 уровень героям команды</color>   ");
         if (unlockBuilding != null) sb.Append($"<color=#7FD8FF>Новая постройка: {unlockBuilding.displayName}</color>");
         return sb.ToString().Trim();
     }

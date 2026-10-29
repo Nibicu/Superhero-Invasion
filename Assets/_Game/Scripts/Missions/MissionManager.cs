@@ -111,7 +111,7 @@ public class MissionManager : MonoBehaviour
         if (missionPool != null)
             foreach (MissionData d in missionPool)
             {
-                if (d == null || d.SideTeam != side || completedOnce.Contains((side, d))) continue;
+                if (d == null || d.hidden || d.SideTeam != side || completedOnce.Contains((side, d))) continue;
                 if (active.Exists(m => m.Data == d)) continue;
                 options.Add(d);
             }

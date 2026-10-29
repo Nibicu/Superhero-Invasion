@@ -272,6 +272,43 @@ public abstract class AttackableSite : MonoBehaviour, ISquadTarget
         OnPrepStarted();
     }
 
+    /// <summary>Опыт за победу в бою (каждому герою).</summary>
+    protected virtual int WinXp => 30;
+
+    /// <summary>Опыт за проигранный бой (каждому герою).</summary>
+    protected const int LoseXp = 10;
+
+    /// <summary>Опыт защитникам за отбитое нападение.</summary>
+    protected const int DefendXp = 25;
+
+    /// <summary>Герои, которые защищают это место (команда подкрепления; у базы — защитники базы).</summary>
+    protected virtual IEnumerable<HeroInstance> DefenderHeroes()
+    {
+        if (reinforcement != null)
+            foreach (HeroInstance h in reinforcement.Squad.AllHeroes) yield return h;
+    }
+
+    /// <summary>Дать опыт героям.</summary>
+    private static void GiveXp(IEnumerable<HeroInstance> heroes, int amount)
+    {
+        if (HeroManager.Instance == null) return;
+        foreach (HeroInstance h in new List<HeroInstance>(heroes)) HeroManager.Instance.GiveXp(h, amount);
+    }
+
+    /// <summary>Ручной бой: герои, выбывшие на арене, теряют по жизни.</summary>
+    private static void ApplyDeaths(BattleResult result)
+    {
+        HeroManager hm = HeroManager.Instance;
+        if (hm == null) return;
+        if (result.ourDead != null)
+            foreach (HeroData d in result.ourDead) hm.LoseLife(hm.FindHero(Team.Player, d));
+        if (result.theirDead != null)
+            foreach (HeroData d in result.theirDead) hm.LoseLife(hm.FindHero(Team.Enemy, d));
+    }
+
+    /// <summary>Нападающие проиграли бой (задание фракции здесь может провалиться).</summary>
+    protected virtual void OnAttackerLost(Squad squad) { }
+
     /// <summary>Началась подготовка к бою (нападающие приехали). База здесь даёт выбрать защитников.</summary>
     protected virtual void OnPrepStarted() { }
 
@@ -386,6 +423,9 @@ public abstract class AttackableSite : MonoBehaviour, ISquadTarget
         BattleForecast f = BattleCalculator.Forecast(BattleCalculator.SquadPower(squad), DefenderPower);
         bool won = BattleCalculator.RollAutoBattle(f);
         OnAutoResolved(squad, won);
+        // Автобой: проигравшая сторона теряет по жизни у каждого героя
+        if (!won) foreach (HeroInstance h in new List<HeroInstance>(squad.AllHeroes)) HeroManager.Instance.LoseLife(h);
+        else foreach (HeroInstance h in new List<HeroInstance>(DefenderHeroes())) HeroManager.Instance.LoseLife(h);
         ApplyDefenderAutoLoss(won ? 0.5f : 0.2f);
         float hp = Mathf.Max(BattleCalculator.MinHpAfterBattle, squad.HpFraction - BattleCalculator.AutoBattleHpLoss(f, won));
         Finish(won, hp);
@@ -444,6 +484,7 @@ public abstract class AttackableSite : MonoBehaviour, ISquadTarget
     {
         if (attacker == null) return;
         OnBattleResult(result);
+        ApplyDeaths(result);
         bool defended = PlayerDefends;
         bool attackerWon = defended ? !result.win : result.win;
         SetDefenderHp(defended ? result.ourHp : result.theirHp, result);
@@ -455,6 +496,7 @@ public abstract class AttackableSite : MonoBehaviour, ISquadTarget
     {
         if (!IsContested) return;
         OnBattleResult(result);
+        ApplyDeaths(result);
         bool playerFirst = attacker.Squad.Owner == Team.Player;
         bool attackerWon = playerFirst ? result.win : !result.win;
         FinishContested(attackerWon,
@@ -470,6 +512,8 @@ public abstract class AttackableSite : MonoBehaviour, ISquadTarget
         c.Squad.HpFraction = challengerHp;
         Squad winner = attackerWon ? a.Squad : c.Squad;
         Squad mine = a.Squad.Owner == Team.Player ? a.Squad : c.Squad;
+        GiveXp(winner.AllHeroes, WinXp);
+        GiveXp((attackerWon ? c.Squad : a.Squad).AllHeroes, LoseXp);
 
         EndAttack();
 
@@ -497,6 +541,10 @@ public abstract class AttackableSite : MonoBehaviour, ISquadTarget
         Squad myHelper = defended && reinforcement != null ? reinforcement.Squad : null; // наша команда на защите
         int lost = Mathf.Max(0, Mathf.RoundToInt((squad.HpFraction - attackerHp) * 100f));
         squad.HpFraction = attackerHp;
+        // Опыт: нападающим — за победу или за попытку, защитникам-героям — за отбитое нападение
+        var defenders = new List<HeroInstance>(DefenderHeroes());
+        GiveXp(squad.AllHeroes, attackerWon ? WinXp : LoseXp);
+        GiveXp(defenders, attackerWon ? LoseXp : DefendXp);
 
         EndAttack();
 
@@ -518,6 +566,7 @@ public abstract class AttackableSite : MonoBehaviour, ISquadTarget
             ToastUI.Show($"Бой за «{SiteName}» проигран. Команда {squad.Number} потеряла {lost}% HP");
             BattleResultWindowUI.Show(false, $"Не удалось победить защитников «{SiteName}»." + AttackerLostText(squad.Owner) + SquadHpLine(squad));
         }
+        if (!attackerWon) OnAttackerLost(squad);
         unit.ReturnHome();
     }
 

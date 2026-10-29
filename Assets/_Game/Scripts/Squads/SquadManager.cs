@@ -167,6 +167,12 @@ public class SquadManager : MonoBehaviour
     public bool SendSquad(Squad squad, ISquadTarget target, out string error)
     {
         if (squad.Status != SquadStatus.AtBase) { error = "Команда сейчас не на базе"; return false; }
+        bool defending = target is AttackableSite ds && ds.CanReinforce(squad.Owner); // защищаться можно всегда
+        if (!defending && PhaseManager.Instance != null && PhaseManager.Instance.DispatchLocked)
+        {
+            error = "Фаза заканчивается — новые задания нельзя (меньше 20 с до конца фазы)";
+            return false;
+        }
         if (MainBase.AnyUnderAttack(out MainBase attacked))
         {
             error = $"Идёт нападение на «{attacked.BaseName}» — команды отправлять нельзя, пока не решится бой";

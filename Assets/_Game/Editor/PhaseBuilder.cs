@@ -108,6 +108,36 @@ public static class PhaseBuilder
         Button inventory = Btn("InventoryButton", baseCol, "ИНВЕНТАРЬ", new Color(0.55f, 0.33f, 0.82f), new Vector2(0, -385), 34);
         Button baseBtn = Btn("BaseButton", baseCol, "БАЗА И ПОСТРОЙКИ", new Color(0.184f, 0.482f, 0.878f), new Vector2(0, -480), 34);
 
+        // Побеждённые герои (под кнопками базы)
+        var defeatedHeader = Text("DefeatedHeader", baseCol, "ПОБЕЖДЁННЫЕ ГЕРОИ", 24, new Color(1f, 0.55f, 0.5f), TextAlignmentOptions.Center, true);
+        Place(defeatedHeader.rectTransform, new Vector2(0.5f, 1f), new Vector2(0, -545), new Vector2(520, 34));
+        var defeatedList = new GameObject("DefeatedList", typeof(RectTransform), typeof(VerticalLayoutGroup)).GetComponent<RectTransform>();
+        defeatedList.SetParent(baseCol, false);
+        defeatedList.anchorMin = new Vector2(0, 0);
+        defeatedList.anchorMax = new Vector2(1, 1);
+        defeatedList.offsetMin = new Vector2(16, 10);
+        defeatedList.offsetMax = new Vector2(-16, -565);
+        var dvl = defeatedList.GetComponent<VerticalLayoutGroup>();
+        dvl.spacing = 6;
+        dvl.childControlHeight = false;
+        dvl.childControlWidth = true;
+        dvl.childForceExpandHeight = false;
+        var defeatedRow = Img("DefeatedTemplate", defeatedList, rounded, new Color(0.35f, 0.15f, 0.15f, 0.9f));
+        defeatedRow.type = Image.Type.Sliced;
+        defeatedRow.rectTransform.sizeDelta = new Vector2(520, 50);
+        defeatedRow.gameObject.AddComponent<LayoutElement>().preferredHeight = 50;
+        var dName = Text("Name", defeatedRow.rectTransform, "Герой", 22, Color.white, TextAlignmentOptions.Left, false);
+        Place(dName.rectTransform, new Vector2(0f, 0.5f), new Vector2(130, 0), new Vector2(240, 44));
+        var dBtnImg = Img("Button", defeatedRow.rectTransform, rounded, new Color(0.247f, 0.639f, 0.302f));
+        dBtnImg.type = Image.Type.Sliced;
+        Place(dBtnImg.rectTransform, new Vector2(1f, 0.5f), new Vector2(-125, 0), new Vector2(240, 42));
+        var dBtn = dBtnImg.gameObject.AddComponent<Button>();
+        var dColors = dBtn.colors;
+        dColors.disabledColor = new Color(0.45f, 0.45f, 0.5f, 0.8f);
+        dBtn.colors = dColors;
+        Stretch(Text("Text", dBtnImg.rectTransform, "ВОССТАНОВИТЬ", 18, Color.white, TextAlignmentOptions.Center, false).rectTransform);
+        defeatedRow.gameObject.SetActive(false);
+
         // Справа — задания фракции
         var missionCol = Column(r, "Missions", 1f, -320f, 560f, new Color(0.3f, 0.16f, 0.36f, 0.95f), out TMP_Text missionsHeader);
         var missionsStatus = Text("Status", missionCol, "", 22, Color.white, TextAlignmentOptions.Center, false);
@@ -140,6 +170,9 @@ public static class PhaseBuilder
         so.FindProperty("missionsStatus").objectReferenceValue = missionsStatus;
         so.FindProperty("missionList").objectReferenceValue = missionList;
         so.FindProperty("cardTemplate").objectReferenceValue = card;
+        so.FindProperty("defeatedHeader").objectReferenceValue = defeatedHeader;
+        so.FindProperty("defeatedList").objectReferenceValue = defeatedList;
+        so.FindProperty("defeatedTemplate").objectReferenceValue = defeatedRow.gameObject;
         so.FindProperty("roster").objectReferenceValue = roster;
         so.FindProperty("heroInfo").objectReferenceValue = heroInfo;
         so.FindProperty("baseWindow").objectReferenceValue = baseWindow;

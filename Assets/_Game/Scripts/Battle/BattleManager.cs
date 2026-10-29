@@ -773,8 +773,17 @@ public class BattleManager : MonoBehaviour
             rivalHp = RemainingHp(rivals),
             reinforcementHp = ReinforcementHp(),
             ourTerritories = contested ? Mathf.Min(heroWave, LaneTerritories) : heroWave,
-            rivalTerritories = Mathf.Min(rivalWave, LaneTerritories)
+            rivalTerritories = Mathf.Min(rivalWave, LaneTerritories),
+            ourDead = new List<HeroData>(),
+            theirDead = new List<HeroData>()
         };
+        // Кто выбыл на арене (клоны и охрана объектов — не герои, у них жизней нет)
+        foreach (Fighter f in allFighters)
+        {
+            if (f == null || f.IsAlive || f.IsClone || f.IsGuard) continue;
+            if (f.Faction == BattleFaction.Heroes) result.ourDead.Add(f.Data);
+            else result.theirDead.Add(f.Data);
+        }
 
         // Сначала место боя применяет итог (захват, урон базе) и показывает окно итога,
         // а на карту возвращаемся, когда игрок нажмёт "ПРОДОЛЖИТЬ"

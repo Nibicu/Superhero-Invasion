@@ -221,6 +221,14 @@ public static class HeroBarBuilder
         so.FindProperty("selection").objectReferenceValue = sel;
         so.FindProperty("statusText").objectReferenceValue = status;
         so.FindProperty("button").objectReferenceValue = button;
+
+        // Жизни: значок сердца и число в правом верхнем углу
+        var heart = Img("LifeIcon", bg.rectTransform, StatIconsBuilder.Load("Hp"), Color.white);
+        Place(heart.rectTransform, new Vector2(1f, 1f), new Vector2(-14, -12), new Vector2(18, 18));
+        heart.raycastTarget = false;
+        var lives = Text("Lives", bg.rectTransform, "3", 18, Color.white, TextAlignmentOptions.Center, true);
+        Place(lives.rectTransform, new Vector2(1f, 1f), new Vector2(-14, -12), new Vector2(20, 20));
+        so.FindProperty("livesText").objectReferenceValue = lives;
         so.ApplyModifiedPropertiesWithoutUndo();
         return a;
     }

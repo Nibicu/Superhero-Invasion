@@ -33,14 +33,10 @@ public class HeroManager : MonoBehaviour
     [SerializeField] private int maxHeroLimit = 20;
     [Tooltip("Максимальный уровень героя")]
     [SerializeField] private int maxHeroLevel = 5;
-    [Tooltip("Цена прокачки уровня героя в плутонии (нужна Лаборатория на базе)")]
-    [SerializeField] private int levelUpPlutoniumCost = 30;
-
-    [Header("Усиление в Институте (за плутоний)")]
-    [Tooltip("Сколько раз можно усилить одного героя")]
-    [SerializeField] private int maxBoosts = 3;
-    [Tooltip("Цена усиления = это число × (сколько усилений уже было + 1)")]
-    [SerializeField] private int boostPlutoniumCost = 20;
+    [Tooltip("Сколько плутония стоит повышение звезды (на 5 уровне, один раз)")]
+    [SerializeField] private int starUpPlutoniumCost = 150;
+    [Tooltip("Сколько фаз побеждённый герой ждёт, прежде чем его можно восстановить")]
+    [SerializeField] private int defeatCooldownPhases = 2;
 
     private readonly List<HeroInstance> playerHeroes = new List<HeroInstance>(); // Нанятые герои игрока
     private readonly List<HeroInstance> enemyHeroes = new List<HeroInstance>();  // Нанятые злодеи врага
@@ -98,6 +94,8 @@ public class HeroManager : MonoBehaviour
     {
         foreach (HeroInstance h in GetHeroes(team))
             if (h.Data == data) return true;
+        foreach (DefeatedHero d in GetDefeated(team))
+            if (d.hero.Data == data) return true; // побеждённого героя заново не нанять — только восстановить
         return false;
     }
 
@@ -146,6 +144,8 @@ public class HeroManager : MonoBehaviour
         reason = null;
         if (data.side != GetSide(team)) { reason = "Чужая сторона"; return false; }
         if (PhaseManager.Instance != null && !PhaseManager.Instance.CanHire) { reason = "Только в паузе"; return false; }
+        foreach (DefeatedHero d in GetDefeated(team))
+            if (d.hero.Data == data) { reason = "Побеждён"; return false; }
         if (IsHired(team, data)) { reason = "Нанят"; return false; }
         if (data.stars > GetMaxStars(team))
         {
@@ -174,6 +174,13 @@ public class HeroManager : MonoBehaviour
         list.Add(new HeroInstance(data, team));
         HeroesChanged?.Invoke(team);
         return true;
+    }
+
+    /// <summary>Лидер стороны — первый герой в иерархии (пока ничего не даёт, понадобится позже).</summary>
+    public HeroInstance GetLeader(Team team)
+    {
+        var list = team == Team.Player ? playerHeroes : enemyHeroes;
+        return list.Count > 0 ? list[0] : null;
     }
 
     /// <summary>
@@ -216,82 +223,122 @@ public class HeroManager : MonoBehaviour
         HeroesChanged?.Invoke(team);
     }
 
-    // ---------- Прокачка ----------
+    // ---------- Опыт, уровень и звезда ----------
 
-    /// <summary>Цена прокачки героя до следующего уровня в плутонии (0 — если уже максимум).</summary>
-    public int GetLevelUpCost(HeroInstance hero) => hero.Level >= maxHeroLevel ? 0 : levelUpPlutoniumCost;
+    /// <summary>Сколько плутония стоит повышение звезды.</summary>
+    public int StarUpCost => starUpPlutoniumCost;
 
     /// <summary>
-    /// Можно ли прокачать героя (без учёта плутония): не максимальный уровень
-    /// и на базе его стороны построена Лаборатория.
+    /// Дать герою опыт (за задания и бои). Каждые 100 опыта — новый уровень (до максимума).
     /// </summary>
-    public bool CanLevelUp(HeroInstance hero, out string reason)
+    public void GiveXp(HeroInstance hero, int amount)
+    {
+        if (hero == null) return;
+        int gained = hero.AddXp(amount, maxHeroLevel);
+        if (gained > 0 && hero.Owner == Team.Player)
+            ToastUI.Show(hero.Level >= maxHeroLevel
+                ? $"{hero.Data.displayName} достиг {hero.Level} уровня! В паузе можно повысить звезду"
+                : $"{hero.Data.displayName} достиг {hero.Level} уровня!");
+        HeroesChanged?.Invoke(hero.Owner);
+    }
+
+    /// <summary>Готов ли герой повысить звезду (5 уровень, звезда ещё не повышена) — без учёта паузы и плутония.</summary>
+    public bool StarReady(HeroInstance hero) => hero.Level >= maxHeroLevel && !hero.StarUpgraded;
+
+    /// <summary>Можно ли повысить звезду сейчас. Если нельзя — reason объясняет почему.</summary>
+    public bool CanStarUp(HeroInstance hero, out string reason)
     {
         reason = null;
-        if (hero.Level >= maxHeroLevel) { reason = "Максимальный уровень"; return false; }
-        MainBase b = MainBase.Get(hero.Owner);
-        if (b == null || !b.HasBuildingOfType(BuildingType.Laboratory)) { reason = "Нужна Лаборатория"; return false; }
+        if (hero.StarUpgraded) { reason = "Звезда уже повышена"; return false; }
+        if (hero.Level < maxHeroLevel) { reason = $"Нужен {maxHeroLevel} уровень"; return false; }
+        if (PhaseManager.Instance != null && !PhaseManager.Instance.CanBuild) { reason = "Только в паузе"; return false; }
         return true;
     }
 
-    /// <summary>Прокачать героя на 1 уровень в Лаборатории за плутоний.</summary>
-    public bool TryLevelUp(HeroInstance hero, out string error)
+    /// <summary>
+    /// Повысить звезду за плутоний: характеристики как у героя с этим числом звёзд
+    /// (3★ становится 3.5★ и получает +10%). Только один раз.
+    /// </summary>
+    public bool TryStarUp(HeroInstance hero, out string error)
     {
-        if (!CanLevelUp(hero, out error))
-        {
-            if (error == "Нужна Лаборатория") error = "Постройте Лабораторию на базе, чтобы прокачивать героев";
-            return false;
-        }
-        if (!ResourceManager.Instance.TrySpend(hero.Owner, 0, GetLevelUpCost(hero)))
-        {
-            error = "Не хватает плутония";
-            return false;
-        }
-        hero.LevelUp();
+        if (!CanStarUp(hero, out error)) return false;
+        if (!ResourceManager.Instance.TrySpend(hero.Owner, 0, starUpPlutoniumCost)) { error = "Не хватает плутония"; return false; }
+        hero.UpgradeStar();
         HeroesChanged?.Invoke(hero.Owner);
         return true;
     }
 
-    /// <summary>Бесплатно поднять уровень героя (награда за миссию). Вернёт false, если уже максимум.</summary>
-    public bool FreeLevelUp(HeroInstance hero)
+    // ---------- Жизни и побеждённые герои ----------
+
+    /// <summary>Побеждённый герой: ждёт восстановления.</summary>
+    public class DefeatedHero
     {
-        if (hero.Level >= maxHeroLevel) return false;
-        hero.LevelUp();
-        HeroesChanged?.Invoke(hero.Owner);
-        return true;
+        public HeroInstance hero;  // Сам герой (уровень, опыт, звезда сохраняются)
+        public int phasesLeft;     // Сколько фаз ещё ждать
     }
 
-    // ---------- Усиление (Институт ядерной физики) ----------
+    private readonly List<DefeatedHero> playerDefeated = new List<DefeatedHero>(); // Побеждённые герои игрока
+    private readonly List<DefeatedHero> enemyDefeated = new List<DefeatedHero>();  // Побеждённые герои врага
 
-    /// <summary>Сколько раз можно усилить героя.</summary>
-    public int MaxBoosts => maxBoosts;
+    /// <summary>Побеждённые герои стороны.</summary>
+    public IReadOnlyList<DefeatedHero> GetDefeated(Team team) => team == Team.Player ? playerDefeated : enemyDefeated;
 
-    /// <summary>Цена следующего усиления в плутонии.</summary>
-    public int GetBoostCost(HeroInstance hero) => boostPlutoniumCost * (hero.Boosts + 1);
+    /// <summary>
+    /// Герой выбыл в бою: минус жизнь. Жизней не осталось — герой побеждён: пропадает из списка героев,
+    /// его вещи уходят в инвентарь, место в лимите освобождается; восстановить его можно через 2 фазы за двойную цену.
+    /// </summary>
+    public void LoseLife(HeroInstance hero)
+    {
+        if (hero == null || hero.Lives <= 0) return;
+        hero.Lives--;
+        if (hero.Lives > 0)
+        {
+            if (hero.Owner == Team.Player) ToastUI.Show($"{hero.Data.displayName} выбыл в бою — осталось жизней: {hero.Lives}");
+            HeroesChanged?.Invoke(hero.Owner);
+            return;
+        }
+        var list = hero.Owner == Team.Player ? playerHeroes : enemyHeroes;
+        list.Remove(hero);
+        if (ArtifactManager.Instance != null) ArtifactManager.Instance.ReturnAll(hero);
+        (hero.Owner == Team.Player ? playerDefeated : enemyDefeated).Add(new DefeatedHero { hero = hero, phasesLeft = defeatCooldownPhases });
+        if (hero.Owner == Team.Player) ToastUI.Show($"{hero.Data.displayName} побеждён! Восстановить можно через {defeatCooldownPhases} фазы");
+        HeroesChanged?.Invoke(hero.Owner);
+    }
 
-    /// <summary>Можно ли усилить героя (без учёта плутония). reason — почему нельзя.</summary>
-    public bool CanBoost(HeroInstance hero, out string reason)
+    /// <summary>Началась новая фаза — побеждённые герои на шаг ближе к восстановлению.</summary>
+    public void OnPhaseStarted()
+    {
+        foreach (List<DefeatedHero> list in new[] { playerDefeated, enemyDefeated })
+            foreach (DefeatedHero d in list)
+                if (d.phasesLeft > 0) d.phasesLeft--;
+        HeroesChanged?.Invoke(Team.Player);
+    }
+
+    /// <summary>Цена восстановления побеждённого героя (двойная цена найма).</summary>
+    public int RestoreCost(DefeatedHero d) => d.hero.Data.hireCost * 2;
+
+    /// <summary>Можно ли восстановить героя. Если нельзя — reason объясняет почему.</summary>
+    public bool CanRestore(DefeatedHero d, out string reason)
     {
         reason = null;
-        if (hero.Boosts >= maxBoosts) { reason = "Макс. усиление"; return false; }
+        if (d.phasesLeft > 0) { reason = $"Через {d.phasesLeft} ф."; return false; }
+        if (PhaseManager.Instance != null && !PhaseManager.Instance.CanHire) { reason = "Только в паузе"; return false; }
+        if (GetHeroes(d.hero.Owner).Count >= GetHeroLimit(d.hero.Owner)) { reason = "Нет мест"; return false; }
         return true;
     }
 
-    /// <summary>Усилить героя за плутоний: +10% ко всем характеристикам.</summary>
-    public bool TryBoost(HeroInstance hero, out string error)
+    /// <summary>Восстановить побеждённого героя: 3 жизни, полное здоровье, уровень/опыт/звезда — как были.</summary>
+    public bool TryRestore(DefeatedHero d, out string error)
     {
-        if (!CanBoost(hero, out error))
-        {
-            if (error == "Нужен Институт") error = "Захватите Институт ядерной физики";
-            return false;
-        }
-        if (!ResourceManager.Instance.TrySpend(hero.Owner, 0, GetBoostCost(hero)))
-        {
-            error = "Не хватает плутония";
-            return false;
-        }
-        hero.AddBoost();
-        HeroesChanged?.Invoke(hero.Owner);
+        if (!CanRestore(d, out error)) return false;
+        if (!ResourceManager.Instance.TrySpend(d.hero.Owner, RestoreCost(d))) { error = "Не хватает золота"; return false; }
+        Team team = d.hero.Owner;
+        (team == Team.Player ? playerDefeated : enemyDefeated).Remove(d);
+        d.hero.Lives = HeroInstance.MaxLives;
+        d.hero.HpFraction = 1f;
+        d.hero.Status = HeroStatus.Free;
+        (team == Team.Player ? playerHeroes : enemyHeroes).Add(d.hero);
+        HeroesChanged?.Invoke(team);
         return true;
     }
 

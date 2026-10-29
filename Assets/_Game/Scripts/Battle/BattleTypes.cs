@@ -27,6 +27,8 @@ public struct BattleResult
     public float reinforcementHp; // Доля HP команды, пришедшей на защиту объекта (1 — если её не было)
     public int ourTerritories;   // Сколько территорий охраны прошли наши (портал запоминает прогресс)
     public int rivalTerritories; // Сколько территорий прошла команда врага (битва за флаг)
+    public List<HeroData> ourDead;   // Наши герои, выбывшие на арене (каждый теряет жизнь)
+    public List<HeroData> theirDead; // Герои противника (не охрана), выбывшие на арене
 }
 
 /// <summary>
@@ -93,8 +95,8 @@ public static class BoostNames
         switch (s)
         {
             case BoostStat.AutoAttack: return "Авто атака";
-            case BoostStat.Attack: return "Атака";
-            case BoostStat.SpecialAttack: return "Спец. атака";
+            case BoostStat.Attack: return "Сила атаки";
+            case BoostStat.SpecialAttack: return "Магия";
             case BoostStat.Defense: return "Защита";
             case BoostStat.SpecialDefense: return "Спец. защита";
             default: return "Скорость";

@@ -38,6 +38,7 @@ public class BuildMenuUI : MonoBehaviour
         mainBase = b;
         slotIndex = index;
         root.SetActive(true);
+        transform.SetAsLastSibling(); // поверх окна базы и паузы
         Refresh();
     }
 

@@ -25,6 +25,31 @@ public class GlobalMissionManager : MonoBehaviour
     [SerializeField] private bool debugCheats = true;
 
     private readonly List<GlobalMission> active = new List<GlobalMission>(); // Задания на карте
+    private readonly Dictionary<Team, int> cooldown = new Dictionary<Team, int>(); // Сколько пауз сторона не может брать задание
+
+    /// <summary>Сторона провалила своё задание — в следующей паузе брать задание нельзя.</summary>
+    public bool OnCooldown(Team team) => cooldown.TryGetValue(team, out int n) && n > 0;
+
+    /// <summary>
+    /// Видно ли задание стороне viewer: своё — всегда, чужое — только когда у него идёт подготовка к бою (или бой).
+    /// </summary>
+    public static bool IsVisibleTo(GlobalMission m, Team viewer) => m.LaunchedBy == viewer || m.IsUnderAttack;
+
+    /// <summary>Задание провалено (своя команда проиграла бой за него или его выполнил враг): задание пропадает, следующая пауза — без задания.</summary>
+    public void OnMissionFailed(GlobalMission m)
+    {
+        cooldown[m.LaunchedBy] = 1;
+        if (m.LaunchedBy == Team.Player) ToastUI.Show($"Задание «{m.Title}» провалено — в следующей паузе новое задание взять нельзя");
+        Remove(m);
+    }
+
+    /// <summary>Пауза закончилась — "перезарядка" заданий уменьшается.</summary>
+    public void OnPauseEnded()
+    {
+        foreach (Team t in new[] { Team.Player, Team.Enemy })
+            if (cooldown.TryGetValue(t, out int n) && n > 0) cooldown[t] = n - 1;
+        Changed?.Invoke();
+    }
 
     /// <summary>Задания фракции на карте сейчас.</summary>
     public IReadOnlyList<GlobalMission> Active => active;
@@ -80,6 +105,7 @@ public class GlobalMissionManager : MonoBehaviour
         reason = null;
         if (markerPrefab == null || data == null) { reason = "Нет задания"; return false; }
         if (HasLaunched(team)) { reason = "Уже идёт ваше задание"; return false; }
+        if (OnCooldown(team)) { reason = "Задание провалено — подождите паузу"; return false; }
         if (IsActive(data)) { reason = "Уже идёт"; return false; }
         return true;
     }
@@ -96,14 +122,15 @@ public class GlobalMissionManager : MonoBehaviour
         active.Add(m);
         if (team == Team.Player)
             ToastUI.Show($"Задание фракции «{m.Title}» началось! Награда: {StripTags(data.GetRewardText())}");
-        else
-            ToastUI.Show($"Враг начал своё задание — для нас это «{m.Title}». Можно помешать!");
-        Changed?.Invoke();
+        Changed?.Invoke(); // задание врага игроку не показываем, пока враг не начнёт подготовку к бою
         return m;
     }
 
     /// <summary>Задание выполнили — убираем его.</summary>
-    public void OnMissionCompleted(GlobalMission m)
+    public void OnMissionCompleted(GlobalMission m) => Remove(m);
+
+    /// <summary>Убрать задание с карты.</summary>
+    private void Remove(GlobalMission m)
     {
         if (!active.Remove(m)) return;
         if (MissionWindowUI.Instance != null) MissionWindowUI.Instance.OnGlobalRemoved(m);
