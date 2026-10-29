@@ -145,6 +145,7 @@ public class HeroManager : MonoBehaviour
     {
         reason = null;
         if (data.side != GetSide(team)) { reason = "Чужая сторона"; return false; }
+        if (PhaseManager.Instance != null && !PhaseManager.Instance.CanHire) { reason = "Только в паузе"; return false; }
         if (IsHired(team, data)) { reason = "Нанят"; return false; }
         if (data.stars > GetMaxStars(team))
         {
@@ -161,6 +162,7 @@ public class HeroManager : MonoBehaviour
         if (!CanHire(team, data, out error))
         {
             if (error == "Нет мест") error = "Достигнут лимит героев — постройте Резервные комнаты";
+            else if (error == "Только в паузе") error = "Нанимать героев можно только на драфте и в тактической паузе";
             return false;
         }
         if (!ResourceManager.Instance.TrySpend(team, data.hireCost))
@@ -172,6 +174,35 @@ public class HeroManager : MonoBehaviour
         list.Add(new HeroInstance(data, team));
         HeroesChanged?.Invoke(team);
         return true;
+    }
+
+    /// <summary>
+    /// Герой в запасе ("не в команде"): его место в иерархии дальше лимита героев.
+    /// Запасного героя нельзя отправить на задание и он не защищает базу; поставьте его выше
+    /// (поменяйте местами с другим героем) или дождитесь, пока лимит вырастет.
+    /// </summary>
+    public bool IsReserve(HeroInstance hero)
+    {
+        var list = hero.Owner == Team.Player ? playerHeroes : enemyHeroes;
+        int index = list.IndexOf(hero);
+        return index >= GetHeroLimit(hero.Owner);
+    }
+
+    /// <summary>
+    /// Подарить стороне случайного героя её стороны (не больше maxStars звёзд, которого ещё нет).
+    /// Даётся даже сверх лимита — тогда герой в запасе. Вернёт героя (или null, если дарить некого).
+    /// </summary>
+    public HeroInstance GrantRandomHero(Team team, int maxStars)
+    {
+        var options = new List<HeroData>();
+        foreach (HeroData d in GetRoster(team))
+            if (d.stars <= maxStars && !IsHired(team, d)) options.Add(d);
+        if (options.Count == 0) return null;
+        HeroData pick = options[UnityEngine.Random.Range(0, options.Count)];
+        var hero = new HeroInstance(pick, team);
+        (team == Team.Player ? playerHeroes : enemyHeroes).Add(hero);
+        HeroesChanged?.Invoke(team);
+        return hero;
     }
 
     /// <summary>
@@ -242,7 +273,6 @@ public class HeroManager : MonoBehaviour
     public bool CanBoost(HeroInstance hero, out string reason)
     {
         reason = null;
-        if (!MapObject.TeamCanBoostHeroes(hero.Owner)) { reason = "Нужен Институт"; return false; }
         if (hero.Boosts >= maxBoosts) { reason = "Макс. усиление"; return false; }
         return true;
     }

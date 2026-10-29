@@ -16,8 +16,17 @@ public class HeroAvatarUI : MonoBehaviour
     [SerializeField] private TMP_Text statusText;     // "В пути" / номер команды
     [SerializeField] private Button button;           // Клик по аватарке
 
+    private bool reserve; // Герой в запасе ("не в команде")
+
     /// <summary>Герой этой аватарки.</summary>
     public HeroInstance Hero { get; private set; }
+
+    /// <summary>Отметить героя как запасного ("не в команде").</summary>
+    public void SetReserve(bool on)
+    {
+        reserve = on;
+        UpdateState();
+    }
 
     /// <summary>Заполнить аватарку. clicked — что сделать по клику.</summary>
     public void Setup(HeroInstance hero, Action clicked)
@@ -37,11 +46,11 @@ public class HeroAvatarUI : MonoBehaviour
         hpFill.fillAmount = Hero.HpFraction;
         hpFill.color = Color.Lerp(new Color(0.9f, 0.25f, 0.25f), new Color(0.35f, 0.85f, 0.4f), Hero.HpFraction);
         bool away = !Hero.IsAtHome;
-        dim.gameObject.SetActive(away);
+        dim.gameObject.SetActive(away || reserve);
         if (statusText != null)
         {
-            statusText.gameObject.SetActive(away);
-            statusText.text = "В ПУТИ";
+            statusText.gameObject.SetActive(away || reserve);
+            statusText.text = reserve ? "ЗАПАС" : "В ПУТИ";
         }
     }
 

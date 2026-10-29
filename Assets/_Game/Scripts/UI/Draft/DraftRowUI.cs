@@ -41,6 +41,13 @@ public class DraftRowUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDr
         normalColor = background.color;
     }
 
+    /// <summary>Отметить строку: герой в запасе ("не в команде").</summary>
+    public void MarkReserve()
+    {
+        infoText.text += "  •  <color=#FF9A6B>ЗАПАС</color>";
+        background.color = normalColor = new Color(0.55f, 0.3f, 0.2f, 0.35f);
+    }
+
     /// <summary>Начали тянуть: строка выходит из раскладки и следует за курсором.</summary>
     public void OnBeginDrag(PointerEventData e)
     {

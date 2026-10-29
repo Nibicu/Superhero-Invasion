@@ -71,7 +71,7 @@ public class SquadManager : MonoBehaviour
     {
         var list = new List<HeroInstance>();
         foreach (HeroInstance h in HeroManager.Instance.GetHeroes(team))
-            if (h.IsAtHome) list.Add(h);
+            if (h.IsAtHome && !HeroManager.Instance.IsReserve(h)) list.Add(h); // запасные базу не защищают
         return list;
     }
 
@@ -101,7 +101,7 @@ public class SquadManager : MonoBehaviour
     {
         var list = new List<HeroInstance>();
         foreach (HeroInstance h in HeroManager.Instance.GetHeroes(team))
-            if (h.Status == HeroStatus.Free) list.Add(h);
+            if (h.Status == HeroStatus.Free && !HeroManager.Instance.IsReserve(h)) list.Add(h); // запасные не ходят на задания
         return list;
     }
 

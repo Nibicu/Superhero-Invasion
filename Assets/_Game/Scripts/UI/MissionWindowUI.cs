@@ -175,7 +175,7 @@ public class MissionWindowUI : WindowUI
         GlobalMissionData d = currentGlobal.Data;
         header.color = d.color;
         if (headerIcon != null) headerIcon.text = d.iconLetter;
-        titleText.text = $"ОБЩАЯ МИССИЯ: {d.title}";
+        titleText.text = $"ЗАДАНИЕ ФРАКЦИИ: {currentGlobal.Title}";
         descText.text = d.description;
 
         MainBase myBase = MainBase.Get(Team.Player);

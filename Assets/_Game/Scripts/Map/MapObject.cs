@@ -80,10 +80,10 @@ public class MapObject : AttackableSite, IIncomeSource
         return false;
     }
 
-    // IIncomeSource: доход идёт текущему владельцу
+    // IIncomeSource: постоянного дохода больше нет — объект даёт разовую награду в конце события
     Team IIncomeSource.Owner => owner;
-    public int GoldIncome => hasOwner ? data.goldIncome : 0;
-    public int PlutoniumIncome => hasOwner ? data.plutoniumIncome : 0;
+    public int GoldIncome => 0;
+    public int PlutoniumIncome => 0;
     public string SourceName => data.displayName;
 
     // ---------- Место нападения (AttackableSite) ----------
@@ -314,7 +314,7 @@ public class MapObject : AttackableSite, IIncomeSource
         bool wasOurs = IsOwnedBy(Team.Player);
         SetOwner(newOwner);
         if (newOwner == Team.Player)
-            ToastUI.Show($"{data.displayName} захвачен! {data.GetBonusText().Split('\n')[0]}");
+            ToastUI.Show($"{data.displayName} захвачен! Удержите до конца события — награда: {data.GetEventRewardText()}");
         else if (wasOurs)
             ToastUI.Show($"Враг захватил наш объект: {data.displayName}!");
         else
@@ -345,16 +345,8 @@ public class MapObject : AttackableSite, IIncomeSource
     /// </summary>
     private void ApplyEffects(Team team, int sign)
     {
-        if (data.heroLimitBonus != 0)
-            HeroManager.Instance.AddExtraLimit(team, data.heroLimitBonus * sign);
-
-        if (data.unlocksFactoryUpgrades)
-        {
-            MainBase b = MainBase.Get(team);
-            if (b != null) b.FactoryUpgradesUnlocked = sign > 0 || TeamOwnsOtherFactory(team);
-        }
-
-        if (data.allowsHeroBoost) HeroManager.Instance.NotifyChanged(team);
+        // Особые бонусы объектов (лимит героев, Завод, Институт) пока убраны:
+        // объект даёт только разовую награду в конце события (EventManager).
     }
 
     /// <summary>Есть ли у стороны другой Завод, кроме этого (на случай, если Заводов несколько).</summary>

@@ -297,8 +297,9 @@ public class EnemyAI : MonoBehaviour
         if (p != null && p.IsOpen && !p.IsClosed && p.TimeLeft > 40f) list.Add(p);
         MapObject o = EM != null ? EM.EventObject : null;
         if (o != null && o.IsActive && !o.IsOwnedBy(team) && o.EventTimeLeft > 40f) list.Add(o);
-        GlobalMission g = GlobalMissionManager.Instance != null ? GlobalMissionManager.Instance.Current : null;
-        if (g != null && !g.IsCompleted && !EventSoon) list.Add(g);
+        if (GlobalMissionManager.Instance != null)
+            foreach (GlobalMission g in GlobalMissionManager.Instance.Active)
+                if (!g.IsCompleted) list.Add(g);
         return list;
     }
 
@@ -489,8 +490,10 @@ public class EnemyAI : MonoBehaviour
 
         // Общая миссия: награда как у объекта (золото, плутоний, артефакты), охрана по территориям.
         // Если её уже выполняет противник — вступаем в битву за флаг, только если успеем и не слабее его
-        GlobalMission gm = GlobalMissionManager.Instance != null ? GlobalMissionManager.Instance.Current : null;
-        if (gm != null && !gm.IsCompleted && !IsOrdered(gm) && !EventSoon && gm.CanAccept(squad, out _))
+        if (GlobalMissionManager.Instance != null)
+        foreach (GlobalMission gm in GlobalMissionManager.Instance.Active)
+        {
+        if (gm.IsCompleted || IsOrdered(gm) || !gm.CanAccept(squad, out _)) continue;
         {
             bool join = gm.IsUnderAttack;
             bool ok = !join || (gm.CanJoin(team) && SM.EstimateTravelTime(squad, gm) <= gm.PrepLeft - 1f
@@ -503,9 +506,11 @@ public class EnemyAI : MonoBehaviour
                 if (forecast == BattleForecast.Equal) value *= 0.7f;
                 value *= objectPriority; // общая миссия ценна, как объект
                 if (join) value *= 1.6f; // перебить противника — заодно не дать ему награду
+                if (d.rewardHero) value += 900f; // герой в награду — очень ценно
                 float score = value / (Vector3.Distance(home, gm.ApproachPoint) + 5f);
                 if (score > bestScore) { bestScore = score; best = gm; }
             }
+        }
         }
 
         // Портал (событие): закрыть его — артефакт и урон базе противника, не закрыть — урон нам.
@@ -596,6 +601,24 @@ public class EnemyAI : MonoBehaviour
     }
 
     // ---------- Деньги ----------
+
+    /// <summary>
+    /// Тактическая пауза (вызывает PhaseManager): ИИ нанимает героев, прокачивает и усиливает их,
+    /// надевает вещи и начинает своё задание фракции (если его ещё нет).
+    /// </summary>
+    public void OnTacticalPause()
+    {
+        for (int i = 0; i < 10 && TryHire(); i++) { }
+        for (int i = 0; i < 10 && TryLevelUpHero(); i++) { }
+        for (int i = 0; i < 10 && TryBoostHero(); i++) { }
+        UseArtifacts();
+        GlobalMissionManager gmm = GlobalMissionManager.Instance;
+        if (gmm == null || gmm.HasLaunched(team)) return;
+        var options = new List<GlobalMissionData>();
+        foreach (GlobalMissionData d in gmm.Pool)
+            if (gmm.CanLaunch(team, d, out _)) options.Add(d);
+        if (options.Count > 0) gmm.Launch(team, options[Random.Range(0, options.Count)]);
+    }
 
     /// <summary>Драфт перед игрой: нанять одного героя (карта стоит, поэтому вызывает DraftUI). Вернёт false, если больше некого.</summary>
     public bool DraftHire() => TryHire();

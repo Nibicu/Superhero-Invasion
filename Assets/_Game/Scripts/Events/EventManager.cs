@@ -10,12 +10,11 @@ public enum GameEventKind
 }
 
 /// <summary>
-/// Расписание событий (объект Managers). Игра идёт по кругу:
-///  затишье (quietTime, 4 мин) → событие (eventDuration, 5 мин) → затишье → ...
-///  Посередине затишья (через 2:00) появляется общая миссия (GlobalMissionManager).
+/// События (объект Managers). Когда событие начинается, решают фазы игры (PhaseManager):
+///  событие идёт в фазе события (eventDuration, 2 мин). Без PhaseManager — старое расписание (затишье → событие).
 /// События идут по порядку из списка order: "объект, объект, портал" и снова сначала.
 /// Событие "Объект": открывается случайный неактивный объект; по окончании последний
-///  владелец получает артефакт, а объект снова ничей и неактивен.
+///  владелец получает разовую награду (золото, плутоний, артефакт), а объект снова ничей и неактивен.
 /// Событие "Портал": открывается портал; закрыл один — урон базе другого (это делает сам Portal);
 ///  никто не закрыл — урон обеим базам.
 /// Если время вышло, а за объект/портал ещё идёт бой — событие ждёт итога боя.
@@ -33,9 +32,7 @@ public class EventManager : MonoBehaviour
     [Tooltip("Сколько секунд затишья между событиями")]
     [SerializeField] private float quietTime = 240f;
     [Tooltip("Сколько секунд длится событие")]
-    [SerializeField] private float eventDuration = 300f;
-    [Tooltip("Создавать общую миссию посередине затишья")]
-    [SerializeField] private bool spawnGlobalMission = true;
+    [SerializeField] private float eventDuration = 120f;
 
     [Header("Портал")]
     [Tooltip("Портал в центре карты (объект Portal в сцене)")]
@@ -49,7 +46,6 @@ public class EventManager : MonoBehaviour
     private float timer;            // Секунд до события (затишье) или до конца события
     private float quietLength;      // Длина текущего затишья (для полоски)
     private int index;              // Какое событие из order следующее/текущее
-    private bool globalSpawned;     // Общая миссия в этом затишье уже была
     private MapObject eventObject;  // Объект текущего события
     private GameEventKind current;  // Вид текущего события
 
@@ -85,27 +81,33 @@ public class EventManager : MonoBehaviour
         if (Instance == this) Instance = null;
     }
 
-    /// <summary>Отсчёт затишья и событий.</summary>
+    /// <summary>
+    /// Отсчёт события. Когда события начинаются, решают фазы игры (PhaseManager):
+    /// событие идёт в фазе события. Без PhaseManager — старое расписание (затишье → событие).
+    /// </summary>
     private void Update()
     {
-        if (debugCheats && Input.GetKeyDown(KeyCode.E)) SkipTimer();
+        bool phases = PhaseManager.Instance != null;
+        if (!phases && debugCheats && Input.GetKeyDown(KeyCode.E)) SkipTimer();
 
         timer -= WorldTime.DeltaTime;
 
         if (!running)
         {
-            // Посередине затишья — общая миссия
-            if (spawnGlobalMission && !globalSpawned && timer <= quietLength / 2f)
-            {
-                globalSpawned = true;
-                if (GlobalMissionManager.Instance != null && GlobalMissionManager.Instance.Current == null)
-                    GlobalMissionManager.Instance.Spawn();
-            }
+            if (phases) return; // ждём фазу события
             if (timer <= 0f) StartEvent();
             return;
         }
 
         UpdateEvent();
+    }
+
+    /// <summary>Начать следующее событие по порядку на duration секунд (вызывает PhaseManager). Вернёт, началось ли оно.</summary>
+    public bool StartNext(float duration)
+    {
+        eventDuration = duration;
+        StartEvent();
+        return running;
     }
 
     /// <summary>Отладка: затишье — сразу начать событие; событие — сразу закончить (дождётся конца боя).</summary>
@@ -132,7 +134,7 @@ public class EventManager : MonoBehaviour
             timer = eventDuration;
             eventObject.EventTimeLeft = eventDuration;
             eventObject.Activate();
-            ToastUI.Show($"СОБЫТИЕ: открыт объект «{eventObject.Data.displayName}»! {Mathf.RoundToInt(eventDuration / 60f)} мин на захват — последний владелец получит артефакт");
+            ToastUI.Show($"СОБЫТИЕ: открыт объект «{eventObject.Data.displayName}»! {Mathf.RoundToInt(eventDuration / 60f)} мин на захват — последний владелец получит награду");
         }
         else
         {
@@ -181,12 +183,15 @@ public class EventManager : MonoBehaviour
         string name = o.Data.displayName;
         if (o.Deactivate(out Team owner))
         {
+            // Разовая награда последнему владельцу: золото, плутоний и артефакт
+            ResourceManager.Instance.Add(owner, o.Data.eventGold, o.Data.eventPlutonium);
             ArtifactData a = ArtifactManager.Instance != null ? ArtifactManager.Instance.GiveRandom(owner) : null;
             string art = a != null ? $"<color=#FF9EE6>артефакт «{a.displayName}»</color>" : "артефакт";
+            string res = o.Data.GetEventRewardText(false);
             if (owner == Team.Player)
-                BattleResultWindowUI.Show(true, $"Событие окончено!\n«{name}» был нашим до конца — получен {art}.\n<size=80%>Объект снова неактивен.</size>");
+                BattleResultWindowUI.Show(true, $"Событие окончено!\n«{name}» был нашим до конца — получено: {res}, {art}.\n<size=80%>Объект снова неактивен.</size>");
             else
-                BattleResultWindowUI.Show(false, $"Событие окончено.\n«{name}» остался за врагом — враг получил артефакт.\n<size=80%>Объект снова неактивен.</size>");
+                BattleResultWindowUI.Show(false, $"Событие окончено.\n«{name}» остался за врагом — враг получил награду.\n<size=80%>Объект снова неактивен.</size>");
         }
         else ToastUI.Show($"Событие окончено: «{name}» никто не захватил. Объект снова неактивен");
         BeginQuiet();
@@ -214,7 +219,6 @@ public class EventManager : MonoBehaviour
     {
         running = false;
         timer = quietLength = quietTime;
-        globalSpawned = false;
         Changed?.Invoke();
     }
 

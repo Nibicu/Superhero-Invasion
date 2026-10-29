@@ -148,8 +148,9 @@ public class MissionManager : MonoBehaviour
             if (Vector2.Distance(o.transform.position, pos) < minDistanceFromObjects) return true;
         foreach (MissionMarker m in active)
             if (Vector2.Distance(m.transform.position, pos) < minDistanceFromObjects) return true;
-        GlobalMission g = GlobalMissionManager.Instance != null ? GlobalMissionManager.Instance.Current : null;
-        if (g != null && Vector2.Distance(g.transform.position, pos) < minDistanceFromObjects + 1f) return true;
+        if (GlobalMissionManager.Instance != null)
+            foreach (GlobalMission g in GlobalMissionManager.Instance.Active)
+                if (Vector2.Distance(g.transform.position, pos) < minDistanceFromObjects + 1f) return true;
         foreach (Team t in new[] { Team.Player, Team.Enemy })
         {
             MainBase b = MainBase.Get(t);

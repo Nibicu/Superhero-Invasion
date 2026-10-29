@@ -45,6 +45,23 @@ public class MapObjectData : ScriptableObject
     [Tooltip("Разрешает усиливать героев за плутоний (Институт)")]
     public bool allowsHeroBoost = false;
 
+    [Header("Разовая награда (событие «Объект»)")]
+    [Tooltip("Золото последнему владельцу в конце события")]
+    public int eventGold = 300;
+
+    [Tooltip("Плутоний последнему владельцу в конце события")]
+    public int eventPlutonium = 0;
+
+    /// <summary>Текст разовой награды (с цветами или без).</summary>
+    public string GetEventRewardText(bool withArtifact = true)
+    {
+        var parts = new System.Collections.Generic.List<string>();
+        if (eventGold > 0) parts.Add($"<color=#FFD84A>+{eventGold} золота</color>");
+        if (eventPlutonium > 0) parts.Add($"<color=#C58BFF>+{eventPlutonium} плутония</color>");
+        if (withArtifact) parts.Add("<color=#FF9EE6>артефакт</color>");
+        return string.Join(", ", parts);
+    }
+
     [Tooltip("Дополнительный текст бонусов (то, что пока не работает в коде — например, ракеты)")]
     [TextArea(1, 3)] public string extraBonusText = "";
 

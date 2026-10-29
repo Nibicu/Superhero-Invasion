@@ -19,6 +19,7 @@ public class EventTimerUI : MonoBehaviour
     [Header("Цвета")]
     [SerializeField] private Color quietColor = new Color(0.1f, 0.12f, 0.17f, 0.9f);
     [SerializeField] private Color eventColor = new Color(0.45f, 0.2f, 0.55f, 0.95f);
+    [SerializeField] private Color pauseColor = new Color(0.16f, 0.36f, 0.62f, 0.95f);
 
     private void Awake()
     {
@@ -30,6 +31,7 @@ public class EventTimerUI : MonoBehaviour
     {
         EventManager em = EventManager.Instance;
         if (em == null || text == null) return;
+        if (PhaseManager.Instance != null) { ShowPhase(PhaseManager.Instance, em); return; }
         string time = Format(em.TimeLeft);
 
         if (!em.IsRunning)
@@ -46,6 +48,40 @@ public class EventTimerUI : MonoBehaviour
         }
         if (fill != null) fill.fillAmount = em.Progress;
         if (background != null) background.color = em.IsRunning ? eventColor : quietColor;
+    }
+
+    /// <summary>Фазы игры: "ФАЗА МИССИЙ 1:45 • дальше: пауза, Событие (Портал)" и т.п.</summary>
+    private void ShowPhase(PhaseManager pm, EventManager em)
+    {
+        string time = $"<color=#FFD84A>{Format(pm.TimeLeft)}</color>";
+        string nextEvent = em.KindName(em.Kind);
+        switch (pm.Phase)
+        {
+            case GamePhase.Draft:
+                text.text = "ДРАФТ";
+                break;
+            case GamePhase.Missions:
+                text.text = $"ФАЗА МИССИЙ  {time}  <size=80%><color=#9AA4B5>• дальше: пауза, событие «{nextEvent}»</color></size>";
+                break;
+            case GamePhase.Pause:
+                text.text = $"ТАКТИЧЕСКАЯ ПАУЗА  {time}  <size=80%><color=#C9D8F0>• дальше: {(pm.NextPhase == GamePhase.Event ? $"событие «{nextEvent}»" : "миссии")}</color></size>";
+                break;
+            default:
+                if (em.IsRunning && em.Kind == GameEventKind.Object && em.EventObject != null)
+                    text.text = $"СОБЫТИЕ: {em.EventObject.Data.displayName.ToUpper()}  {time}";
+                else if (em.IsRunning && em.Kind == GameEventKind.Portal && em.Portal != null)
+                {
+                    Portal p = em.Portal;
+                    text.text = p.IsClosed
+                        ? $"ПОРТАЛ ЗАКРЫТ {(p.ClosedBy == Team.Player ? "<color=#7FB8FF>НАМИ</color>" : "<color=#FF7A7A>ВРАГОМ</color>")}  {time}"
+                        : $"ПОРТАЛ  {time}  <size=80%><color=#7FB8FF>мы {p.GetProgress(Team.Player)}/{p.TerritoryCount}</color> " +
+                          $"<color=#FF7A7A>враг {p.GetProgress(Team.Enemy)}/{p.TerritoryCount}</color></size>";
+                }
+                else text.text = $"ФАЗА СОБЫТИЯ  {time}";
+                break;
+        }
+        if (fill != null) fill.fillAmount = pm.Progress;
+        if (background != null) background.color = pm.Phase == GamePhase.Event ? eventColor : pm.Phase == GamePhase.Pause ? pauseColor : quietColor;
     }
 
     /// <summary>"4:05".</summary>

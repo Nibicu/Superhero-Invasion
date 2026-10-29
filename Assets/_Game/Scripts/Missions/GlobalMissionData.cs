@@ -24,6 +24,30 @@ public class GlobalMissionData : ScriptableObject
     [Tooltip("Буква/символ в круге на карте (временная графика)")]
     public string iconLetter = "!";
 
+    [Header("Задание фракции")]
+    [Tooltip("Как задание называется у героев (пусто — общее название)")]
+    public string heroesTitle = "";
+
+    [Tooltip("Как задание называется у злодеев (пусто — общее название)")]
+    public string villainsTitle = "";
+
+    [Tooltip("Где на карте появляется задание (координаты мира)")]
+    public Vector2 mapPosition;
+
+    [Tooltip("Награда — случайный герой стороны победителя (даже сверх лимита — тогда в запас)")]
+    public bool rewardHero = false;
+
+    [Tooltip("Герой-награда — не больше скольких звёзд")]
+    [Range(1, 3)] public int rewardHeroMaxStars = 2;
+
+    /// <summary>Название задания для стороны viewer (герои и злодеи видят его по-своему).</summary>
+    public string TitleFor(Team viewer)
+    {
+        bool heroes = HeroManager.Instance == null || HeroManager.Instance.GetSide(viewer) == Side.Heroes;
+        string t = heroes ? heroesTitle : villainsTitle;
+        return string.IsNullOrWhiteSpace(t) ? title : t;
+    }
+
     [Header("Охрана")]
     [Tooltip("Волны охраны — по одной на каждую территорию арены (обычно 3)")]
     public GuardWave[] waves = new GuardWave[0];
@@ -62,7 +86,8 @@ public class GlobalMissionData : ScriptableObject
         var sb = new StringBuilder();
         if (rewardGold > 0) sb.Append($"<color=#FFD84A>+{rewardGold} золота</color>   ");
         if (rewardPlutonium > 0) sb.Append($"<color=#C58BFF>+{rewardPlutonium} плутония</color>   ");
-        if (rewardArtifacts > 0) sb.Append($"<color=#FF9EE6>+{rewardArtifacts} {(rewardArtifacts == 1 ? "артефакт" : "артефакта")}</color>");
+        if (rewardArtifacts > 0) sb.Append($"<color=#FF9EE6>+{rewardArtifacts} {(rewardArtifacts == 1 ? "артефакт" : "артефакта")}</color>   ");
+        if (rewardHero) sb.Append($"<color=#7FE0FF>случайный герой 1–{rewardHeroMaxStars} зв.</color>");
         return sb.ToString().Trim();
     }
 }

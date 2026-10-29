@@ -17,7 +17,6 @@ MonoBehaviour:
   icon: {fileID: 0}
   iconLetter: $
   color: {r: 0.9098039, g: 0.69803923, b: 0.22745098, a: 1}
-  captureTime: 15
   waves:
   - guards:
     - unit: {fileID: 11400000, guid: 69229f06c0946c84bb409c279b571cae, type: 2}
@@ -35,4 +34,6 @@ MonoBehaviour:
   heroLimitBonus: 0
   unlocksFactoryUpgrades: 0
   allowsHeroBoost: 0
+  eventGold: 600
+  eventPlutonium: 0
   extraBonusText: 

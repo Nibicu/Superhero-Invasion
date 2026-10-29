@@ -91,6 +91,7 @@ public class HeroBarUI : MonoBehaviour
             rt.anchoredPosition = new Vector2(x + i * step, 0f);
             HeroData data = heroes[i].Data;
             a.Setup(heroes[i], () => heroInfo.ShowHero(data));
+            a.SetReserve(hm.IsReserve(heroes[i]));
             avatars.Add(a);
         }
     }

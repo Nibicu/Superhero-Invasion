@@ -52,8 +52,14 @@ public class GlobalMission : AttackableSite
 
     // ---------- Место нападения (AttackableSite) ----------
 
-    public override string TargetName => Data.title;
-    public override string SiteName => Data.title;
+    public override string TargetName => Title;
+    public override string SiteName => Title;
+
+    /// <summary>Название задания так, как его видит игрок (у героев и злодеев — по-своему).</summary>
+    public string Title => Data.TitleFor(Team.Player);
+
+    /// <summary>Кто начал это задание фракции.</summary>
+    public Team LaunchedBy { get; set; }
     public override Color SiteColor => Data.color;
 
     /// <summary>Сила охраны миссии.</summary>
@@ -131,10 +137,16 @@ public class GlobalMission : AttackableSite
                 ArtifactData a = ArtifactManager.Instance.GiveRandom(team);
                 if (a != null) got.Add($"<color=#FF9EE6>артефакт «{a.displayName}»</color>");
             }
+        if (Data.rewardHero)
+        {
+            HeroInstance hero = HeroManager.Instance.GrantRandomHero(team, Data.rewardHeroMaxStars);
+            if (hero != null)
+                got.Add($"<color=#7FE0FF>герой {hero.Data.displayName} ({hero.Data.stars} зв.){(HeroManager.Instance.IsReserve(hero) ? " — в запасе" : "")}</color>");
+        }
         rewardText = string.Join(",  ", got);
 
-        if (team == Team.Player) ToastUI.Show($"Общая миссия «{Data.title}» выполнена!");
-        else ToastUI.Show($"Враг выполнил общую миссию «{Data.title}»");
+        if (team == Team.Player) ToastUI.Show($"Задание «{Title}» выполнено!");
+        else ToastUI.Show($"Враг выполнил задание «{Title}»");
 
         if (manager != null) manager.OnMissionCompleted(this);
     }
@@ -142,8 +154,8 @@ public class GlobalMission : AttackableSite
     /// <summary>Текст для окна итога.</summary>
     protected override string AttackerWonText(Team winner) =>
         winner == Team.Player
-            ? $"Общая миссия «{Data.title}» выполнена!\n<size=85%>Награда: {rewardText}</size>"
-            : $"Общую миссию «{Data.title}» выполнил враг.";
+            ? $"Задание «{Title}» выполнено!\n<size=85%>Награда: {rewardText}</size>"
+            : $"Задание «{Title}» выполнил враг.";
 
     // ---------- Жизненный цикл ----------
 
@@ -165,7 +177,7 @@ public class GlobalMission : AttackableSite
         if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) return;
         if (IsUnderAttack && CanJoin(Team.Player))
         {
-            ToastUI.Show($"Враг выполняет «{Data.title}»! Успейте за {Mathf.CeilToInt(PrepLeft)} с — будет битва за флаг");
+            ToastUI.Show($"Враг выполняет «{Title}»! Успейте за {Mathf.CeilToInt(PrepLeft)} с — будет битва за флаг");
             if (MissionWindowUI.Instance != null) MissionWindowUI.Instance.OpenJoinPicker(this);
             return;
         }
@@ -179,7 +191,7 @@ public class GlobalMission : AttackableSite
     protected override void UpdateAttackVisuals()
     {
         if (Data == null) return;
-        string status = "<color=#FFD84A>Общая миссия</color>";
+        string status = LaunchedBy == Team.Player ? "<color=#7FB8FF>Наше задание фракции</color>" : "<color=#FF9A9A>Задание врага</color>";
         if (IsUnderAttack)
         {
             string col = IsContested ? "#FFD84A" : AttackingTeam == Team.Player ? "#7FB8FF" : "#FF7A7A";
@@ -188,7 +200,7 @@ public class GlobalMission : AttackableSite
                 ? $"<color={col}>{what} через {Mathf.CeilToInt(PrepLeft)} с</color>"
                 : $"<color={col}>Идёт бой!</color>";
         }
-        if (label != null) label.text = $"{Data.title}\n<size=70%>{status}</size>";
+        if (label != null) label.text = $"{Title}\n<size=70%>{status}</size>";
 
         if (barRoot != null) barRoot.SetActive(IsUnderAttack);
         if (barFill == null || !IsUnderAttack) return;

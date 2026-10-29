@@ -83,7 +83,7 @@ public class MainBase : AttackableSite, IIncomeSource
     /// </summary>
     public bool FactoryUpgradesUnlocked
     {
-        get => factoryUpgradesUnlocked;
+        get => true; // бонус Завода убран — улучшения доходных построек доступны всегда
         set
         {
             if (factoryUpgradesUnlocked == value) return;
