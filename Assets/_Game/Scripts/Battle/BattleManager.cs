@@ -22,6 +22,11 @@ using UnityEngine.UI;
 ///   Если враг уже набрал 7 с, а мы его выбили — сначала отсчёт уходит обратно до нуля, потом идёт к нам.
 /// - Победа: удержали флаг или вся команда врага выбыла. Поражение — наоборот (или "Отступить").
 ///
+/// ДУЭЛЬ КОМАНД (полигон «Битва»): команда A (слева) против команды B (справа), без охраны.
+/// Обычная арена — одна территория, победа — вся команда соперника выбыла.
+/// Арена с флагом — 7 территорий без барьеров, команды начинают у центра; победа — флаг или все соперники выбыли.
+/// Если за duelTimeLimit секунд никто не победил — ничья.
+///
 /// После боя камера и интерфейс карты возвращаются, а место боя получает результат.
 /// Хранит списки бойцов, чтобы удары и ИИ не искали объекты по сцене каждый кадр.
 /// </summary>
@@ -106,6 +111,8 @@ public class BattleManager : MonoBehaviour
     [SerializeField] private float resultDelay = 2.5f;
     [Tooltip("Где появляются враги на своей территории (отступ от её края со стороны команды)")]
     [SerializeField] private float enemySpawnOffset = 13f;
+    [Tooltip("Дуэль команд (полигон): сколько секунд длится бой, потом — ничья")]
+    [SerializeField] private float duelTimeLimit = 180f;
 
     [Header("Интерфейс")]
     [Tooltip("Интерфейс карты — прячется на время боя")]
@@ -143,12 +150,26 @@ public class BattleManager : MonoBehaviour
     private float rivalRallyX;            // Куда идёт враг (мир)
     private float flagValue;              // Захват флага: + к нам, − к врагу (от −flagHoldTime до +flagHoldTime)
     private bool finishing;               // Итог уже известен, ждём возврата
+    private bool duel;                    // Дуэль команд (полигон): A против B без охраны
+    private bool drawResult;              // Бой закончился ничьей (дуэль: вышло время или бой остановлен)
+    private float duration;               // Сколько секунд длился бой (запоминается в момент итога)
+    private string finishDetails;         // Почему бой закончился
+    private float startTime;              // Когда начался бой (Time.time)
     private Camera cam;
     private Vector3 savedCamPos;
     private float savedCamSize;
 
     /// <summary>Идёт ли бой.</summary>
     public bool IsRunning { get; private set; }
+
+    /// <summary>Сколько секунд идёт бой.</summary>
+    public float Elapsed => IsRunning ? Time.time - startTime : 0f;
+
+    /// <summary>Бойцы команды слева (наши / команда A в полигоне).</summary>
+    public IReadOnlyList<Fighter> LeftTeam => heroes;
+
+    /// <summary>Бойцы команды справа (команда врага / команда B в полигоне).</summary>
+    public IReadOnlyList<Fighter> RightTeam => rivals;
 
     /// <summary>Куда складывать снаряды и бойцов.</summary>
     public Transform RuntimeRoot => runtimeRoot;
@@ -220,6 +241,7 @@ public class BattleManager : MonoBehaviour
         if (IsRunning) return;
         contested = false;
         defenseMode = false;
+        duel = false;
         totalTerritories = Mathf.Clamp(theirWaves.Count, 1, (barriers?.Length ?? 0) + 1);
         BeginBattle(title, color, theirWaves, finished);
 
@@ -246,6 +268,7 @@ public class BattleManager : MonoBehaviour
             Debug.LogError("BattleManager: для битвы за флаг нужно 6 барьеров на арене");
         contested = true;
         defenseMode = false;
+        duel = false;
         rivalLaneLength = LaneTerritories;
         totalTerritories = LaneTerritories * 2 + 1;
         BeginBattle(title, color, guardWaves, finished);
@@ -284,6 +307,7 @@ public class BattleManager : MonoBehaviour
         if (IsRunning) return;
         contested = false;
         defenseMode = true;
+        duel = false;
         bool hasGuards = guardUnits != null && guardUnits.Count > 0;
         totalTerritories = hasGuards ? 2 : 1;
         rivalLaneLength = hasGuards ? 1 : 0;
@@ -315,6 +339,65 @@ public class BattleManager : MonoBehaviour
             : "ЗАЩИТА!\n<size=60%>Отбейте нападение</size>", 3.5f);
     }
 
+    /// <summary>
+    /// Дуэль команд (полигон «Битва»): teamA слева против teamB справа, без охраны.
+    /// flagArena: false — обычная арена из одной территории (победа — все соперники выбыли);
+    /// true — арена битвы за флаг без барьеров, команды начинают у центра (победа — флаг или все соперники выбыли).
+    /// </summary>
+    public void StartDuelBattle(string title, Color color, List<BattleUnit> teamA, List<BattleUnit> teamB,
+                                bool flagArena, Action<BattleResult> finished)
+    {
+        if (IsRunning) return;
+        contested = flagArena;
+        defenseMode = false;
+        duel = true;
+        rivalLaneLength = 0;
+        totalTerritories = flagArena ? LaneTerritories * 2 + 1 : 1;
+        BeginBattle(title, color, new List<List<BattleUnit>>(), finished);
+
+        // Барьеров нет: обе команды ходят по всей арене
+        if (barriers != null) foreach (GameObject b in barriers) if (b != null) b.SetActive(false);
+        heroMaxX = ArenaLength - 0.5f;
+        rivalMinX = 0.5f;
+        heroWave = flagArena ? LaneTerritories : 0; // охраны нет — свои территории уже "пройдены"
+        rivalWave = heroWave;
+        heroRallyX = WorldX(ArenaLength - 3f);       // идут навстречу друг другу
+        rivalRallyX = WorldX(3f);
+        flagValue = 0f;
+        if (flagArena && flagZone != null)
+        {
+            flagZone.transform.position = arenaRoot.position + (Vector3)FlagPoint;
+            flagZone.Setup(flagZoneRadius);
+            flagZone.SetProgress(0f, false);
+        }
+
+        // С флагом команды стоят у центра (а не у краёв длинной арены)
+        float startX = flagArena ? LaneTerritories * territoryWidth - 8f : 1.5f;
+        SpawnDuelTeam(teamA, BattleFaction.Heroes, startX, false);
+        SpawnDuelTeam(teamB, BattleFaction.Rivals, startX, true);
+
+        var all = new List<Fighter>(heroes);
+        all.AddRange(rivals);
+        hud.Show(this, siteName, all);
+        hud.SetRetreatLabel("СТОП");
+        hud.SetTeamHeader("<color=#7FB8FF>КОМАНДА A</color>  •  <color=#FF7A7A>КОМАНДА B</color>");
+        hud.ShowMessage(flagArena
+            ? "КОМАНДА A  ПРОТИВ  КОМАНДЫ B\n<size=60%>Удержите флаг или выбейте всех соперников</size>"
+            : "КОМАНДА A  ПРОТИВ  КОМАНДЫ B\n<size=60%>Бой до последнего бойца</size>", 2.5f);
+    }
+
+    /// <summary>Выставить команду дуэли: слева от startX (или зеркально справа), вразброс по глубине.</summary>
+    private void SpawnDuelTeam(List<BattleUnit> units, BattleFaction faction, float startX, bool fromRight)
+    {
+        for (int i = 0; i < units.Count; i++)
+        {
+            float x = startX + (i % 2) * 1.2f;
+            if (fromRight) x = ArenaLength - x;
+            float y = Mathf.Lerp(floorMinY + 0.4f, floorMaxY - 0.4f, (i + 0.5f) / units.Count);
+            Spawn(units[i], faction, false, new Vector2(x, y));
+        }
+    }
+
     /// <summary>Общая подготовка арены, камеры и интерфейса.</summary>
     private void BeginBattle(string title, Color color, List<List<BattleUnit>> guardWaves, Action<BattleResult> finished)
     {
@@ -324,6 +407,8 @@ public class BattleManager : MonoBehaviour
         onFinished = finished;
         IsRunning = true;
         finishing = false;
+        drawResult = false;
+        startTime = Time.time;
         WorldTime.Paused = true;
         heroWave = 0;
         rivalWave = 0;
@@ -386,6 +471,7 @@ public class BattleManager : MonoBehaviour
         Vector3 pos = ClampToArena(owner, worldPos);
         Fighter f = Spawn(u, owner.Faction, owner.NeutralLook, pos - arenaRoot.position, owner.Territory, false);
         f.IsClone = true;
+        f.Summoner = owner.StatsOwner; // урон клона засчитывается хозяину
         if (f.View != null) f.View.MarkClone();
         return f;
     }
@@ -555,7 +641,8 @@ public class BattleManager : MonoBehaviour
         UpdateCamera();
         if (finishing) return;
         UpdateDrops();
-        if (contested) UpdateContested();
+        if (duel) UpdateDuel();
+        else if (contested) UpdateContested();
         else if (defenseMode) UpdateDefense();
         else UpdateNormal();
     }
@@ -576,6 +663,26 @@ public class BattleManager : MonoBehaviour
             hud.ShowMessage($"ВПЕРЁД!\n<size=60%>Территория {heroWave + 1} / {totalTerritories}</size>");
         }
         hud.SetProgress(Mathf.Min(heroWave + 1, totalTerritories), totalTerritories, AliveCount(guards));
+    }
+
+    /// <summary>Дуэль команд: кто остался без бойцов — проиграл; с флагом — ещё и захват флага; вышло время — ничья.</summary>
+    private void UpdateDuel()
+    {
+        bool aAlive = AliveCount(heroes) > 0, bAlive = AliveCount(rivals) > 0;
+        if (!aAlive && !bAlive) { Finish(false, "Обе команды выбыли", true); return; }
+        if (!bAlive) { Finish(true, "Команда B выбыла"); return; }
+        if (!aAlive) { Finish(false, "Команда A выбыла"); return; }
+        if (contested)
+        {
+            UpdateFlag();
+            if (finishing) return;
+        }
+        float left = duelTimeLimit - Elapsed;
+        if (left <= 0f) { Finish(false, $"Время вышло ({duelTimeLimit:0} с)", true); return; }
+        string flag = !contested ? "" :
+            flagValue > 0.05f ? $"   •   <color=#7FB8FF>Флаг: A {flagValue:0.0} / {flagHoldTime:0}</color>" :
+            flagValue < -0.05f ? $"   •   <color=#FF7A7A>Флаг: B {-flagValue:0.0} / {flagHoldTime:0}</color>" : "   •   Флаг: ничей";
+        hud.SetProgressText($"<color=#7FB8FF>A: {AliveCount(heroes)}</color>   •   <color=#FF7A7A>B: {AliveCount(rivals)}</color>{flag}   •   {Mathf.CeilToInt(left)} с");
     }
 
     /// <summary>Защита с подкреплением: враг прорывается через охрану к нашей команде.</summary>
@@ -660,8 +767,8 @@ public class BattleManager : MonoBehaviour
 
         if (flagZone != null) flagZone.SetProgress(flagValue / flagHoldTime, ours > 0 && theirs > 0);
 
-        if (flagValue >= flagHoldTime) Finish(true, "Флаг удержан — объект наш!");
-        else if (flagValue <= -flagHoldTime) Finish(false, "Враг удержал флаг — объект достаётся ему");
+        if (flagValue >= flagHoldTime) Finish(true, duel ? "Команда A удержала флаг" : "Флаг удержан — объект наш!");
+        else if (flagValue <= -flagHoldTime) Finish(false, duel ? "Команда B удержала флаг" : "Враг удержал флаг — объект достаётся ему");
     }
 
     /// <summary>Сколько живых бойцов из списка стоит в зоне флага.</summary>
@@ -713,6 +820,15 @@ public class BattleManager : MonoBehaviour
         }
     }
 
+    /// <summary>Боец в битве за флаг уже прошёл свои территории и должен держать флаг (а не гоняться за противником).</summary>
+    public bool IsHoldingFlag(Fighter f)
+    {
+        if (!contested) return false;
+        if (f.Faction == BattleFaction.Heroes) return heroWave >= LaneTerritories;
+        if (f.Faction == BattleFaction.Rivals) return rivalWave >= LaneTerritories;
+        return false;
+    }
+
     /// <summary>
     /// Ограничить позицию бойца ареной: каждая сторона — только в своих открытых территориях,
     /// охрана в битве за флаг — только на своей половине.
@@ -745,19 +861,27 @@ public class BattleManager : MonoBehaviour
         return x > -1f && x < ArenaLength + 1f;
     }
 
-    /// <summary>Отступить (кнопка в интерфейсе боя).</summary>
+    /// <summary>Отступить (кнопка в интерфейсе боя). В дуэли команд — остановить бой (ничья).</summary>
     public void Retreat()
     {
-        if (IsRunning && !finishing) Finish(false, "Команда отступила");
+        if (!IsRunning || finishing) return;
+        if (duel) Finish(false, "Бой остановлен", true);
+        else Finish(false, "Команда отступила");
     }
 
     // ---------- Конец боя ----------
 
-    /// <summary>Итог известен: показать результат и через паузу вернуться на карту.</summary>
-    private void Finish(bool win, string details)
+    /// <summary>Итог известен: показать результат и через паузу вернуться на карту. draw — ничья (только дуэль).</summary>
+    private void Finish(bool win, string details, bool draw = false)
     {
         finishing = true;
-        hud.ShowResult(win, details);
+        drawResult = draw;
+        duration = Elapsed;
+        finishDetails = details;
+        if (duel)
+            hud.ShowResult(win, details, draw ? "<color=#FFD84A>НИЧЬЯ</color>"
+                : win ? "<color=#7FB8FF>ПОБЕДА КОМАНДЫ A</color>" : "<color=#FF7A7A>ПОБЕДА КОМАНДЫ B</color>", "");
+        else hud.ShowResult(win, details);
         StartCoroutine(EndAfterDelay(win));
     }
 
@@ -775,7 +899,10 @@ public class BattleManager : MonoBehaviour
             ourTerritories = contested ? Mathf.Min(heroWave, LaneTerritories) : heroWave,
             rivalTerritories = Mathf.Min(rivalWave, LaneTerritories),
             ourDead = new List<HeroData>(),
-            theirDead = new List<HeroData>()
+            theirDead = new List<HeroData>(),
+            draw = drawResult,
+            duration = duration,
+            details = finishDetails
         };
         // Кто выбыл на арене (клоны и охрана объектов — не герои, у них жизней нет)
         foreach (Fighter f in allFighters)
@@ -827,6 +954,7 @@ public class BattleManager : MonoBehaviour
         allFighters.Clear(); boxes.Clear(); buffs.Clear();
         contested = false;
         defenseMode = false;
+        duel = false;
         SetDecor(false);
         cam.transform.position = savedCamPos;
         cam.orthographicSize = savedCamSize;
@@ -860,7 +988,14 @@ public class BattleManager : MonoBehaviour
     {
         float sum = 0f, lead = 2f; // lead — сдвиг камеры вперёд по ходу движения
         int n = 0;
-        if (defenseMode)
+        if (duel)
+        {
+            // Дуэль: камера смотрит на всех живых бойцов обеих команд
+            foreach (Fighter f in allFighters)
+                if (f.IsAlive && !f.IsClone) { sum += f.transform.position.x; n++; }
+            lead = 0f;
+        }
+        else if (defenseMode)
         {
             foreach (Fighter f in rivals)
                 if (f.IsAlive) { sum += f.transform.position.x; n++; }

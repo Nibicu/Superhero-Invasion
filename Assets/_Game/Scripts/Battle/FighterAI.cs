@@ -193,9 +193,21 @@ public class FighterAI : MonoBehaviour
             if (TryTakeItem(bm, radius)) return;
         }
 
-        // 4) Нет противников — к точке сбора (охрана стоит на месте)
+        // 4) Рядом противников нет. Если они есть дальше на арене — идём к ближайшему, чтобы бой не замирал
+        //    (команды разошлись дальше радиуса обнаружения). Команда у флага держит флаг, охрана стоит на месте.
+        //    Иначе — к точке сбора.
         if (target == null)
         {
+            if (isTeam && !bm.IsHoldingFlag(self))
+            {
+                Fighter far = NearestReachableOpponent(bm);
+                if (far != null)
+                {
+                    destination = far.Position;
+                    hasDestination = true;
+                    return;
+                }
+            }
             if (bm.TryGetRallyPoint(self, out Vector2 rally))
             {
                 destination = rally;
@@ -490,6 +502,20 @@ public class FighterAI : MonoBehaviour
         foreach (Fighter f in bm.GetOpponents(self.Faction))
         {
             if (!f.IsTargetable || !bm.IsReachable(self, f.Position)) continue;
+            float dist = Vector2.Distance(f.Position, self.Position);
+            if (dist < bestDist) { bestDist = dist; best = f; }
+        }
+        return best;
+    }
+
+    /// <summary>Ближайший противник на всей арене (без ограничения радиусом), до которого можно дойти. null — таких нет.</summary>
+    private Fighter NearestReachableOpponent(BattleManager bm)
+    {
+        Fighter best = null;
+        float bestDist = float.MaxValue;
+        foreach (Fighter f in bm.GetOpponents(self.Faction))
+        {
+            if (!f.IsAlive || !bm.IsReachable(self, f.Position)) continue;
             float dist = Vector2.Distance(f.Position, self.Position);
             if (dist < bestDist) { bestDist = dist; best = f; }
         }

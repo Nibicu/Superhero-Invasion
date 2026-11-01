@@ -118,6 +118,29 @@ public class Fighter : MonoBehaviour
     /// <summary>Клон (Фантом): без скилов, его HP не считается в итоге боя, исчезает вместе с хозяином.</summary>
     public bool IsClone { get; set; }
 
+    /// <summary>Кто вызвал этого бойца (клоны Фантома): урон клона засчитывается ему. null — никто.</summary>
+    public Fighter Summoner { get; set; }
+
+    // ---------- Статистика боя (для полигона) ----------
+
+    /// <summary>Сколько урона нанёс (вместе с уроном своих клонов).</summary>
+    public float DamageDealt { get; set; }
+
+    /// <summary>Сколько урона получил.</summary>
+    public float DamageTaken { get; set; }
+
+    /// <summary>Сколько здоровья вылечил союзникам и себе скилами.</summary>
+    public float HealingDone { get; set; }
+
+    /// <summary>Скольких противников добил.</summary>
+    public int Kills { get; set; }
+
+    /// <summary>Через сколько секунд от начала боя выбыл (−1 — дожил до конца).</summary>
+    public float DeathTime { get; set; } = -1f;
+
+    /// <summary>Кому засчитывать урон и добивания этого бойца (клону — его хозяину).</summary>
+    public Fighter StatsOwner => Summoner != null ? Summoner : this;
+
     /// <summary>Сколько урона ещё впитает щит (0 — щита нет).</summary>
     public float Shield => shieldTimer > 0f ? shieldAmount : 0f;
 

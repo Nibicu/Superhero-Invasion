@@ -79,15 +79,38 @@ public class BattleHUD : MonoBehaviour
         bigMessageGroup.alpha = 1f;
     }
 
-    /// <summary>Показать итог боя.</summary>
-    public void ShowResult(bool win, string details)
+    /// <summary>
+    /// Показать итог боя. title — свой заголовок (null — "ПОБЕДА!" / "ПОРАЖЕНИЕ"),
+    /// footer — подпись под итогом (null — "Возвращение на карту...", пусто — без подписи).
+    /// </summary>
+    public void ShowResult(bool win, string details, string title = null, string footer = null)
     {
         messageTimer = 0f;
         bigMessageGroup.alpha = 0f;
         resultPanel.SetActive(true);
         retreatButton.interactable = false;
-        resultTitle.text = win ? "<color=#6EE07A>ПОБЕДА!</color>" : "<color=#FF6B6B>ПОРАЖЕНИЕ</color>";
-        resultText.text = $"{details}\n<size=75%><color=#9AA4B5>Возвращение на карту...</color></size>";
+        resultTitle.text = title ?? (win ? "<color=#6EE07A>ПОБЕДА!</color>" : "<color=#FF6B6B>ПОРАЖЕНИЕ</color>");
+        footer = footer ?? "Возвращение на карту...";
+        resultText.text = string.IsNullOrEmpty(footer) ? details : $"{details}\n<size=75%><color=#9AA4B5>{footer}</color></size>";
+    }
+
+    /// <summary>Заголовок над списком HP ("ВАША КОМАНДА"; на полигоне — обе команды).</summary>
+    public void SetTeamHeader(string text)
+    {
+        if (teamList.parent == null) return;
+        foreach (Transform child in teamList.parent)
+        {
+            if (child == teamList) continue;
+            TMP_Text t = child.GetComponent<TMP_Text>();
+            if (t != null) { t.text = text; return; }
+        }
+    }
+
+    /// <summary>Надпись на кнопке «ОТСТУПИТЬ» (на полигоне — «СТОП»).</summary>
+    public void SetRetreatLabel(string text)
+    {
+        TMP_Text label = retreatButton.GetComponentInChildren<TMP_Text>();
+        if (label != null) label.text = text;
     }
 
     /// <summary>Плавное исчезание сообщения.</summary>

@@ -29,6 +29,9 @@ public struct BattleResult
     public int rivalTerritories; // Сколько территорий прошла команда врага (битва за флаг)
     public List<HeroData> ourDead;   // Наши герои, выбывшие на арене (каждый теряет жизнь)
     public List<HeroData> theirDead; // Герои противника (не охрана), выбывшие на арене
+    public bool draw;      // Ничья (дуэль команд на полигоне: вышло время или бой остановлен)
+    public float duration; // Сколько секунд длился бой
+    public string details; // Почему бой закончился ("Команда B выбыла", "Время вышло")
 }
 
 /// <summary>

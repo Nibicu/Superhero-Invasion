@@ -276,7 +276,7 @@ public class FighterCombat : MonoBehaviour
     private void Heal(float power)
     {
         Fighter target = healTarget != null && healTarget.IsAlive ? healTarget : fighter;
-        target.Health.Heal(power * healPower + target.Health.Max * healMaxHpPart);
+        target.Health.Heal(power * healPower + target.Health.Max * healMaxHpPart, fighter);
         if (target.View != null) target.View.FlashHeal();
         healTarget = null;
     }

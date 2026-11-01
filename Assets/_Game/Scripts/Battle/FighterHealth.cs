@@ -56,10 +56,12 @@ public class FighterHealth : MonoBehaviour
         Heal(fighter.Stats.hpRegen * regenRate * Time.deltaTime);
     }
 
-    /// <summary>Вылечить на amount единиц (не больше максимума). Мёртвых не лечит.</summary>
-    public void Heal(float amount)
+    /// <summary>Вылечить на amount единиц (не больше максимума). Мёртвых не лечит. healer — кто лечит (для статистики).</summary>
+    public void Heal(float amount, Fighter healer = null)
     {
         if (!fighter.IsAlive || amount <= 0f) return;
+        float healed = Mathf.Min(Max - Current, amount);
+        if (healer != null) healer.StatsOwner.HealingDone += healed;
         Current = Mathf.Min(Max, Current + amount);
         Changed?.Invoke(this);
     }
@@ -87,12 +89,17 @@ public class FighterHealth : MonoBehaviour
 
         // Щит "Барьер" впитывает урон
         float damage = fighter.AbsorbShield(hit.damage);
+        float lost = Mathf.Min(Current, damage); // Сколько здоровья реально снял удар (для статистики)
+        fighter.DamageTaken += lost;
+        if (hit.attacker != null) hit.attacker.StatsOwner.DamageDealt += lost;
         Current = Mathf.Max(0f, Current - damage);
         Changed?.Invoke(this);
         if (fighter.View != null) fighter.View.FlashHit();
 
         if (Current <= 0f)
         {
+            if (hit.attacker != null && !fighter.IsClone) hit.attacker.StatsOwner.Kills++;
+            if (BattleManager.Instance != null) fighter.DeathTime = BattleManager.Instance.Elapsed;
             fighter.SetState(FighterState.Dead);
             fighter.Movement.ApplyKnockback(hit.knockback * 1.3f);
             Died?.Invoke(fighter);

@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Главное меню (сцена MainMenu): Кампания (пока заглушка), Песочница, Энциклопедия (пока заглушка),
+/// Главное меню (сцена MainMenu): Кампания (пока заглушка), Песочница, Битва (полигон), Энциклопедия (пока заглушка),
 /// Опции и Выход. Экраны — панели внутри одного холста, показывается одна за раз.
 /// </summary>
 public class MainMenuUI : MonoBehaviour
@@ -17,6 +17,7 @@ public class MainMenuUI : MonoBehaviour
     [Header("Кнопки главного меню")]
     [SerializeField] private Button campaignButton;     // "КАМПАНИЯ" (скоро)
     [SerializeField] private Button sandboxButton;      // "ПЕСОЧНИЦА"
+    [SerializeField] private Button battleButton;       // "БИТВА" — полигон для испытаний баланса
     [SerializeField] private Button encyclopediaButton; // "ЭНЦИКЛОПЕДИЯ" (скоро)
     [SerializeField] private Button optionsButton;      // "ОПЦИИ"
     [SerializeField] private Button quitButton;         // "ВЫХОД"
@@ -29,6 +30,7 @@ public class MainMenuUI : MonoBehaviour
     [SerializeField] private TMP_Text toast;     // Короткое сообщение внизу ("Скоро!")
 
     private Coroutine toastRoutine; // Таймер скрытия подсказки
+    private const string PolygonScene = "Polygon"; // Сцена полигона «Битва»
 
     /// <summary>Подписать кнопки и открыть главный экран.</summary>
     private void Awake()
@@ -36,6 +38,7 @@ public class MainMenuUI : MonoBehaviour
         campaignButton.onClick.AddListener(() => ShowToast("Кампания — скоро!"));
         encyclopediaButton.onClick.AddListener(() => ShowToast("Энциклопедия — скоро!"));
         sandboxButton.onClick.AddListener(() => Open(sandboxPanel));
+        if (battleButton != null) battleButton.onClick.AddListener(() => UnityEngine.SceneManagement.SceneManager.LoadScene(PolygonScene));
         optionsButton.onClick.AddListener(() => Open(optionsPanel));
         quitButton.onClick.AddListener(Application.Quit);
         sandboxBack.onClick.AddListener(() => Open(mainPanel));

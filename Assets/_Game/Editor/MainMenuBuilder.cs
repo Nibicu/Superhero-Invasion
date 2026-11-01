@@ -87,14 +87,16 @@ public static class MainMenuBuilder
         Place(title.rectTransform, new Vector2(0.5f, 1f), new Vector2(0, -150), new Vector2(1400, 130));
         var sub = Text("Subtitle", mainPanel, "Герои против злодеев", 40, new Color(1f, 0.85f, 0.4f), TextAlignmentOptions.Center, true);
         Place(sub.rectTransform, new Vector2(0.5f, 1f), new Vector2(0, -235), new Vector2(1000, 60));
-        float y = 90f;
-        Button campaign = Btn("CampaignButton", mainPanel, "КАМПАНИЯ", Gray, new Vector2(0, y), new Vector2(560, 92), 40);
+        float y = 150f, step = 105f; // Кнопки сверху вниз
+        Button campaign = Btn("CampaignButton", mainPanel, "КАМПАНИЯ", Gray, new Vector2(0, y), new Vector2(560, 86), 40);
         Badge(campaign.transform, "скоро");
-        Button sandbox = Btn("SandboxButton", mainPanel, "ПЕСОЧНИЦА", Green, new Vector2(0, y - 115), new Vector2(560, 92), 40);
-        Button encyclopedia = Btn("EncyclopediaButton", mainPanel, "ЭНЦИКЛОПЕДИЯ", Gray, new Vector2(0, y - 230), new Vector2(560, 92), 40);
+        Button sandbox = Btn("SandboxButton", mainPanel, "ПЕСОЧНИЦА", Green, new Vector2(0, y - step), new Vector2(560, 86), 40);
+        Button battle = Btn("BattleButton", mainPanel, "БИТВА", Purple, new Vector2(0, y - 2 * step), new Vector2(560, 86), 40);
+        Badge(battle.transform, "полигон");
+        Button encyclopedia = Btn("EncyclopediaButton", mainPanel, "ЭНЦИКЛОПЕДИЯ", Gray, new Vector2(0, y - 3 * step), new Vector2(560, 86), 40);
         Badge(encyclopedia.transform, "скоро");
-        Button options = Btn("OptionsButton", mainPanel, "ОПЦИИ", Blue, new Vector2(0, y - 345), new Vector2(560, 92), 40);
-        Button quit = Btn("QuitButton", mainPanel, "ВЫХОД", Red, new Vector2(0, y - 460), new Vector2(560, 80), 34);
+        Button options = Btn("OptionsButton", mainPanel, "ОПЦИИ", Blue, new Vector2(0, y - 4 * step), new Vector2(560, 86), 40);
+        Button quit = Btn("QuitButton", mainPanel, "ВЫХОД", Red, new Vector2(0, y - 5 * step), new Vector2(560, 76), 34);
 
         // ---------- Песочница ----------
         var sandboxPanel = Img("SandboxPanel", root, rounded, PanelColor);
@@ -205,6 +207,7 @@ public static class MainMenuBuilder
         mso.FindProperty("optionsPanel").objectReferenceValue = optionsPanel.gameObject;
         mso.FindProperty("campaignButton").objectReferenceValue = campaign;
         mso.FindProperty("sandboxButton").objectReferenceValue = sandbox;
+        mso.FindProperty("battleButton").objectReferenceValue = battle;
         mso.FindProperty("encyclopediaButton").objectReferenceValue = encyclopedia;
         mso.FindProperty("optionsButton").objectReferenceValue = options;
         mso.FindProperty("quitButton").objectReferenceValue = quit;
