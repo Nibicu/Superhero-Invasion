@@ -4,19 +4,17 @@ using UnityEngine;
 /// ИИ бойца на арене (управляет всеми: нашими героями, врагами и охраной — бой мы только смотрим).
 /// Раз в небольшую случайную задержку ("время реакции") принимает решение. Порядок важности:
 ///
+/// 0) ШАРМ (Суккуб): зачарованный бьёт авто атаками ближайшего своего союзника, скилы не применяет.
 /// 1) ОТСТУПЛЕНИЕ. HP упало ниже порога класса (Танк 10%, Боец 20%, Маг 25%, Стрелок 30%, Поддержка 20%) —
-///    боец отходит НЕДАЛЕКО (держится в kiteDistance от врага) и всё время двигается,
-///    по пути бьёт скилами; увидел зелье — бежит к нему. Прижали вплотную — отбивается.
+///    боец отходит НЕДАЛЕКО (держится в kiteDistance от врага) и всё время двигается;
+///    увидел зелье — бежит к нему. Прижали вплотную — отбивается.
 ///    Когда HP выше 35% — снова идёт в бой. Охрана объектов (нейтральные юниты) не отступает никогда.
-/// 2) ЛЕЧЕНИЕ (Поддержка): союзник (или сама) ранен — лечит.
-/// 3) ПРЕДМЕТЫ: врагов рядом нет (или коробка/бафф совсем близко) — идёт разбить коробку или подобрать бафф.
-/// 4) БОЙ по стилю класса:
-///    - ближний (Танк, Боец): подходит вплотную, в основном авто атаки, скил иногда;
-///    - средний (Маг, Поддержка): держит среднюю дистанцию, больше полагается на скилы;
-///    - дальний (Стрелок): держится далеко, в основном авто атаки (пули), скил иногда;
-///    - если враг подошёл вплотную, Маг, Поддержка и Стрелок бьют рукой, пока он не отлетит.
-/// 5) Противников рядом нет — команды идут к точке сбора (следующая территория или флаг), охрана стоит.
-/// Если у героя есть личные навыки (HeroKit, например Солдат) — каждое решение сначала спрашивает их:
+/// 2) ПРЕДМЕТЫ: врагов рядом нет (или коробка/бафф совсем близко) — идёт разбить коробку или подобрать бафф.
+/// 3) БОЙ по стилю класса:
+///    - ближний (Танк, Боец, Маг, Поддержка): подходит вплотную и бьёт авто атаками;
+///    - дальний (Стрелок): держится далеко и стреляет; враг подошёл вплотную — бьёт рукой, пока он не отлетит.
+/// 4) Противников рядом нет — идёт к ближайшему противнику на арене или к точке сбора (флаг), охрана стоит.
+/// Скилы есть только у героев с личными навыками (HeroKit): каждое решение сначала спрашивает их —
 /// навык применён — ждём его конца; навык хочет держать дистанцию (PreferredRange) — встаём на неё.
 /// </summary>
 [DefaultExecutionOrder(-10)] // решает раньше, чем двигается FighterMovement
@@ -53,14 +51,12 @@ public class FighterAI : MonoBehaviour
     [SerializeField] private float itemNearDistance = 2.5f;
 
     private Fighter self;
-    private Fighter target;       // Цель-противник
-    private Fighter healTarget;   // Кого лечим (Поддержка)
+    private Fighter target;       // Цель-противник (у зачарованного — союзник)
     private Vector2 aimPoint;     // Куда повернуться перед атакой (противник или коробка)
     private Vector2 destination;  // Куда идём
     private bool hasDestination;
     private bool wantAuto;        // Решили сделать авто атаку
-    private bool wantSkill;       // Решили применить скил
-    private bool autoClose;       // Авто атака вплотную (Маг, Поддержка, Стрелок бьют рукой)
+    private bool autoClose;       // Авто атака вплотную (Стрелок бьёт рукой)
     private bool retreating;      // Режим отступления
     private bool wantRun;         // Решили бежать к точке (а не идти)
     private float thinkTimer;
@@ -89,11 +85,10 @@ public class FighterAI : MonoBehaviour
         }
 
         // Выполняем решение
-        if (wantSkill || wantAuto)
+        if (wantAuto)
         {
             self.Movement.FaceTowards(aimPoint.x);
-            bool done = wantSkill ? self.Combat.TrySkill(healTarget) : self.Combat.TryAuto(autoClose);
-            if (done) { wantSkill = false; wantAuto = false; }
+            if (self.Combat.TryAuto(autoClose)) wantAuto = false;
             return;
         }
         if (hasDestination)
@@ -106,13 +101,11 @@ public class FighterAI : MonoBehaviour
 
     // ---------- Решение ----------
 
-    /// <summary>Принять решение: отступить, лечить, взять предмет или драться.</summary>
+    /// <summary>Принять решение: отступить, взять предмет или драться.</summary>
     private void Think(BattleManager bm)
     {
         wantAuto = false;
-        wantSkill = false;
         autoClose = false;
-        healTarget = null;
         ClassProfile profile = self.Profile;
         try { ThinkInner(bm, profile); }
         finally { wantRun = ShouldRun(bm); }
@@ -133,6 +126,16 @@ public class FighterAI : MonoBehaviour
     /// <summary>Само решение (без выбора "бежать или идти").</summary>
     private void ThinkInner(BattleManager bm, ClassProfile profile)
     {
+        // 0) Шарм: бьём ближайшего своего союзника авто атаками (скилы и отступление — нет)
+        if (self.IsCharmed)
+        {
+            target = NearestCharmTarget(bm);
+            if (target == null) { hasDestination = false; return; }
+            if (profile.style == CombatStyle.Melee) FightMelee();
+            else FightRanged(profile);
+            return;
+        }
+        if (target != null && target.Faction == self.Faction) target = null; // шарм прошёл — союзник больше не цель
 
         // Цель: старую бросаем, если она недоступна (за барьером), лежит или ушла далеко;
         // переключаемся на противника, который заметно ближе (кто рядом бьёт — тот и цель)
@@ -157,7 +160,6 @@ public class FighterAI : MonoBehaviour
         }
         if (retreating)
         {
-            if (self.Class == UnitClass.Support && TryHeal(bm, true)) return; // Поддержка лечит себя на бегу
             BattleBuffItem potion = FindBuff(bm, true, itemSearchRadius);
             if (potion != null)
             {
@@ -170,20 +172,16 @@ public class FighterAI : MonoBehaviour
             if (threat != null && IsUnderAttack(bm) && Vector2.Distance(threat.Position, self.Position) <= self.meleeRange * 1.3f)
             {
                 target = threat;
-                if (profile.style == CombatStyle.Melee) FightMelee(bm, profile);
+                if (profile.style == CombatStyle.Melee) FightMelee();
                 else FightRanged(profile);
                 return;
             }
-            if (TrySkillWhileRetreating(bm)) return;
             destination = KitePoint(bm, threat);
             hasDestination = true;
             return;
         }
 
-        // 2) Лечение
-        if (self.Class == UnitClass.Support && TryHeal(bm, false)) return;
-
-        // 3) Предметы: врагов рядом нет — или предмет совсем рядом, а цель далеко
+        // 2) Предметы: врагов рядом нет — или предмет совсем рядом, а цель далеко
         // (охрана за предметами не ходит — она стережёт свою территорию)
         bool isTeam = self.Faction == BattleFaction.Heroes || self.Faction == BattleFaction.Rivals;
         float targetDist = target != null ? Vector2.Distance(target.Position, self.Position) : float.MaxValue;
@@ -193,7 +191,7 @@ public class FighterAI : MonoBehaviour
             if (TryTakeItem(bm, radius)) return;
         }
 
-        // 4) Рядом противников нет. Если они есть дальше на арене — идём к ближайшему, чтобы бой не замирал
+        // 3) Рядом противников нет. Если они есть дальше на арене — идём к ближайшему, чтобы бой не замирал
         //    (команды разошлись дальше радиуса обнаружения). Команда у флага держит флаг, охрана стоит на месте.
         //    Иначе — к точке сбора.
         if (target == null)
@@ -217,7 +215,7 @@ public class FighterAI : MonoBehaviour
             return;
         }
 
-        // 5) Личный навык хочет держать дистанцию (например, Солдат с готовым Залпом) — встаём на неё,
+        // 4) Личный навык хочет держать дистанцию (например, Солдат с готовым Залпом) — встаём на неё,
         //    но если враг уже вплотную — дерёмся как обычно
         if (self.Kit != null)
         {
@@ -235,37 +233,22 @@ public class FighterAI : MonoBehaviour
             }
         }
 
-        // 6) Бой по стилю класса
-        if (profile.style == CombatStyle.Melee) FightMelee(bm, profile);
+        // 5) Бой по стилю класса
+        if (profile.style == CombatStyle.Melee) FightMelee();
         else FightRanged(profile);
     }
 
-    /// <summary>Ближний бой (Танк, Боец): вплотную, в основном авто атаки, скил иногда.</summary>
-    private void FightMelee(BattleManager bm, ClassProfile profile)
+    /// <summary>Ближний бой (Танк, Боец, Маг, Поддержка): подходит вплотную и бьёт авто атаками.</summary>
+    private void FightMelee()
     {
         Vector2 d = target.Position - self.Position;
         aimPoint = target.Position;
 
-        // Танк: удар по земле, когда вокруг двое и больше врагов (или иногда по одному)
-        if (self.Class == UnitClass.Tank && self.Combat.CanSkill)
-        {
-            int around = 0;
-            foreach (Fighter f in bm.GetOpponents(self.Faction))
-                if (f.IsTargetable && self.Combat.InSlamZone(f.Position)) around++;
-            if (around >= 2 || (around == 1 && Random.value < profile.skillChance * 0.5f))
-            {
-                wantSkill = true;
-                hasDestination = false;
-                return;
-            }
-        }
-
-        // В зоне удара — бьём (Боец иногда мощным ударом)
+        // В зоне удара — бьём
         if (Mathf.Abs(d.x) <= self.meleeRange && Mathf.Abs(d.y) <= self.depthTolerance * 0.8f)
         {
             hasDestination = false;
-            if (self.Class == UnitClass.Fighter && self.Combat.CanSkill && Random.value < profile.skillChance) wantSkill = true;
-            else wantAuto = true;
+            wantAuto = true;
             return;
         }
 
@@ -276,50 +259,32 @@ public class FighterAI : MonoBehaviour
     }
 
     /// <summary>
-    /// Средний и дальний бой (Маг, Поддержка, Стрелок): держит свою дистанцию,
-    /// встаёт на одну линию с целью и стреляет — авто атакой или скилом.
+    /// Дальний бой (Стрелок): держит свою дистанцию, встаёт на одну линию с целью и стреляет авто атакой.
+    /// Враг вплотную — бьёт рукой.
     /// </summary>
     private void FightRanged(ClassProfile profile)
     {
         Vector2 d = target.Position - self.Position;
         float absX = Mathf.Abs(d.x), absY = Mathf.Abs(d.y);
         aimPoint = target.Position;
-        bool aligned = absY <= aimTolerance;
 
-        // Враг вплотную — бьём рукой (пока не отлетит), Маг и Стрелок иногда отвечают скилом в упор
+        // Враг вплотную — бьём рукой (пока не отлетит)
         if (absX <= self.meleeRange * 1.1f && absY <= self.depthTolerance * 0.8f)
         {
             hasDestination = false;
-            if (self.Class != UnitClass.Support && self.Combat.CanSkill && Random.value < profile.skillChance)
-                wantSkill = true;
-            else
-            {
-                wantAuto = true;
-                autoClose = true;
-            }
+            wantAuto = true;
+            autoClose = true;
             return;
         }
 
-        if (aligned)
+        if (absY <= aimTolerance && absX <= self.Combat.AutoRange && self.Combat.CanAuto)
         {
-            // Скил: Маг — часто, Стрелок — иногда (Поддержка лечит в другом месте)
-            if (self.Class != UnitClass.Support && self.Combat.CanSkill && absX <= self.Combat.SkillRange
-                && Random.value < profile.skillChance)
-            {
-                wantSkill = true;
-                hasDestination = false;
-                return;
-            }
-            if (absX <= self.Combat.AutoRange && self.Combat.CanAuto)
-            {
-                wantAuto = true;
-                hasDestination = false;
-                return;
-            }
+            wantAuto = true;
+            hasDestination = false;
+            return;
         }
 
-        // Встаём на свою дистанцию и на одну глубину с целью (слишком близко — отходим).
-        // Дистанция 0 (Маг, Поддержка — ближний бой) — подходим вплотную, как Боец
+        // Встаём на свою дистанцию и на одну глубину с целью (слишком близко — отходим)
         float side = d.x >= 0 ? -1f : 1f;
         float keep = profile.preferredRange > 0f ? profile.preferredRange : self.meleeRange * preferredRangeFactor;
         destination = new Vector2(target.Position.x + side * keep, target.Position.y);
@@ -327,28 +292,6 @@ public class FighterAI : MonoBehaviour
     }
 
     // ---------- Отступление ----------
-
-    /// <summary>
-    /// Скил на бегу: Танк — удар по земле, если враг рядом; Боец — мощный удар вплотную;
-    /// Маг и Стрелок — выстрел по цели на одной линии. Вернёт true, если решили применить.
-    /// </summary>
-    private bool TrySkillWhileRetreating(BattleManager bm)
-    {
-        if (self.Class == UnitClass.Support || target == null || !self.Combat.CanSkill) return false;
-        Vector2 d = target.Position - self.Position;
-        bool ok;
-        switch (self.Class)
-        {
-            case UnitClass.Tank: ok = self.Combat.InSlamZone(target.Position); break;
-            case UnitClass.Fighter: ok = Mathf.Abs(d.x) <= self.Combat.SkillRange && Mathf.Abs(d.y) <= self.depthTolerance * 0.8f; break;
-            default: ok = Mathf.Abs(d.y) <= aimTolerance && Mathf.Abs(d.x) <= self.Combat.SkillRange; break;
-        }
-        if (!ok) return false;
-        aimPoint = target.Position;
-        wantSkill = true;
-        hasDestination = false;
-        return true;
-    }
 
     /// <summary>
     /// Куда отходить раненому: недалеко (kiteDistance от ближайшего врага, чтобы его не теряли из виду)
@@ -379,42 +322,6 @@ public class FighterAI : MonoBehaviour
             if (dist < bestDist) { bestDist = dist; best = f; }
         }
         return best;
-    }
-
-    // ---------- Лечение ----------
-
-    /// <summary>
-    /// Поддержка: найти раненого союзника (меньше 75% HP, или себя при отступлении) в радиусе лечения и вылечить.
-    /// Вернёт true, если решили лечить (или идём к раненому).
-    /// </summary>
-    private bool TryHeal(BattleManager bm, bool selfOnly)
-    {
-        if (!self.Combat.CanSkill) return false;
-        Fighter best = null;
-        float bestHp = selfOnly ? 0.9f : 0.75f;
-        foreach (Fighter ally in bm.GetAllies(self.Faction))
-        {
-            if (!ally.IsAlive || (selfOnly && ally != self)) continue;
-            if (ally.Health.Fraction >= bestHp) continue;
-            if (Vector2.Distance(ally.Position, self.Position) > self.Combat.SkillRange * 1.5f) continue;
-            bestHp = ally.Health.Fraction;
-            best = ally;
-        }
-        if (best == null) return false;
-
-        if (Vector2.Distance(best.Position, self.Position) <= self.Combat.SkillRange)
-        {
-            healTarget = best;
-            aimPoint = best.Position;
-            wantSkill = true;
-            hasDestination = false;
-        }
-        else
-        {
-            destination = best.Position; // подходим ближе к раненому
-            hasDestination = true;
-        }
-        return true;
     }
 
     // ---------- Предметы ----------
@@ -502,6 +409,20 @@ public class FighterAI : MonoBehaviour
         foreach (Fighter f in bm.GetOpponents(self.Faction))
         {
             if (!f.IsTargetable || !bm.IsReachable(self, f.Position)) continue;
+            float dist = Vector2.Distance(f.Position, self.Position);
+            if (dist < bestDist) { bestDist = dist; best = f; }
+        }
+        return best;
+    }
+
+    /// <summary>Шарм: ближайший живой союзник (его бьёт зачарованный). null — союзников нет.</summary>
+    private Fighter NearestCharmTarget(BattleManager bm)
+    {
+        Fighter best = null;
+        float bestDist = float.MaxValue;
+        foreach (Fighter f in bm.FoesOf(self))
+        {
+            if (!f.IsTargetable) continue;
             float dist = Vector2.Distance(f.Position, self.Position);
             if (dist < bestDist) { bestDist = dist; best = f; }
         }

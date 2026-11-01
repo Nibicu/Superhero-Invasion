@@ -1,0 +1,717 @@
+fileFormatVersion: 2
+guid: 414144ab27ad52f439abd4a2eb84816f
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -7515681671060237195
+    second: StandartNewWumen3_0
+  - first:
+      213: 6468691620135536270
+    second: StandartNewWumen3_1
+  - first:
+      213: 8692690773819266060
+    second: StandartNewWumen3_2
+  - first:
+      213: 6057482783394499723
+    second: StandartNewWumen3_3
+  - first:
+      213: -4717996779121176252
+    second: StandartNewWumen3_4
+  - first:
+      213: -875880635559707589
+    second: StandartNewWumen3_5
+  - first:
+      213: 5555867915645761452
+    second: StandartNewWumen3_6
+  - first:
+      213: 2340373890623085826
+    second: StandartNewWumen3_7
+  - first:
+      213: 1652486009552000271
+    second: StandartNewWumen3_8
+  - first:
+      213: -9143737830766539163
+    second: StandartNewWumen3_9
+  - first:
+      213: -3853194375201313155
+    second: StandartNewWumen3_10
+  - first:
+      213: 8235023394651708924
+    second: StandartNewWumen3_11
+  - first:
+      213: -6775653257788914631
+    second: StandartNewWumen3_12
+  - first:
+      213: -8394948066140902345
+    second: StandartNewWumen3_13
+  - first:
+      213: 3220650713815846521
+    second: StandartNewWumen3_14
+  - first:
+      213: -1237501731312557994
+    second: StandartNewWumen3_15
+  - first:
+      213: 6276262013956043285
+    second: StandartNewWumen3_16
+  - first:
+      213: -2974990028838431351
+    second: StandartNewWumen3_17
+  - first:
+      213: -8340586471713806507
+    second: StandartNewWumen3_18
+  - first:
+      213: 5732443427830174556
+    second: Sukub_0
+  - first:
+      213: 7543009546907523850
+    second: Sukub_1
+  - first:
+      213: -4411169208640601577
+    second: Sukub_2
+  - first:
+      213: -4005564607835231213
+    second: Sukub_3
+  - first:
+      213: -3443867199108290894
+    second: Sukub_4
+  - first:
+      213: 1700527984043765276
+    second: Sukub_5
+  - first:
+      213: 7498003292494556269
+    second: Sukub_6
+  - first:
+      213: -6790820557873983157
+    second: Sukub_7
+  - first:
+      213: -2194568220279829934
+    second: Sukub_8
+  - first:
+      213: 704250532788520900
+    second: Sukub_9
+  - first:
+      213: -5284261066654312468
+    second: Sukub_10
+  - first:
+      213: 8847543417898878824
+    second: Sukub_11
+  - first:
+      213: -6337787698062063406
+    second: Sukub_12
+  - first:
+      213: 2391067262576129298
+    second: Sukub_13
+  - first:
+      213: 7559605582997229237
+    second: Sukub_14
+  - first:
+      213: -7880714080256799883
+    second: Sukub_15
+  - first:
+      213: 1022999431196794956
+    second: Sukub_16
+  - first:
+      213: -7959869154315200626
+    second: Sukub_17
+  - first:
+      213: 4975915806813402518
+    second: Sukub_18
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 32
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationMethod: 0
+  spriteTessellationDetail: -1
+  spriteGeometrySubdivision: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: 4
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: Sukub_0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 192
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c5317d20deabd8f40800000000000000
+      internalID: 5732443427830174556
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sukub_1
+      rect:
+        serializedVersion: 2
+        x: 64
+        y: 192
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a0b9dc4e7372ea860800000000000000
+      internalID: 7543009546907523850
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sukub_2
+      rect:
+        serializedVersion: 2
+        x: 128
+        y: 192
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 71206d2e9f068c2c0800000000000000
+      internalID: -4411169208640601577
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sukub_3
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 192
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 31caa1926306968c0800000000000000
+      internalID: -4005564607835231213
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sukub_4
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 128
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2b6e78f570de430d0800000000000000
+      internalID: -3443867199108290894
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sukub_5
+      rect:
+        serializedVersion: 2
+        x: 64
+        y: 128
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c1e2a83113d799710800000000000000
+      internalID: 1700527984043765276
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sukub_6
+      rect:
+        serializedVersion: 2
+        x: 128
+        y: 128
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d6ce8d5b4424e0860800000000000000
+      internalID: 7498003292494556269
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sukub_7
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 128
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b4150829ea822c1a0800000000000000
+      internalID: -6790820557873983157
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sukub_8
+      rect:
+        serializedVersion: 2
+        x: 256
+        y: 128
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 25a0cdab4d35b81e0800000000000000
+      internalID: -2194568220279829934
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sukub_9
+      rect:
+        serializedVersion: 2
+        x: 320
+        y: 128
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4c74db7d02006c900800000000000000
+      internalID: 704250532788520900
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sukub_10
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 128
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ce794ad9e888aa6b0800000000000000
+      internalID: -5284261066654312468
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sukub_11
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 64
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 86745bebcd9c8ca70800000000000000
+      internalID: 8847543417898878824
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sukub_12
+      rect:
+        serializedVersion: 2
+        x: 64
+        y: 64
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2d88b2beaa7ab08a0800000000000000
+      internalID: -6337787698062063406
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sukub_13
+      rect:
+        serializedVersion: 2
+        x: 128
+        y: 64
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2157ae3c107ce2120800000000000000
+      internalID: 2391067262576129298
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sukub_14
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 64
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5be0c98a93d19e860800000000000000
+      internalID: 7559605582997229237
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sukub_15
+      rect:
+        serializedVersion: 2
+        x: 256
+        y: 64
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 57bcfdd3c4412a290800000000000000
+      internalID: -7880714080256799883
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sukub_16
+      rect:
+        serializedVersion: 2
+        x: 320
+        y: 64
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c4069e5009c623e00800000000000000
+      internalID: 1022999431196794956
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sukub_17
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 64
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e8714766d2dd88190800000000000000
+      internalID: -7959869154315200626
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sukub_18
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6953d5110110e0540800000000000000
+      internalID: 4975915806813402518
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 330f0ca6e7e231e4786f7b561f298fd4
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries:
+      - key: SpriteEditor.SliceSettings
+        value: '{"sliceOnImport":false,"gridCellCount":{"x":1.0,"y":1.0},"gridSpriteSize":{"x":64.0,"y":64.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":1,"keepEmptyRects":false,"isAlternate":false}'
+    nameFileIdTable:
+      StandartNewWumen3_0: -7515681671060237195
+      StandartNewWumen3_1: 6468691620135536270
+      StandartNewWumen3_10: -3853194375201313155
+      StandartNewWumen3_11: 8235023394651708924
+      StandartNewWumen3_12: -6775653257788914631
+      StandartNewWumen3_13: -8394948066140902345
+      StandartNewWumen3_14: 3220650713815846521
+      StandartNewWumen3_15: -1237501731312557994
+      StandartNewWumen3_16: 6276262013956043285
+      StandartNewWumen3_17: -2974990028838431351
+      StandartNewWumen3_18: -8340586471713806507
+      StandartNewWumen3_2: 8692690773819266060
+      StandartNewWumen3_3: 6057482783394499723
+      StandartNewWumen3_4: -4717996779121176252
+      StandartNewWumen3_5: -875880635559707589
+      StandartNewWumen3_6: 5555867915645761452
+      StandartNewWumen3_7: 2340373890623085826
+      StandartNewWumen3_8: 1652486009552000271
+      StandartNewWumen3_9: -9143737830766539163
+      Sukub_0: 5732443427830174556
+      Sukub_1: 7543009546907523850
+      Sukub_10: -5284261066654312468
+      Sukub_11: 8847543417898878824
+      Sukub_12: -6337787698062063406
+      Sukub_13: 2391067262576129298
+      Sukub_14: 7559605582997229237
+      Sukub_15: -7880714080256799883
+      Sukub_16: 1022999431196794956
+      Sukub_17: -7959869154315200626
+      Sukub_18: 4975915806813402518
+      Sukub_2: -4411169208640601577
+      Sukub_3: -4005564607835231213
+      Sukub_4: -3443867199108290894
+      Sukub_5: 1700527984043765276
+      Sukub_6: 7498003292494556269
+      Sukub_7: -6790820557873983157
+      Sukub_8: -2194568220279829934
+      Sukub_9: 704250532788520900
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

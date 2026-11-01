@@ -99,23 +99,29 @@ public class HeroSkill
     [Tooltip("Что делает навык (для карточки героя)")]
     [TextArea(1, 4)] public string description = "";
 
-    [Tooltip("Перезарядка в секундах (0 — нет / пассивный навык)")]
+    [Tooltip("Перезарядка в секундах (0 — нет)")]
     [Min(0)] public float cooldown = 0f;
+
+    [Tooltip("Пассивный навык: работает сам, применять не нужно")]
+    public bool passive;
 
     /// <summary>Навыка пока нет (не придуман).</summary>
     public bool IsEmpty => string.IsNullOrWhiteSpace(name);
 }
 
 /// <summary>
-/// Чья боевая логика личных навыков используется в бою (у кого навыки ещё не сделаны — None:
-/// такой герой дерётся скилом своего класса).
+/// Чья боевая логика личных навыков используется в бою (у кого навыков нет — None:
+/// такой герой дерётся только авто атаками).
 /// </summary>
 public enum HeroKitType
 {
-    None,    // Своих навыков пока нет — скил класса
-    Soldier, // Солдат: Меткий стрелок, Залп, Отступление, Барьер, Энерго оковы
-    Stajor,  // Стажёр: Храбрость, Волна, Блок, Силовые клинки, Парирование
-    Phantom  // Фантом: Пятый удар, Клоны, Энерго шар, Телепорт, Тень
+    None,       // Своих навыков нет — только авто атаки
+    Soldier,    // Солдат: Залп, Геном, Барьер
+    Stajor,     // Стажёр: Волна, Блок, Комбо
+    Phantom,    // Фантом: Клоны, Звёздочки, Нематериальный
+    Soyka,      // Сойка: Ловкость, Дымовая завеса, Перчатка с лезвиями
+    Sukub,      // Суккуб: Шарм, Сай, Проклятье
+    Charovnica  // Чародейка: Энерго стрела, Мышь, Мираж
 }
 
 /// <summary>
@@ -178,23 +184,20 @@ public class HeroData : ScriptableObject
         baseStats = UnitClasses.ScaledTemplate(unitClass, skillDamage, UnitClasses.StarPower(stars), stars);
     }
 
-    [Header("Навыки: 1 пассивный + 4 скила (открываются на 1, 2, 4 и 5 уровне)")]
-    [Tooltip("Чья боевая логика навыков работает в бою. None — своих навыков пока нет, работает скил класса")]
+    [Header("Навыки: 3 скила (открываются на 1, 3 и 5 уровне; скил может быть пассивным)")]
+    [Tooltip("Чья боевая логика навыков работает в бою. None — своих навыков нет, только авто атаки")]
     public HeroKitType kit = HeroKitType.None;
 
-    [Tooltip("Пассивный навык — работает всегда")]
-    public HeroSkill passive = new HeroSkill();
+    [Tooltip("3 скила по порядку: открываются на уровнях 1, 3 и 5")]
+    public HeroSkill[] skills = { new HeroSkill(), new HeroSkill(), new HeroSkill() };
 
-    [Tooltip("4 скила по порядку: открываются на уровнях 1, 2, 4 и 5")]
-    public HeroSkill[] skills = { new HeroSkill(), new HeroSkill(), new HeroSkill(), new HeroSkill() };
-
-    /// <summary>С какого уровня открывается скил с номером i (0..3). На 3 уровне новых скилов нет.</summary>
-    public static readonly int[] SkillUnlockLevels = { 1, 2, 4, 5 };
+    /// <summary>С какого уровня открывается скил с номером i (0..2).</summary>
+    public static readonly int[] SkillUnlockLevels = { 1, 3, 5 };
 
     /// <summary>Скил i (или пустой, если в файле меньше скилов).</summary>
     public HeroSkill GetSkill(int i) => skills != null && i >= 0 && i < skills.Length && skills[i] != null ? skills[i] : new HeroSkill();
 
-    /// <summary>Есть ли у героя свои навыки в бою (тогда скил класса не используется).</summary>
+    /// <summary>Есть ли у героя свои навыки в бою (иначе — только авто атаки).</summary>
     public bool HasOwnSkills => kit != HeroKitType.None;
 
     [Header("Бонус командира")]

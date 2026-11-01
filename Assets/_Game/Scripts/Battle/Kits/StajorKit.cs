@@ -2,25 +2,21 @@ using UnityEngine;
 
 /// <summary>
 /// Стажёр (класс Боец, ближний бой). Навыки:
-///  ПАССИВКА "Храбрость" — пока живых врагов больше, чем союзников (вместе с ним), Защита +20.
-///  1) "Волна" (ур. 1) — волна энергии летит вперёд как снаряд: урон от Атаки, сбивает с ног.
-///  2) "Блок" (ур. 2) — срабатывает сам, когда по Стажёру попадает вражеский СКИЛ:
+///  1) "Волна" (ур. 1) — волна энергии летит вперёд как снаряд: урон от Силы атаки, сбивает с ног.
+///  2) "Блок" (ур. 3) — срабатывает сам, когда по Стажёру попадает вражеский СКИЛ:
 ///     удар не проходит (ни урона, ни отбрасывания, ни стана), играет анимация блока.
-///  3) "Силовые клинки" (ур. 4) — мощный удар перед собой: урон от Атаки всем в зоне, сбивает их с ног.
-///  4) "Парирование" (ур. 5, пассивный) — 20% шанс, что вражеская авто атака по Стажёру не сработает.
+///  3) "Комбо" (ур. 5) — 3 сильных удара перед собой, каждый — 40% Силы атаки и стан 0.5 с;
+///     последний удар отбрасывает и сбивает с ног.
 /// Перезарядки — в файле героя (Data/Heroes/Hero_Stajor). Кадры — в Data/Characters/Sprites_Stajor.
 /// </summary>
 public class StajorKit : HeroKit
 {
-    private const int Wave = 0, Block = 1, Blades = 2, Parry = 3; // номера скилов
-
-    [Header("Храбрость (пассивка)")]
-    [SerializeField] private int braveDefense = 20;          // Сколько Защиты добавляет
+    private const int Wave = 0, Block = 1, Combo = 2; // номера скилов
 
     [Header("Волна")]
-    [SerializeField] private float waveDamage = 1.2f;        // Урон (доля Атаки)
+    [SerializeField] private float waveDamage = 1.2f;        // Урон (доля Силы атаки)
     [SerializeField] private float waveRange = 8f;           // Дальность полёта
-    [SerializeField] private float waveMinRange = 1.2f;      // Ближе — бьёт клинками/рукой, а не волной
+    [SerializeField] private float waveMinRange = 1.2f;      // Ближе — бьёт рукой/комбо, а не волной
     [SerializeField] private float waveSpeed = 9f;           // Скорость волны
     [SerializeField] private float waveCastTime = 0.25f;     // Через сколько секунд после начала вылетает волна
     [SerializeField] private float waveActionTime = 0.45f;   // Сколько длится применение
@@ -28,27 +24,24 @@ public class StajorKit : HeroKit
     [Header("Блок")]
     [SerializeField] private float blockTime = 0.5f;         // Сколько секунд держится блок (все удары в это время не проходят)
 
-    [Header("Силовые клинки")]
-    [SerializeField] private float bladesDamage = 1.8f;      // Урон (доля Атаки)
-    [SerializeField] private float bladesRangeMult = 1.6f;   // Дальность удара (× дальность ближнего боя)
-    [SerializeField] private float bladesDepthMult = 1.6f;   // Ширина зоны по глубине (× обычная)
-    [SerializeField] private float bladesHitTime = 0.15f;    // Когда наносится удар
-    [SerializeField] private float bladesActionTime = 0.45f; // Сколько длится удар
-    [SerializeField] private float bladesKnockback = 7f;     // Сила отбрасывания
-
-    [Header("Парирование (пассивка)")]
-    [SerializeField] private float parryChance = 0.2f;       // Шанс, что авто атака врага не сработает
+    [Header("Комбо")]
+    [SerializeField] private int comboHits = 3;              // Сколько ударов
+    [SerializeField] private float comboDamage = 0.4f;       // Урон одного удара (доля Силы атаки)
+    [SerializeField] private float comboStun = 0.5f;         // Стан после каждого удара (сек)
+    [SerializeField] private float comboFirstHit = 0.12f;    // Когда первый удар
+    [SerializeField] private float comboInterval = 0.3f;     // Интервал между ударами
+    [SerializeField] private float comboRangeMult = 1.3f;    // Дальность ударов (× дальность ближнего боя)
+    [SerializeField] private float comboKnockback = 7f;      // Сила отбрасывания последнего удара
 
     private const float AimTolerance = 0.35f; // Насколько точно встать на линию цели для волны
     private const int Knockdown = 99;         // "Очки сбивания" — сразу с ног
 
     private int current = -1;      // Какой скил сейчас применяется (-1 — никакой)
-    private bool struck;           // Волна вылетела / клинки ударили (в текущем действии)
+    private bool struck;           // Волна вылетела (в текущем действии)
+    private int comboDone;         // Сколько ударов комбо уже нанесено
     private float actionLength;    // Сколько длится текущее действие
     private Fighter waveTarget;    // В кого летит волна
     private float blockTimer;      // Сколько ещё держится блок
-    private bool brave;            // Храбрость сейчас действует
-    private float braveCheck;      // Таймер проверки Храбрости
 
     // ---------- Внешний вид ----------
 
@@ -56,36 +49,22 @@ public class StajorKit : HeroKit
 
     public override bool IsBlocking => blockTimer > 0f;
 
-    /// <summary>Силовые клинки обычный удар не прерывает (мощный удар доводится до конца).</summary>
-    protected override bool ActionUnstoppable => base.ActionUnstoppable || current == Blades;
+    /// <summary>Комбо обычный удар не прерывает (серия доводится до конца).</summary>
+    protected override bool ActionUnstoppable => base.ActionUnstoppable || current == Combo;
 
-    // ---------- Пассивки и блок ----------
+    // ---------- Блок ----------
 
-    /// <summary>Храбрость: Защита +20, пока врагов больше, чем союзников.</summary>
-    public override HeroStats ModifyStats(HeroStats s)
-    {
-        if (brave) s.defense += braveDefense;
-        return s;
-    }
-
-    /// <summary>Блок (от скилов) и Парирование (от авто атак).</summary>
+    /// <summary>Блок: срабатывает на вражеский скил (авто атаки не ловит).</summary>
     public override bool TryBlock(HitInfo hit)
     {
         if (blockTimer > 0f) return true; // блок уже стоит — всё отражается
+        if (hit.auto) return false;
 
-        if (hit.auto)
-        {
-            // Парирование: 20% — авто атака врага не сработала
-            if (!IsUnlocked(Parry) || Random.value >= parryChance) return false;
-            if (self.View != null) self.View.Pop("ПАРИРОВАНИЕ", new Color(0.8f, 0.9f, 1f));
-            return true;
-        }
-
-        // Блок: удар скилом — если блок открыт, перезарядился и Стажёр не оглушён
+        // Удар скилом — если блок открыт, перезарядился и Стажёр не оглушён
         if (!IsUnlocked(Block) || IsOnCooldown(Block) || self.IsStunned || !self.IsAlive) return false;
         StartCooldown(Block);
         blockTimer = blockTime;
-        if (self.View != null) self.View.Pop("БЛОК", new Color(0.55f, 0.85f, 1f));
+        Pop("БЛОК", new Color(0.55f, 0.85f, 1f));
         if (hit.attacker != null) self.Movement.FaceTowards(hit.attacker.Position.x);
 
         // Своё действие прерывается — Стажёр встаёт в блок
@@ -105,11 +84,12 @@ public class StajorKit : HeroKit
         Vector2 d = target.Position - self.Position;
         float absX = Mathf.Abs(d.x), absY = Mathf.Abs(d.y);
 
-        // 3) Силовые клинки — кто-то из врагов в зоне удара
-        if (IsReady(Blades) && !retreating)
+        // 3) Комбо — кто-то из врагов в зоне удара
+        if (IsReady(Combo) && !retreating)
         {
             int facing = d.x >= 0f ? 1 : -1;
-            if (CountInBladesZone(facing) > 0) return StartBlades(facing);
+            foreach (Fighter e in Enemies)
+                if (e.IsTargetable && InComboZone(e, facing)) return StartCombo(facing);
         }
 
         // 1) Волна — цель на одной линии, не вплотную и не слишком далеко
@@ -119,22 +99,13 @@ public class StajorKit : HeroKit
         return false;
     }
 
-    /// <summary>Сколько врагов попадёт под Силовые клинки, если бить в сторону facing.</summary>
-    private int CountInBladesZone(int facing)
-    {
-        int n = 0;
-        foreach (Fighter e in BattleManager.Instance.GetOpponents(self.Faction))
-            if (e.IsTargetable && InBladesZone(e, facing)) n++;
-        return n;
-    }
-
-    /// <summary>Попадает ли враг в зону Силовых клинков (перед Стажёром).</summary>
-    private bool InBladesZone(Fighter e, int facing)
+    /// <summary>Попадает ли враг под удар Комбо, если бить в сторону facing.</summary>
+    private bool InComboZone(Fighter e, int facing)
     {
         Vector2 d = e.Position - self.Position;
         return d.x * facing >= -0.2f
-               && Mathf.Abs(d.x) <= self.meleeRange * bladesRangeMult
-               && Mathf.Abs(d.y) <= self.depthTolerance * bladesDepthMult;
+               && Mathf.Abs(d.x) <= self.meleeRange * comboRangeMult
+               && Mathf.Abs(d.y) <= self.depthTolerance * 1.2f;
     }
 
     // ---------- Скилы ----------
@@ -152,15 +123,16 @@ public class StajorKit : HeroKit
         return true;
     }
 
-    /// <summary>Силовые клинки: мощный удар перед собой.</summary>
-    private bool StartBlades(int facing)
+    /// <summary>Комбо: серия ударов перед собой.</summary>
+    private bool StartCombo(int facing)
     {
         if (!BeginAction(KitPose.Cast)) return false;
-        StartCooldown(Blades);
-        current = Blades;
-        struck = false;
-        actionLength = bladesActionTime;
+        StartCooldown(Combo);
+        current = Combo;
+        comboDone = 0;
+        actionLength = comboFirstHit + comboInterval * (comboHits - 1) + 0.25f;
         self.Movement.FaceTowards(self.Position.x + facing);
+        Pop("КОМБО", new Color(1f, 0.8f, 0.35f));
         return true;
     }
 
@@ -183,23 +155,17 @@ public class StajorKit : HeroKit
         });
     }
 
-    /// <summary>Ударить Силовыми клинками всех в зоне (урон от Атаки, сбивает с ног).</summary>
-    private void StrikeBlades()
+    /// <summary>Один удар Комбо по всем в зоне: стан; последний — отбрасывает и сбивает с ног.</summary>
+    private void StrikeCombo(bool last)
     {
         int facing = self.Movement.Facing;
-        int id = FighterCombat.NewAttackId();
-        foreach (Fighter e in BattleManager.Instance.GetOpponents(self.Faction))
+        AnimCycle++; // кадры удара — заново на каждый удар
+        foreach (Fighter e in Enemies)
         {
-            if (!e.IsAlive || !InBladesZone(e, facing)) continue;
-            e.Health.TakeHit(new HitInfo
-            {
-                attacker = self,
-                attackId = id,
-                damage = FighterCombat.CalcDamage(self.Stats.attack * bladesDamage, e.Stats.defense),
-                knockback = new Vector2(facing * bladesKnockback, Random.Range(-0.4f, 0.4f)),
-                stagger = Knockdown,
-                special = false
-            });
+            if (!e.IsAlive || !InComboZone(e, facing)) continue;
+            bool landed = HitEnemy(e, self.Stats.attack * comboDamage, false,
+                new Vector2(facing * (last ? comboKnockback : 0.6f), Random.Range(-0.3f, 0.3f)), last ? Knockdown : 0);
+            if (landed && !last) e.ApplyStun(comboStun);
         }
     }
 
@@ -210,14 +176,17 @@ public class StajorKit : HeroKit
         base.Update();
         float dt = Time.deltaTime;
         if (blockTimer > 0f) blockTimer -= dt;
-        UpdateBravery(dt);
 
         if (Pose == KitPose.None) return;
         if (!ActionAlive) { Pose = KitPose.None; current = -1; return; } // по Стажёру попали — действие прервано
         ActionTime += dt;
 
         if (!struck && current == Wave && ActionTime >= waveCastTime) { struck = true; FireWave(); }
-        if (!struck && current == Blades && ActionTime >= bladesHitTime) { struck = true; StrikeBlades(); }
+        if (current == Combo && comboDone < comboHits && ActionTime >= comboFirstHit + comboDone * comboInterval)
+        {
+            comboDone++;
+            StrikeCombo(comboDone == comboHits);
+        }
 
         if (ActionTime >= actionLength)
         {
@@ -225,19 +194,5 @@ public class StajorKit : HeroKit
             waveTarget = null;
             EndAction();
         }
-    }
-
-    /// <summary>Храбрость: раз в 0.25 с пересчитать, врагов ли больше, чем союзников.</summary>
-    private void UpdateBravery(float dt)
-    {
-        braveCheck -= dt;
-        if (braveCheck > 0f || BattleManager.Instance == null) return;
-        braveCheck = 0.25f;
-        int foes = 0, friends = 0;
-        foreach (Fighter f in BattleManager.Instance.GetOpponents(self.Faction)) if (f.IsAlive) foes++;
-        foreach (Fighter f in BattleManager.Instance.GetAllies(self.Faction)) if (f.IsAlive) friends++;
-        bool now = self.IsAlive && foes > friends;
-        if (now && !brave && self.View != null) self.View.Pop("ХРАБРОСТЬ", new Color(1f, 0.75f, 0.3f));
-        brave = now;
     }
 }

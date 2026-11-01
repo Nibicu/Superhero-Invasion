@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fb02b52e743cf1e4a86b3c91a63383a7, type: 3}
+  m_Name: Sprites_Soyka
+  m_EditorClassIdentifier: Assembly-CSharp::CharacterSprites
+  idle:
+  - {fileID: 2375006316561867387, guid: d35f2f5ff997d2348909f01e13f103f3, type: 3}
+  - {fileID: -5099289667905504433, guid: d35f2f5ff997d2348909f01e13f103f3, type: 3}
+  - {fileID: 6388072622911147328, guid: d35f2f5ff997d2348909f01e13f103f3, type: 3}
+  - {fileID: 5217474281969756544, guid: d35f2f5ff997d2348909f01e13f103f3, type: 3}
+  walk:
+  - {fileID: 8838680439472571704, guid: d35f2f5ff997d2348909f01e13f103f3, type: 3}
+  - {fileID: -1030976910343643635, guid: d35f2f5ff997d2348909f01e13f103f3, type: 3}
+  - {fileID: -5493816019840420775, guid: d35f2f5ff997d2348909f01e13f103f3, type: 3}
+  - {fileID: 8105648209835140578, guid: d35f2f5ff997d2348909f01e13f103f3, type: 3}
+  - {fileID: 6886563565183249588, guid: d35f2f5ff997d2348909f01e13f103f3, type: 3}
+  - {fileID: 3292775818332513009, guid: d35f2f5ff997d2348909f01e13f103f3, type: 3}
+  - {fileID: -4795244521847064463, guid: d35f2f5ff997d2348909f01e13f103f3, type: 3}
+  run:
+  - {fileID: -5444941500662857087, guid: d35f2f5ff997d2348909f01e13f103f3, type: 3}
+  - {fileID: 2393842469063969073, guid: d35f2f5ff997d2348909f01e13f103f3, type: 3}
+  - {fileID: -3504883788196270127, guid: d35f2f5ff997d2348909f01e13f103f3, type: 3}
+  - {fileID: 2329687912722981954, guid: d35f2f5ff997d2348909f01e13f103f3, type: 3}
+  - {fileID: 1983965328201811463, guid: d35f2f5ff997d2348909f01e13f103f3, type: 3}
+  - {fileID: 6964987797530530839, guid: d35f2f5ff997d2348909f01e13f103f3, type: 3}
+  - {fileID: -7478082949155055791, guid: d35f2f5ff997d2348909f01e13f103f3, type: 3}
+  attack:
+  - {fileID: 4310954417938768285, guid: d35f2f5ff997d2348909f01e13f103f3, type: 3}
+  skills: []
+  idleFps: 5
+  walkFps: 10
+  runFps: 14
+  scale: 1.7
+  feetBelowCenterPx: 32
+  offsetXPx: 0

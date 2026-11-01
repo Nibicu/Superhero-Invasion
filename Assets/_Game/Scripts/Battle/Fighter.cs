@@ -9,9 +9,10 @@ using UnityEngine;
 ///   FighterCombat   — удары и снаряды,
 ///   FighterAI       — решает, куда идти и когда бить,
 ///   FighterView     — внешний вид (цвета, позы, позже — настоящие анимации),
-///   HeroKit         — личные навыки героя (пассивка и 4 скила), если они уже сделаны.
+///   HeroKit         — личные навыки героя (3 скила), если они есть.
 /// Состояния-эффекты: оглушение (стан — не ходит и не бьёт), немота (не применяет скилы),
-/// щит (впитывает урон от Спец. атаки).
+/// щит (впитывает любой урон), шарм (бьёт своих), кровотечение (теряет HP со временем),
+/// метка проклятья (Суккуб телепортируется к бойцу, когда у него мало HP).
 /// Состояния меняются только через SetState — он не даёт делать несовместимое
 /// (например, мёртвый не ходит и не бьёт).
 /// </summary>
@@ -85,12 +86,6 @@ public class Fighter : MonoBehaviour
     /// <summary>Настройки класса: поведение, дальности, скил.</summary>
     public ClassProfile Profile => Data.Profile;
 
-    /// <summary>Сила скилов: Атака или Спец. атака (зависит от типа урона бойца).</summary>
-    public int SkillPower => Data.skillDamage == DamageType.Special ? Stats.specialAttack : Stats.attack;
-
-    /// <summary>Ослабляется ли урон скилов Спец. защитой цели (а не Защитой).</summary>
-    public bool SkillVsSpecial => Data.skillDamage == DamageType.Special;
-
     /// <summary>Где боец появился (X в мире) — охрана отступает к этой точке.</summary>
     public float HomeX { get; private set; }
 
@@ -114,6 +109,15 @@ public class Fighter : MonoBehaviour
 
     /// <summary>Немота: не может применять скилы (авто атаки можно).</summary>
     public bool IsSilenced => silenceTimer > 0f;
+
+    /// <summary>Шарм (Суккуб): бьёт авто атаками своих союзников, скилы не применяет.</summary>
+    public bool IsCharmed => charmTimer > 0f;
+
+    /// <summary>Кровотечение (Сойка): теряет здоровье со временем.</summary>
+    public bool IsBleeding => bleedTimer > 0f;
+
+    /// <summary>Метка проклятья (Суккуб): до конца боя.</summary>
+    public bool IsCursed { get; private set; }
 
     /// <summary>Клон (Фантом): без скилов, его HP не считается в итоге боя, исчезает вместе с хозяином.</summary>
     public bool IsClone { get; set; }
@@ -149,6 +153,10 @@ public class Fighter : MonoBehaviour
 
     private float stunTimer;     // Сколько ещё оглушён
     private float silenceTimer;  // Сколько ещё немота
+    private float charmTimer;    // Сколько ещё зачарован
+    private float bleedTimer;    // Сколько ещё кровотечение
+    private float bleedPerSecond; // Сколько HP в секунду отнимает кровотечение
+    private Fighter bleedSource; // Кто наложил кровотечение (ему засчитывается урон)
     private float shieldTimer;   // Сколько ещё действует щит
     private float shieldAmount;  // Сколько урона ещё впитает щит
 
@@ -255,6 +263,36 @@ public class Fighter : MonoBehaviour
         StatusChanged?.Invoke(this);
     }
 
+    /// <summary>Шарм на seconds секунд: бьёт своих союзников (блок Стажёра защищает).</summary>
+    public void ApplyCharm(float seconds)
+    {
+        if (seconds <= 0f || !IsAlive || (Kit != null && Kit.IsBlocking)) return;
+        charmTimer = Mathf.Max(charmTimer, seconds);
+        StatusChanged?.Invoke(this);
+    }
+
+    /// <summary>
+    /// Кровотечение: за seconds секунд отнимает total здоровья. Не складывается и не продлевается:
+    /// если боец уже кровоточит — ничего не происходит. Вернёт true, если кровотечение началось.
+    /// </summary>
+    public bool ApplyBleed(float total, float seconds, Fighter source)
+    {
+        if (IsBleeding || !IsAlive || seconds <= 0f || total <= 0f) return false;
+        bleedTimer = seconds;
+        bleedPerSecond = total / seconds;
+        bleedSource = source;
+        StatusChanged?.Invoke(this);
+        return true;
+    }
+
+    /// <summary>Поставить метку проклятья (до конца боя).</summary>
+    public void MarkCursed()
+    {
+        if (IsCursed || !IsAlive) return;
+        IsCursed = true;
+        StatusChanged?.Invoke(this);
+    }
+
     /// <summary>Щит на seconds секунд, впитывает amount любого урона.</summary>
     public void AddShield(float amount, float seconds)
     {
@@ -301,7 +339,14 @@ public class Fighter : MonoBehaviour
         if (invulnerableTimer > 0f) invulnerableTimer -= Time.deltaTime;
         TickStatus(ref stunTimer);
         TickStatus(ref silenceTimer);
+        TickStatus(ref charmTimer);
         TickStatus(ref shieldTimer);
+        if (bleedTimer > 0f && IsAlive)
+        {
+            float dt = Mathf.Min(Time.deltaTime, bleedTimer);
+            Health.TakeDamageOverTime(bleedPerSecond * dt, bleedSource);
+        }
+        TickStatus(ref bleedTimer);
 
         if (State == FighterState.Hurt && StateTime >= hurtDuration)
             SetState(FighterState.Idle);

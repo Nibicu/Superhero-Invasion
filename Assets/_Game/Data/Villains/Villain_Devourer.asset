@@ -15,6 +15,7 @@ MonoBehaviour:
   displayName: "\u041F\u043E\u0436\u0438\u0440\u0430\u0442\u0435\u043B\u044C"
   portrait: {fileID: 0}
   color: {r: 0.3529412, g: 0.16470589, b: 0.41568628, a: 1}
+  sprites: {fileID: 0}
   description: "\u0421\u0443\u0449\u0435\u0441\u0442\u0432\u043E \u0438\u0437 \u0434\u0440\u0443\u0433\u043E\u0433\u043E \u0438\u0437\u043C\u0435\u0440\u0435\u043D\u0438\u044F, \u043F\u0438\u0442\u0430\u044E\u0449\u0435\u0435\u0441\u044F \u0447\u0443\u0436\u043E\u0439 \u0441\u0438\u043B\u043E\u0439."
   side: 1
   stars: 3
@@ -23,32 +24,28 @@ MonoBehaviour:
   unitClass: 1
   skillDamage: 0
   baseStats:
-    hp: 3214
-    hpRegen: 43
-    autoAttack: 120
-    attack: 300
-    specialAttack: 86
-    defense: 236
-    specialDefense: 107
-    energy: 168
-    energyRegen: 19
-    speed: 95
+    hp: 2940
+    hpRegen: 50
+    autoAttack: 92
+    attack: 504
+    specialAttack: 420
+    defense: 227
+    specialDefense: 151
+    energy: 237
+    energyRegen: 28
+    speed: 98
   kit: 0
-  passive:
-    name: 
-    description: 
-    cooldown: 0
   skills:
   - name: 
     description: 
     cooldown: 0
+    passive: 0
   - name: 
     description: 
     cooldown: 0
+    passive: 0
   - name: 
     description: 
     cooldown: 0
-  - name: 
-    description: 
-    cooldown: 0
+    passive: 0
   captainBonus: "\u041A\u043E\u043C\u0430\u043D\u0434\u0430 \u043A\u0440\u0430\u0434\u0451\u0442 \u0437\u0434\u043E\u0440\u043E\u0432\u044C\u0435 \u0432\u0440\u0430\u0433\u043E\u0432"

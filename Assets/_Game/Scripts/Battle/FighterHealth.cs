@@ -48,10 +48,14 @@ public class FighterHealth : MonoBehaviour
         lastHitTime = -100f;
     }
 
-    /// <summary>Реген HP: работает, только если бойца давно не били (Реген HP × regenRate единиц в секунду).</summary>
+    /// <summary>
+    /// Реген HP: работает, только если бойца давно не били (Реген HP × regenRate единиц в секунду).
+    /// Навык "Геном" (Солдат) — реген идёт всегда, даже под ударами.
+    /// </summary>
     private void Update()
     {
-        if (!fighter.IsAlive || Current >= Max || TimeSinceHit < regenDelay) return;
+        bool always = fighter.Kit != null && fighter.Kit.RegenAlways;
+        if (!fighter.IsAlive || Current >= Max || (TimeSinceHit < regenDelay && !always)) return;
         if (BattleManager.Instance == null || !BattleManager.Instance.IsRunning) return;
         Heal(fighter.Stats.hpRegen * regenRate * Time.deltaTime);
     }
@@ -98,11 +102,8 @@ public class FighterHealth : MonoBehaviour
 
         if (Current <= 0f)
         {
-            if (hit.attacker != null && !fighter.IsClone) hit.attacker.StatsOwner.Kills++;
-            if (BattleManager.Instance != null) fighter.DeathTime = BattleManager.Instance.Elapsed;
-            fighter.SetState(FighterState.Dead);
+            Die(hit.attacker);
             fighter.Movement.ApplyKnockback(hit.knockback * 1.3f);
-            Died?.Invoke(fighter);
             return true;
         }
 
@@ -127,6 +128,31 @@ public class FighterHealth : MonoBehaviour
             fighter.Movement.ApplyKnockback(hit.knockback);
         }
         return true;
+    }
+
+    /// <summary>
+    /// Урон со временем (кровотечение): без реакции на удар, блока и сбивания. Щит впитывает.
+    /// source — кто наложил (ему засчитывается урон и добивание).
+    /// </summary>
+    public void TakeDamageOverTime(float amount, Fighter source)
+    {
+        if (!fighter.IsAlive || amount <= 0f) return;
+        float damage = fighter.AbsorbShield(amount);
+        float lost = Mathf.Min(Current, damage);
+        fighter.DamageTaken += lost;
+        if (source != null) source.StatsOwner.DamageDealt += lost;
+        Current = Mathf.Max(0f, Current - damage);
+        Changed?.Invoke(this);
+        if (Current <= 0f) Die(source);
+    }
+
+    /// <summary>Боец выбыл: добивание засчитывается killer, время выбывания — для статистики.</summary>
+    private void Die(Fighter killer)
+    {
+        if (killer != null && !fighter.IsClone) killer.StatsOwner.Kills++;
+        if (BattleManager.Instance != null) fighter.DeathTime = BattleManager.Instance.Elapsed;
+        fighter.SetState(FighterState.Dead);
+        Died?.Invoke(fighter);
     }
 
     /// <summary>Запомнить номер удара (храним только последние).</summary>

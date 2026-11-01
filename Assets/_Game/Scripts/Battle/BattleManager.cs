@@ -228,6 +228,21 @@ public class BattleManager : MonoBehaviour
         }
     }
 
+    private readonly List<Fighter> charmFoes = new List<Fighter>(); // Временный список: кого бьёт зачарованный
+
+    /// <summary>
+    /// Кого сейчас бьёт боец: обычно — противников его стороны; зачарованный (Шарм) — своих союзников (кроме себя).
+    /// Список временный: использовать сразу, не сохранять.
+    /// </summary>
+    public IReadOnlyList<Fighter> FoesOf(Fighter f)
+    {
+        if (!f.IsCharmed) return GetOpponents(f.Faction);
+        charmFoes.Clear();
+        foreach (Fighter a in GetAllies(f.Faction))
+            if (a != f) charmFoes.Add(a);
+        return charmFoes;
+    }
+
     // ---------- Начало боя ----------
 
     /// <summary>

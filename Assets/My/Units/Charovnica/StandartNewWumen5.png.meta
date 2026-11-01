@@ -1,0 +1,717 @@
+fileFormatVersion: 2
+guid: a13e1ac2d060d614081619ec662548d8
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -839518278241314802
+    second: StandartNewWumen5_0
+  - first:
+      213: 6493742841230118688
+    second: StandartNewWumen5_1
+  - first:
+      213: 7139185013112352935
+    second: StandartNewWumen5_2
+  - first:
+      213: 3377322958711600572
+    second: StandartNewWumen5_3
+  - first:
+      213: 2074553972890165897
+    second: StandartNewWumen5_4
+  - first:
+      213: 2411192817912494423
+    second: StandartNewWumen5_5
+  - first:
+      213: -6503900463595240984
+    second: StandartNewWumen5_6
+  - first:
+      213: -4234404416369648136
+    second: StandartNewWumen5_7
+  - first:
+      213: -738946880588581809
+    second: StandartNewWumen5_8
+  - first:
+      213: 4525811518374742077
+    second: StandartNewWumen5_9
+  - first:
+      213: -8263926528000153238
+    second: StandartNewWumen5_10
+  - first:
+      213: 9183748125141485537
+    second: StandartNewWumen5_11
+  - first:
+      213: 5058202887831890753
+    second: StandartNewWumen5_12
+  - first:
+      213: 1447952891024034656
+    second: StandartNewWumen5_13
+  - first:
+      213: -5984886061104153911
+    second: StandartNewWumen5_14
+  - first:
+      213: 7707886056059107609
+    second: StandartNewWumen5_15
+  - first:
+      213: 6170248630308182456
+    second: StandartNewWumen5_16
+  - first:
+      213: -903712839295907123
+    second: StandartNewWumen5_17
+  - first:
+      213: -6162009048354166846
+    second: StandartNewWumen5_18
+  - first:
+      213: 575542002508075187
+    second: Charovnica_0
+  - first:
+      213: -6425132581043902705
+    second: Charovnica_1
+  - first:
+      213: 4176116092981062886
+    second: Charovnica_2
+  - first:
+      213: 6830626145527908237
+    second: Charovnica_3
+  - first:
+      213: -7057116193780075090
+    second: Charovnica_4
+  - first:
+      213: 5368039543393665443
+    second: Charovnica_5
+  - first:
+      213: -225966182874970015
+    second: Charovnica_6
+  - first:
+      213: 6859064425576739346
+    second: Charovnica_7
+  - first:
+      213: -7521620209878813057
+    second: Charovnica_8
+  - first:
+      213: 3756591497730177401
+    second: Charovnica_9
+  - first:
+      213: 3213253320832743357
+    second: Charovnica_10
+  - first:
+      213: -7341693770126955432
+    second: Charovnica_11
+  - first:
+      213: 4240763021788426196
+    second: Charovnica_12
+  - first:
+      213: -4171524422238828116
+    second: Charovnica_13
+  - first:
+      213: 6781945042957552335
+    second: Charovnica_14
+  - first:
+      213: -4600751107950774537
+    second: Charovnica_15
+  - first:
+      213: 7040471195787193091
+    second: Charovnica_16
+  - first:
+      213: 6746152922150141594
+    second: Charovnica_17
+  - first:
+      213: 9179025519122855640
+    second: Charovnica_18
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 32
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationMethod: 0
+  spriteTessellationDetail: -1
+  spriteGeometrySubdivision: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: 4
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: Charovnica_0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 192
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3b09fc4e66cbcf700800000000000000
+      internalID: 575542002508075187
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Charovnica_1
+      rect:
+        serializedVersion: 2
+        x: 64
+        y: 192
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f07e61895f755d6a0800000000000000
+      internalID: -6425132581043902705
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Charovnica_2
+      rect:
+        serializedVersion: 2
+        x: 128
+        y: 192
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6ecade6e57b84f930800000000000000
+      internalID: 4176116092981062886
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Charovnica_3
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 192
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d87cfa50a424bce50800000000000000
+      internalID: 6830626145527908237
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Charovnica_4
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 128
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ea5f4134636101e90800000000000000
+      internalID: -7057116193780075090
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Charovnica_5
+      rect:
+        serializedVersion: 2
+        x: 64
+        y: 128
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3a1ca3c068b1f7a40800000000000000
+      internalID: 5368039543393665443
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Charovnica_6
+      rect:
+        serializedVersion: 2
+        x: 128
+        y: 128
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1688c7234f43ddcf0800000000000000
+      internalID: -225966182874970015
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Charovnica_7
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 128
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 212350211ca403f50800000000000000
+      internalID: 6859064425576739346
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Charovnica_8
+      rect:
+        serializedVersion: 2
+        x: 256
+        y: 128
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f7636c63546dd9790800000000000000
+      internalID: -7521620209878813057
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Charovnica_9
+      rect:
+        serializedVersion: 2
+        x: 320
+        y: 128
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 979b57c5018122430800000000000000
+      internalID: 3756591497730177401
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Charovnica_10
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 128
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: db77499eed4c79c20800000000000000
+      internalID: 3213253320832743357
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Charovnica_11
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 64
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 85c62edf9601d1a90800000000000000
+      internalID: -7341693770126955432
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Charovnica_12
+      rect:
+        serializedVersion: 2
+        x: 64
+        y: 64
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4dfaf42ff773ada30800000000000000
+      internalID: 4240763021788426196
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Charovnica_13
+      rect:
+        serializedVersion: 2
+        x: 128
+        y: 64
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ca98690c3a4cb16c0800000000000000
+      internalID: -4171524422238828116
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Charovnica_14
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 64
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fcac4b3951f4e1e50800000000000000
+      internalID: 6781945042957552335
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Charovnica_15
+      rect:
+        serializedVersion: 2
+        x: 256
+        y: 64
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7f6fb9e3e39d620c0800000000000000
+      internalID: -4600751107950774537
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Charovnica_16
+      rect:
+        serializedVersion: 2
+        x: 320
+        y: 64
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 30be3442047c4b160800000000000000
+      internalID: 7040471195787193091
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Charovnica_17
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 64
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a9ef83d07562f9d50800000000000000
+      internalID: 6746152922150141594
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Charovnica_18
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8d6309bb313726f70800000000000000
+      internalID: 9179025519122855640
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 4584d8960e06b8e4a978989dc44390c8
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries:
+      - key: SpriteEditor.SliceSettings
+        value: '{"sliceOnImport":false,"gridCellCount":{"x":1.0,"y":1.0},"gridSpriteSize":{"x":64.0,"y":64.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":1,"keepEmptyRects":false,"isAlternate":false}'
+    nameFileIdTable:
+      Charovnica_0: 575542002508075187
+      Charovnica_1: -6425132581043902705
+      Charovnica_10: 3213253320832743357
+      Charovnica_11: -7341693770126955432
+      Charovnica_12: 4240763021788426196
+      Charovnica_13: -4171524422238828116
+      Charovnica_14: 6781945042957552335
+      Charovnica_15: -4600751107950774537
+      Charovnica_16: 7040471195787193091
+      Charovnica_17: 6746152922150141594
+      Charovnica_18: 9179025519122855640
+      Charovnica_2: 4176116092981062886
+      Charovnica_3: 6830626145527908237
+      Charovnica_4: -7057116193780075090
+      Charovnica_5: 5368039543393665443
+      Charovnica_6: -225966182874970015
+      Charovnica_7: 6859064425576739346
+      Charovnica_8: -7521620209878813057
+      Charovnica_9: 3756591497730177401
+      StandartNewWumen5_0: -839518278241314802
+      StandartNewWumen5_1: 6493742841230118688
+      StandartNewWumen5_10: -8263926528000153238
+      StandartNewWumen5_11: 9183748125141485537
+      StandartNewWumen5_12: 5058202887831890753
+      StandartNewWumen5_13: 1447952891024034656
+      StandartNewWumen5_14: -5984886061104153911
+      StandartNewWumen5_15: 7707886056059107609
+      StandartNewWumen5_16: 6170248630308182456
+      StandartNewWumen5_17: -903712839295907123
+      StandartNewWumen5_18: -6162009048354166846
+      StandartNewWumen5_2: 7139185013112352935
+      StandartNewWumen5_3: 3377322958711600572
+      StandartNewWumen5_4: 2074553972890165897
+      StandartNewWumen5_5: 2411192817912494423
+      StandartNewWumen5_6: -6503900463595240984
+      StandartNewWumen5_7: -4234404416369648136
+      StandartNewWumen5_8: -738946880588581809
+      StandartNewWumen5_9: 4525811518374742077
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

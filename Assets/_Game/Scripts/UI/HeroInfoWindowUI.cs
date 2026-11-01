@@ -159,30 +159,23 @@ public class HeroInfoWindowUI : WindowUI
         // Навыки: открытые — белым, закрытые — серым с подписью уровня
         int level = hero != null ? hero.Level : 1;
         var sb = new StringBuilder();
-        // Пассивный навык — работает всегда
-        HeroSkill passive = current.passive ?? new HeroSkill();
-        sb.AppendLine(passive.IsEmpty
-            ? "<color=#6B7385><b>Пассивный навык:</b> пока нет</color>"
-            : $"<color=#C58BFF><b>{passive.name}</b></color> (пассивный) — {passive.description}");
-        // 4 скила: открываются на 1, 2, 4 и 5 уровне
-        for (int i = 0; i < HeroData.SkillUnlockLevels.Length; i++)
-        {
-            HeroSkill s = current.GetSkill(i);
-            int unlock = HeroData.SkillUnlockLevels[i];
-            string cd = s.cooldown > 0f ? $", перезарядка {s.cooldown:0} с" : "";
-            if (s.IsEmpty)
-                sb.AppendLine($"<color=#6B7385>Скил {i + 1} (ур. {unlock}): пока нет</color>");
-            else if (level >= unlock)
-                sb.AppendLine($"<color=#FFFFFF><b>{s.name}</b></color> <size=85%>(скил {i + 1}{cd})</size> — {s.description}");
-            else
-                sb.AppendLine($"<color=#6B7385><b>{s.name}</b> (откроется на ур. {unlock}{cd}) — {s.description}</color>");
-        }
-        // Пока своих скилов нет — в бою работает скил класса
         if (!current.HasOwnSkills)
-        {
-            ClassProfile cp = current.Profile;
-            sb.AppendLine($"<color=#FFD84A><b>{cp.skillName}</b></color> <size=85%>(скил класса, пока нет своих)</size> — {cp.skillDescription}");
-        }
+            sb.AppendLine("<color=#6B7385>Своих скилов пока нет — дерётся авто атаками</color>");
+        else
+            // 3 скила: открываются на 1, 3 и 5 уровне (пассивные работают сами)
+            for (int i = 0; i < HeroData.SkillUnlockLevels.Length; i++)
+            {
+                HeroSkill s = current.GetSkill(i);
+                int unlock = HeroData.SkillUnlockLevels[i];
+                string kind = s.passive ? "пассивный" : $"скил {i + 1}";
+                string cd = s.cooldown > 0f ? $", перезарядка {s.cooldown:0} с" : "";
+                if (s.IsEmpty)
+                    sb.AppendLine($"<color=#6B7385>Скил {i + 1} (ур. {unlock}): пока нет</color>");
+                else if (level >= unlock)
+                    sb.AppendLine($"<color={(s.passive ? "#C58BFF" : "#FFFFFF")}><b>{s.name}</b></color> <size=85%>({kind}{cd})</size> — {s.description}");
+                else
+                    sb.AppendLine($"<color=#6B7385><b>{s.name}</b> ({kind}, откроется на ур. {unlock}{cd}) — {s.description}</color>");
+            }
         skillsText.text = sb.ToString().TrimEnd();
         if (skillsScroll != null)
         {

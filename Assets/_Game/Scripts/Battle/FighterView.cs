@@ -63,10 +63,9 @@ public class FighterView : MonoBehaviour
     private float legBaseY;              // Исходная высота ног
     private Vector3 visualBasePos;
     private SpriteRenderer aura;         // Аура баффа (копия кружка под ногами)
-    private SpriteRenderer slamRing;     // Волна удара по земле (Танк)
     private float healTimer;             // Зелёная вспышка лечения
-    private float slamTimer;             // Сколько ещё видна волна
-    private Vector2 slamSize;            // Размер волны
+    private SpriteRenderer bloodDrop;    // Капля крови рядом с полоской HP (кровотечение)
+    private static Sprite dropSprite;    // Картинка капли (рисуется один раз)
     private Color buffColor = new Color(1f, 0.85f, 0.25f); // Цвет ауры баффа
     private CharacterSprites sheet;      // Спрайты персонажа (null — человечек из квадратов)
     private SpriteRenderer spriteBody;   // Картинка персонажа (кадры анимации)
@@ -79,6 +78,9 @@ public class FighterView : MonoBehaviour
     private float staminaWidth = 1.04f;  // Полная ширина шкалы бега
     /// <summary>Спрайты персонажа (null — человечек из квадратов). Скилы берут отсюда кадры снарядов.</summary>
     public CharacterSprites Sheet => sheet;
+
+    /// <summary>Круглый спрайт (как кружок команды) — для эффектов скилов (дым и т.п.).</summary>
+    public Sprite CircleSprite => teamRing != null ? teamRing.sprite : null;
 
     private string popText;              // Короткая надпись над головой ("МЕТКО!", "БАРЬЕР")
     private Color popColor;              // Её цвет
@@ -125,7 +127,7 @@ public class FighterView : MonoBehaviour
         baseColors = new Color[allParts.Length];
         for (int i = 0; i < allParts.Length; i++) baseColors[i] = allParts[i].color;
 
-        // Аура баффа и волна удара — копии кружка команды (позже можно заменить своими спрайтами)
+        // Аура баффа — копия кружка команды (позже можно заменить своим спрайтом)
         if (teamRing != null)
         {
             aura = Instantiate(teamRing, teamRing.transform.parent);
@@ -133,12 +135,10 @@ public class FighterView : MonoBehaviour
             aura.transform.localScale = teamRing.transform.localScale * 1.6f;
             aura.sortingOrder = teamRing.sortingOrder - 1;
             aura.gameObject.SetActive(false);
-            slamRing = Instantiate(teamRing, teamRing.transform.parent);
-            slamRing.name = "SlamWave";
-            slamRing.gameObject.SetActive(false);
         }
 
         SetupShieldBubble();
+        SetupBloodDrop();
 
         f.StateChanged += OnStateChanged;
         f.Combat.AttackStarted += OnAttackStarted;
@@ -186,6 +186,52 @@ public class FighterView : MonoBehaviour
         float size = 2f / Mathf.Max(0.01f, w); // шар диаметром ~2 единицы
         go.transform.localScale = new Vector3(size, size, 1f);
         go.SetActive(false);
+    }
+
+    /// <summary>Капля крови слева от полоски HP — видна, пока идёт кровотечение (Сойка).</summary>
+    private void SetupBloodDrop()
+    {
+        Transform bar = transform.Find("HealthBar");
+        var go = new GameObject("BloodDrop");
+        go.transform.SetParent(bar != null ? bar : transform, false);
+        go.transform.localPosition = new Vector3(-0.72f, 0.02f, 0f);
+        bloodDrop = go.AddComponent<SpriteRenderer>();
+        bloodDrop.sprite = DropSprite();
+        bloodDrop.sortingOrder = (body != null ? body.sortingOrder : 4) + 30;
+        go.transform.localScale = new Vector3(1.4f, 1.4f, 1f);
+        go.SetActive(false);
+    }
+
+    /// <summary>Картинка капли крови 9×12 пикселей (рисуется кодом один раз; потом можно заменить своей).</summary>
+    private static Sprite DropSprite()
+    {
+        if (dropSprite != null) return dropSprite;
+        string[] map =
+        {
+            "....#....",
+            "....#....",
+            "...###...",
+            "...###...",
+            "..#####..",
+            "..#####..",
+            ".###o###.",
+            ".##oo###.",
+            ".##o####.",
+            ".#######.",
+            "..#####..",
+            "...###...",
+        };
+        int w = map[0].Length, h = map.Length;
+        var tex = new Texture2D(w, h) { filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Clamp };
+        for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
+            {
+                char c = map[h - 1 - y][x];
+                tex.SetPixel(x, y, c == '#' ? new Color(0.85f, 0.05f, 0.1f) : c == 'o' ? new Color(1f, 0.55f, 0.55f) : Color.clear);
+            }
+        tex.Apply();
+        dropSprite = Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f), 32f);
+        return dropSprite;
     }
 
     /// <summary>Это клон (Фантом): затемнить картинку и подписать имя.</summary>
@@ -295,6 +341,8 @@ public class FighterView : MonoBehaviour
         string status = "";
         if (fighter.IsStunned) status += "<color=#9FD0FF>СТАН</color> ";
         if (fighter.IsSilenced) status += "<color=#C58BFF>НЕМОТА</color> ";
+        if (fighter.IsCharmed) status += "<color=#FF8AD8>ШАРМ</color> ";
+        if (fighter.IsCursed) status += "<color=#B070FF>ПРОКЛЯТ</color> ";
         if (fighter.Shield > 0f) status += $"<color=#7FD8FF>ЩИТ {Mathf.CeilToInt(fighter.Shield)}</color>";
         if (status != "") t += $"\n<size=70%>{status.Trim()}</size>";
         if (popTimer > 0f && !string.IsNullOrEmpty(popText))
@@ -304,14 +352,6 @@ public class FighterView : MonoBehaviour
 
     /// <summary>Зелёная вспышка — бойца вылечили.</summary>
     public void FlashHeal() => healTimer = 0.45f;
-
-    /// <summary>Волна удара по земле (Танк): овал размером с зону удара.</summary>
-    public void PlaySlam(float radiusX, float radiusY)
-    {
-        slamTimer = 0.35f;
-        slamSize = new Vector2(radiusX * 2f, radiusY * 2f);
-        if (slamRing != null) slamRing.gameObject.SetActive(true);
-    }
 
     /// <summary>Бафф начался/закончился: аура и подпись над головой.</summary>
     private void OnBuffChanged(Fighter f)
@@ -333,9 +373,9 @@ public class FighterView : MonoBehaviour
         if (state == FighterState.Dead && nameTag != null) nameTag.gameObject.SetActive(false);
     }
 
-    private void OnAttackStarted(bool special)
+    private void OnAttackStarted()
     {
-        if (animator != null) animator.SetTrigger(special ? "Special" : "Attack");
+        if (animator != null) animator.SetTrigger("Attack");
     }
 
     private void LateUpdate()
@@ -359,6 +399,12 @@ public class FighterView : MonoBehaviour
         {
             bool on = fighter.Shield > 0f && fighter.IsAlive;
             if (shieldBubble.gameObject.activeSelf != on) shieldBubble.gameObject.SetActive(on);
+        }
+        if (bloodDrop != null)
+        {
+            bool bleeding = fighter.IsBleeding && fighter.IsAlive;
+            if (bloodDrop.gameObject.activeSelf != bleeding) bloodDrop.gameObject.SetActive(bleeding);
+            if (bleeding) bloodDrop.transform.localPosition = new Vector3(-0.72f, 0.02f + Mathf.Abs(Mathf.Sin(Time.time * 4f)) * 0.06f, 0f); // капает
         }
         UpdateStaminaBar();
         UpdateColors();
@@ -413,7 +459,6 @@ public class FighterView : MonoBehaviour
                 armAngle = Mathf.Lerp(-70f, 0f, punch);
                 armStretch = 1f + punch * 0.6f;
                 rotZ = -8f * punch * facing;
-                if (fighter.Combat.IsSpecialAttack) backArmAngle = 90f * punch;
                 break;
             case FighterState.Hurt:
                 rotZ = 14f * facing;
@@ -442,21 +487,13 @@ public class FighterView : MonoBehaviour
         if (legRight != null) legRight.localPosition = new Vector3(legRight.localPosition.x, legBaseY - legSwing, 0f);
     }
 
-    /// <summary>Пульсация ауры баффа и расходящаяся волна удара по земле.</summary>
+    /// <summary>Пульсация ауры баффа.</summary>
     private void UpdateEffects()
     {
         if (aura != null && aura.gameObject.activeSelf)
         {
             float pulse = 0.35f + 0.25f * Mathf.Sin(Time.time * 6f);
             aura.color = new Color(buffColor.r, buffColor.g, buffColor.b, fighter.IsAlive ? pulse : 0f);
-        }
-        if (slamRing != null && slamTimer > 0f)
-        {
-            slamTimer -= Time.deltaTime;
-            float k = 1f - Mathf.Clamp01(slamTimer / 0.35f); // 0 → 1
-            slamRing.transform.localScale = new Vector3(slamSize.x * (0.3f + 0.7f * k), slamSize.y * (0.3f + 0.7f * k), 1f);
-            slamRing.color = new Color(1f, 0.8f, 0.4f, 0.6f * (1f - k));
-            if (slamTimer <= 0f) slamRing.gameObject.SetActive(false);
         }
         if (healTimer > 0f) healTimer -= Time.deltaTime;
     }
@@ -484,6 +521,7 @@ public class FighterView : MonoBehaviour
                 c.a *= Mathf.Lerp(1f, 0.4f, deadFade);
             }
             if (fighter.IsStunned && !dead) c = Color.Lerp(c, new Color(0.55f, 0.75f, 1f, c.a), 0.45f); // оглушён — голубоватый
+            else if (fighter.IsCharmed && !dead) c = Color.Lerp(c, new Color(1f, 0.55f, 0.85f, c.a), 0.4f); // зачарован — розоватый
             if (blink) c.a *= 0.4f;
             allParts[i].color = c;
         }

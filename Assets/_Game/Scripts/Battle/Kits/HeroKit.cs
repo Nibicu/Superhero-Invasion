@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>Поза бойца во время личного скила (для внешнего вида).</summary>
@@ -5,28 +6,30 @@ public enum KitPose
 {
     None, // Обычные позы
     Aim,  // Целится и стреляет (обе руки вперёд)
-    Roll, // Кувырок
-    Cast, // Применяет что-то руками (щит, оковы, волна)
+    Roll, // Рывок или кувырок (кадры бега)
+    Cast, // Применяет что-то руками (щит, волна, бросок)
     Block // Блок (Стажёр)
 }
 
 /// <summary>
-/// Личные навыки героя в бою: 1 пассивный и 4 скила (открываются на 1, 2, 4 и 5 уровне).
+/// Личные навыки героя в бою: 3 скила (открываются на 1, 3 и 5 уровне; скил может быть пассивным).
 /// Каждый герой со своими навыками — отдельный класс-наследник (например, SoldierKit).
-/// Пока у героя нет своих навыков (HeroData.kit = None), он дерётся скилом своего класса.
+/// У героя без своих навыков (HeroData.kit = None) скилов нет — он бьётся авто атаками.
 ///
 /// Как это работает:
 ///  - FighterAI каждое решение сначала спрашивает Think(...): если навык применён — ИИ ждёт;
 ///  - PreferredRange(...) — на какой дистанции держаться (0 — как у класса);
-///  - ModifyAutoDamage(...) — пассивка может менять урон авто атак;
-///  - длинные действия (залп, кувырок) идут в состоянии Attacking, удар по бойцу их прерывает.
+///  - ModifyStats(...), RegenAlways, SpeedMultiplier — пассивные эффекты;
+///  - TryBlock(...) — навык может отменить попавший по герою удар (блок, уворот);
+///  - OnAutoHit(...) — авто атака героя попала (например, кровотечение);
+///  - длинные действия (залп, рывок) идут в состоянии Attacking, удар по бойцу их прерывает.
 /// Перезарядка, название и описание скилов — в файле героя (HeroData.skills).
 /// </summary>
 [RequireComponent(typeof(Fighter))]
 public abstract class HeroKit : MonoBehaviour
 {
     protected Fighter self;
-    private readonly float[] cooldowns = new float[4]; // Сколько секунд до готовности каждого скила
+    private readonly float[] cooldowns = new float[HeroData.SkillUnlockLevels.Length]; // Сколько секунд до готовности каждого скила
 
     /// <summary>Поза для внешнего вида (во время скила).</summary>
     public KitPose Pose { get; protected set; } = KitPose.None;
@@ -35,24 +38,30 @@ public abstract class HeroKit : MonoBehaviour
     public float ActionTime { get; protected set; }
 
     /// <summary>
-    /// Идёт действие, которое обычный удар не прерывает (залп, кувырок).
+    /// Идёт действие, которое обычный удар не прерывает (залп, рывок, блок).
     /// Урон проходит, а сбить с ног — по-прежнему можно.
     /// </summary>
     public bool Unstoppable => ActionUnstoppable && self != null && self.State == FighterState.Attacking;
 
-    /// <summary>Какие действия обычный удар не прерывает (залп, кувырок, блок; наследник может добавить свои).</summary>
+    /// <summary>Какие действия обычный удар не прерывает (залп, рывок, блок; наследник может добавить свои).</summary>
     protected virtual bool ActionUnstoppable => Pose == KitPose.Aim || Pose == KitPose.Roll || Pose == KitPose.Block;
 
-    /// <summary>Какой скил (0..3) сейчас показывать кадрами персонажа (-1 — никакой: обычные кадры).</summary>
+    /// <summary>Какой скил (0..2) сейчас показывать кадрами персонажа (-1 — никакой: обычные кадры).</summary>
     public virtual int AnimSkill => -1;
 
     /// <summary>Счётчик повторов анимации скила: изменился — кадры скила играют сначала (каждая пуля Залпа).</summary>
     public int AnimCycle { get; protected set; }
 
-    /// <summary>Сейчас идёт блок: любой урон, отбрасывание, стан и немота не проходят.</summary>
+    /// <summary>Сейчас идёт блок: любой урон, отбрасывание, стан и шарм не проходят.</summary>
     public virtual bool IsBlocking => false;
 
-    /// <summary>Создать навыки нужного героя (null — своих навыков пока нет).</summary>
+    /// <summary>Реген HP идёт всегда, даже под ударами (Геном Солдата).</summary>
+    public virtual bool RegenAlways => false;
+
+    /// <summary>Множитель скорости ходьбы (дым Сойки — ×1.3).</summary>
+    public virtual float SpeedMultiplier => 1f;
+
+    /// <summary>Создать навыки нужного героя (null — своих навыков нет).</summary>
     public static HeroKit Create(Fighter f, HeroKitType type)
     {
         switch (type)
@@ -60,6 +69,9 @@ public abstract class HeroKit : MonoBehaviour
             case HeroKitType.Soldier: return f.gameObject.AddComponent<SoldierKit>();
             case HeroKitType.Stajor: return f.gameObject.AddComponent<StajorKit>();
             case HeroKitType.Phantom: return f.gameObject.AddComponent<PhantomKit>();
+            case HeroKitType.Soyka: return f.gameObject.AddComponent<SoykaKit>();
+            case HeroKitType.Sukub: return f.gameObject.AddComponent<SukubKit>();
+            case HeroKitType.Charovnica: return f.gameObject.AddComponent<CharovnicaKit>();
             default: return null;
         }
     }
@@ -85,17 +97,17 @@ public abstract class HeroKit : MonoBehaviour
     /// <summary>Запустить перезарядку скила i (из файла героя).</summary>
     protected void StartCooldown(int i) => cooldowns[i] = Mathf.Max(0.5f, self.Data.GetSkill(i).cooldown);
 
-    /// <summary>Пассивка: изменить силу авто атаки (по умолчанию — без изменений).</summary>
-    public virtual float ModifyAutoDamage(float power) => power;
-
     /// <summary>Пассивка: изменить характеристики бойца (по умолчанию — без изменений).</summary>
     public virtual HeroStats ModifyStats(HeroStats s) => s;
 
     /// <summary>
-    /// Пришёл удар: вернёт true, если навык его остановил (блок, парирование) — тогда урона нет.
+    /// Пришёл удар: вернёт true, если навык его остановил (блок, уворот) — тогда урона нет.
     /// hit.auto — удар авто атакой (иначе скилом).
     /// </summary>
     public virtual bool TryBlock(HitInfo hit) => false;
+
+    /// <summary>Авто атака героя попала по target (по умолчанию — ничего).</summary>
+    public virtual void OnAutoHit(Fighter target) { }
 
     /// <summary>
     /// Решение ИИ: применить скил против target (retreating — боец отступает).
@@ -132,4 +144,62 @@ public abstract class HeroKit : MonoBehaviour
 
     /// <summary>Действие ещё идёт (боец не получил удар и не упал).</summary>
     protected bool ActionAlive => Pose != KitPose.None && self.State == FighterState.Attacking;
+
+    // ---------- Помощники для скилов ----------
+
+    /// <summary>Противники героя.</summary>
+    protected IReadOnlyList<Fighter> Enemies => BattleManager.Instance.GetOpponents(self.Faction);
+
+    /// <summary>Короткая надпись над головой героя.</summary>
+    protected void Pop(string text, Color color)
+    {
+        if (self.View != null) self.View.Pop(text, color);
+    }
+
+    /// <summary>Расстояние от точки p до ближайшего живого противника.</summary>
+    protected float NearestEnemyDistance(Vector2 p)
+    {
+        float best = float.MaxValue;
+        foreach (Fighter f in Enemies)
+            if (f.IsAlive) best = Mathf.Min(best, Vector2.Distance(f.Position, p));
+        return best;
+    }
+
+    /// <summary>Живые противники в радиусе radius от точки p (кроме except).</summary>
+    protected List<Fighter> EnemiesNear(Vector2 p, float radius, Fighter except = null)
+    {
+        var list = new List<Fighter>();
+        foreach (Fighter f in Enemies)
+            if (f != except && f.IsAlive && Vector2.Distance(f.Position, p) <= radius) list.Add(f);
+        return list;
+    }
+
+    /// <summary>Перенестись в точку неподалёку (до radius по арене), которая дальше всех от противников.</summary>
+    protected void TeleportAway(float radius)
+    {
+        BattleManager bm = BattleManager.Instance;
+        Vector3 best = self.transform.position;
+        float bestDist = NearestEnemyDistance(best);
+        for (int i = 0; i < 12; i++)
+        {
+            Vector3 p = bm.RandomPointNear(self, radius);
+            float dist = NearestEnemyDistance(p);
+            if (dist > bestDist) { bestDist = dist; best = p; }
+        }
+        self.transform.position = best;
+    }
+
+    /// <summary>Ударить врага скилом (урон power × сила; vsSpecial — против Спец. защиты).</summary>
+    protected bool HitEnemy(Fighter e, float power, bool vsSpecial, Vector2 knockback, int stagger)
+    {
+        return e.Health.TakeHit(new HitInfo
+        {
+            attacker = self,
+            attackId = FighterCombat.NewAttackId(),
+            damage = FighterCombat.CalcDamage(power, vsSpecial ? e.Stats.specialDefense : e.Stats.defense),
+            knockback = knockback,
+            stagger = stagger,
+            special = vsSpecial
+        });
+    }
 }
