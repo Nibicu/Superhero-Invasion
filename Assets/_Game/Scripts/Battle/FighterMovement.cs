@@ -23,6 +23,10 @@ public class FighterMovement : MonoBehaviour
     [Tooltip("Как быстро гаснет отбрасывание")]
     [SerializeField] private float knockbackDrag = 10f;
 
+    [Header("Прыжки и полёт")]
+    [Tooltip("Сила тяжести (как быстро падает подброшенный или прыгнувший)")]
+    [SerializeField] private float gravity = 25f;
+
     [Header("Бег")]
     [Tooltip("Во сколько раз бег быстрее ходьбы")]
     [SerializeField] private float runMultiplier = 1.8f;
@@ -37,6 +41,25 @@ public class FighterMovement : MonoBehaviour
     private float speed;          // Итоговая скорость ходьбы
     private bool wantRun;         // Хочет бежать в этом кадре
     private bool exhausted;       // Шкала бега кончилась — ждём, пока наполнится целиком
+    private float verticalSpeed;  // Скорость вверх (в воздухе)
+    private Vector2 airVelocity;  // Скорость прыжка по земле (X — вперёд, Y — по глубине); гаснет при приземлении
+
+    /// <summary>Высота над землёй (0 — стоит на земле). Картинка поднимается, тень остаётся внизу.</summary>
+    public float Height { get; private set; }
+
+    /// <summary>В воздухе (прыжок или подброшен).</summary>
+    public bool InAir => Height > 0f || verticalSpeed > 0f;
+
+    /// <summary>Сила тяжести (для расчёта прыжка).</summary>
+    public float Gravity => gravity;
+
+    /// <summary>Оторваться от земли: скорость вверх up и скорость по земле ground (прыжок; 0 — только вверх).</summary>
+    public void StartAir(float up, Vector2 ground)
+    {
+        verticalSpeed = Mathf.Max(verticalSpeed, up);
+        airVelocity = ground;
+        if (Height <= 0f) Height = 0.001f;
+    }
 
     /// <summary>Шкала бега 0..1 (1 — полная).</summary>
     public float Stamina { get; private set; } = 1f;
@@ -93,6 +116,22 @@ public class FighterMovement : MonoBehaviour
         float dt = Time.deltaTime;
         Vector3 pos = transform.position;
 
+        // Полёт: вверх-вниз по высоте и (прыжок) вперёд; приземлился — сообщаем бойцу
+        bool landed = false;
+        if (InAir)
+        {
+            verticalSpeed -= gravity * dt;
+            Height += verticalSpeed * dt;
+            pos += (Vector3)(airVelocity * dt);
+            if (Height <= 0f)
+            {
+                Height = 0f;
+                verticalSpeed = 0f;
+                airVelocity = Vector2.zero;
+                landed = true;
+            }
+        }
+
         bool running = false;
         if (fighter.CanAct)
         {
@@ -134,5 +173,6 @@ public class FighterMovement : MonoBehaviour
         transform.position = BattleManager.Instance.ClampToArena(fighter, pos);
         input = Vector2.zero; // намерение действует только один кадр
         wantRun = false;
+        if (landed) fighter.OnLanded();
     }
 }

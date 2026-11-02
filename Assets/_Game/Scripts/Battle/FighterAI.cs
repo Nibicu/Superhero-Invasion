@@ -34,6 +34,14 @@ public class FighterAI : MonoBehaviour
     [Tooltip("Шанс схватить беззащитного (шатается или оглушён) врага вплотную — за одно решение")]
     [SerializeField, Range(0f, 1f)] private float grabChance = 0.5f;
 
+    [Header("Прыжок")]
+    [Tooltip("Подброшенный враг ближе этого (по горизонтали) — подпрыгнуть и добить в воздухе")]
+    [SerializeField] private float jumpJuggleRange = 3.5f;
+    [Tooltip("Иногда прыгает с ударом на врага на этом расстоянии (от и до)")]
+    [SerializeField] private Vector2 jumpAttackRange = new Vector2(2f, 3f);
+    [Tooltip("Шанс прыгнуть с ударом (за одно решение), когда враг на таком расстоянии")]
+    [SerializeField, Range(0f, 1f)] private float jumpChance = 0.2f;
+
     [Header("Отступление")]
     [Tooltip("Боец считается 'под атакой' (не может убежать), если его били меньше столько секунд назад")]
     [SerializeField] private float underAttackTime = 1.2f;
@@ -62,6 +70,7 @@ public class FighterAI : MonoBehaviour
     private bool wantAuto;        // Решили сделать авто атаку
     private bool wantGrab;        // Решили схватить цель
     private bool wantDash;        // Решили ударить с разбега
+    private bool wantJump;        // Решили прыгнуть (с ударом в прыжке)
     private bool autoClose;       // Авто атака вплотную (Стрелок бьёт рукой)
     private bool retreating;      // Режим отступления
     private bool wantRun;         // Решили бежать к точке (а не идти)
@@ -97,6 +106,11 @@ public class FighterAI : MonoBehaviour
             wantGrab = false;
             if (target != null && self.Combat.TryGrab(target)) return;
         }
+        if (wantJump)
+        {
+            wantJump = false;
+            if (target != null && self.Combat.TryJump(target)) return;
+        }
         if (wantDash && target != null && self.Combat.CanDashAttack(target))
         {
             wantDash = false;
@@ -124,6 +138,7 @@ public class FighterAI : MonoBehaviour
         wantAuto = false;
         wantGrab = false;
         wantDash = false;
+        wantJump = false;
         autoClose = false;
         ClassProfile profile = self.Profile;
         try { ThinkInner(bm, profile); }
@@ -259,7 +274,15 @@ public class FighterAI : MonoBehaviour
             }
         }
 
-        // 5) Бой по стилю класса
+        // 5) Прыжок: подброшенного врага — добить в воздухе; иногда — прыжок с ударом на подходе
+        if (WantJump())
+        {
+            wantJump = true;
+            hasDestination = false;
+            return;
+        }
+
+        // 6) Бой по стилю класса
         if (profile.style == CombatStyle.Melee) FightMelee();
         else FightRanged(profile);
     }
@@ -448,6 +471,20 @@ public class FighterAI : MonoBehaviour
             if (dist < bestDist) { bestDist = dist; best = f; }
         }
         return best;
+    }
+
+    /// <summary>
+    /// Прыгать ли сейчас: цель подброшена и недалеко (добить в воздухе) или иногда —
+    /// враг на расстоянии прыжка с ударом. Не прыгает при отступлении и под шармом.
+    /// </summary>
+    private bool WantJump()
+    {
+        if (target == null || retreating || self.IsCharmed || !self.Combat.CanJump) return false;
+        Vector2 d = target.Position - self.Position;
+        float ax = Mathf.Abs(d.x), ay = Mathf.Abs(d.y);
+        if (ay > self.depthTolerance * 1.5f) return false;
+        if (target.State == FighterState.Airborne) return ax <= jumpJuggleRange;
+        return ax >= jumpAttackRange.x && ax <= jumpAttackRange.y && Random.value < jumpChance;
     }
 
     /// <summary>Хватать ли цель сейчас: она беззащитна и вплотную, и выпал шанс.</summary>

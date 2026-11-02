@@ -77,6 +77,8 @@ public class FighterView : MonoBehaviour
     private Transform staminaFill;       // Заполнение шкалы бега
     private GameObject staminaRoot;      // Шкала бега (видна, только когда не полная)
     private float staminaWidth = 1.04f;  // Полная ширина шкалы бега
+    private Transform healthBar, nameTagRoot; // Полоска HP и имя — поднимаются вместе с бойцом в воздухе
+    private float barBaseY, tagBaseY, bubbleBaseY; // Их высота, когда боец на земле
     /// <summary>Спрайты персонажа (null — человечек из квадратов). Скилы берут отсюда кадры снарядов.</summary>
     public CharacterSprites Sheet => sheet;
 
@@ -140,6 +142,13 @@ public class FighterView : MonoBehaviour
 
         SetupShieldBubble();
         SetupBloodDrop();
+
+        // Высота полоски HP, имени и шара щита на земле (в прыжке они поднимаются вместе с бойцом)
+        healthBar = transform.Find("HealthBar");
+        nameTagRoot = transform.Find("NameTag");
+        if (healthBar != null) barBaseY = healthBar.localPosition.y;
+        if (nameTagRoot != null) tagBaseY = nameTagRoot.localPosition.y;
+        if (shieldBubble != null) bubbleBaseY = shieldBubble.transform.localPosition.y;
 
         f.StateChanged += OnStateChanged;
         f.Combat.AttackStarted += OnAttackStarted;
@@ -317,6 +326,15 @@ public class FighterView : MonoBehaviour
                 frames = Has(sheet.held) ? sheet.held : sheet.idle;
                 fps = Has(sheet.held) ? sheet.idleFps : 0f;
                 break;
+            case FighterState.Jumping:
+                if (fighter.Combat.IsJumpAttacking) { frames = Has(sheet.jumpAttack) ? sheet.jumpAttack : sheet.GetAttack(3, true); fps = 10f; }
+                else if (Has(sheet.jump)) { frames = sheet.jump; fps = 10f; }
+                else { frames = Has(sheet.run) ? sheet.run : sheet.idle; fps = 0f; } // первый кадр бега
+                break;
+            case FighterState.Airborne:
+                frames = Has(sheet.launched) ? sheet.launched : sheet.idle;
+                fps = Has(sheet.launched) ? 10f : 0f;
+                break;
             case FighterState.Holding:
                 bool kneeNow = fighter.Combat.SinceKnee >= 0f && fighter.Combat.SinceKnee < 0.25f;
                 frames = kneeNow ? (Has(sheet.knee) ? sheet.knee : sheet.attack) : (Has(sheet.grab) ? sheet.grab : sheet.attack);
@@ -431,6 +449,7 @@ public class FighterView : MonoBehaviour
         }
         UpdateStaminaBar();
         UpdateColors();
+        LiftWithHeight();
     }
 
     /// <summary>Процедурные позы по состоянию.</summary>
@@ -496,6 +515,19 @@ public class FighterView : MonoBehaviour
                 offset.x = -0.05f * facing;
                 armAngle = -20f;
                 break;
+            case FighterState.Jumping: // прыжок: ноги поджаты; удар в прыжке — наклон вперёд, рука вытянута
+                legSwing = 0.08f;
+                if (fighter.Combat.IsJumpAttacking)
+                {
+                    rotZ = -20f * facing;
+                    armAngle = 10f;
+                    armStretch = 1.7f;
+                }
+                break;
+            case FighterState.Airborne: // подброшен: откинулся назад, медленно переворачивается
+                rotZ = (30f + fighter.StateTime * 120f) * facing;
+                armAngle = 40f;
+                break;
             case FighterState.Dizzy: // шатается: раскачивается из стороны в сторону
                 rotZ = Mathf.Sin(Time.time * 7f) * 10f;
                 offset.x = Mathf.Sin(Time.time * 7f) * 0.05f;
@@ -524,6 +556,7 @@ public class FighterView : MonoBehaviour
                 break;
         }
 
+        offset.y += fighter.Movement.Height; // в воздухе — картинка выше (тень остаётся на земле)
         visualRoot.localPosition = visualBasePos + offset;
         visualRoot.localRotation = Quaternion.Euler(0f, 0f, rotZ);
         if (armPivot != null)
@@ -534,6 +567,15 @@ public class FighterView : MonoBehaviour
         if (backArm != null) backArm.localRotation = Quaternion.Euler(0f, 0f, backArmAngle);
         if (legLeft != null) legLeft.localPosition = new Vector3(legLeft.localPosition.x, legBaseY + legSwing, 0f);
         if (legRight != null) legRight.localPosition = new Vector3(legRight.localPosition.x, legBaseY - legSwing, 0f);
+    }
+
+    /// <summary>Полоска HP, имя и шар щита поднимаются вместе с бойцом, когда он в воздухе.</summary>
+    private void LiftWithHeight()
+    {
+        float h = fighter.Movement.Height;
+        if (healthBar != null) healthBar.localPosition = new Vector3(healthBar.localPosition.x, barBaseY + h, 0f);
+        if (nameTagRoot != null) nameTagRoot.localPosition = new Vector3(nameTagRoot.localPosition.x, tagBaseY + h, 0f);
+        if (shieldBubble != null) shieldBubble.transform.localPosition = new Vector3(0f, bubbleBaseY + h, 0f);
     }
 
     /// <summary>Пульсация ауры баффа.</summary>

@@ -58,6 +58,7 @@ public class Fighter : MonoBehaviour
 
     private float invulnerableTimer; // Неуязвимость после подъёма
     private float dizzyImmuneTimer;  // Сколько ещё нельзя снова зашататься
+    private float groundClock;       // Сколько секунд сбитый с ног уже лежит на земле (после полёта)
 
     /// <summary>"Очки сбивания" удара, который сразу валит с ног (добивающий удар, бросок, сильный скил).</summary>
     public const int KnockdownStagger = 99;
@@ -303,6 +304,33 @@ public class Fighter : MonoBehaviour
         return true;
     }
 
+    /// <summary>
+    /// Подбросить: боец взлетает со скоростью upSpeed и падает обратно; пока в воздухе — по нему проходит любой удар.
+    /// Приземлился — лежит (сбит с ног). knock — заодно сдвинуть в сторону.
+    /// </summary>
+    public void Launch(float upSpeed, Vector2 knock)
+    {
+        if (!SetState(FighterState.Airborne)) return;
+        Movement.StartAir(upSpeed, Vector2.zero);
+        Movement.ApplyKnockback(knock);
+        StatusChanged?.Invoke(this);
+    }
+
+    /// <summary>Прыгнуть: вверх со скоростью up и вперёд со скоростью ground. Вернёт false, если сейчас нельзя.</summary>
+    public bool StartJump(float up, Vector2 ground)
+    {
+        if (!SetState(FighterState.Jumping)) return false;
+        Movement.StartAir(up, ground);
+        return true;
+    }
+
+    /// <summary>Приземлился (вызывает FighterMovement): подброшенный падает (лежит), прыгнувший встаёт.</summary>
+    public void OnLanded()
+    {
+        if (State == FighterState.Airborne) SetState(FighterState.KnockedDown);
+        else if (State == FighterState.Jumping) SetState(FighterState.Idle);
+    }
+
     /// <summary>Зашататься: стоит, не бьёт, его можно схватить (на dizzyDuration секунд).</summary>
     public void BecomeDizzy()
     {
@@ -380,6 +408,7 @@ public class Fighter : MonoBehaviour
         }
         if (invulnerableTimer > 0f) invulnerableTimer -= Time.deltaTime;
         if (dizzyImmuneTimer > 0f) dizzyImmuneTimer -= Time.deltaTime;
+        if (Movement.InAir) groundClock = 0f; else groundClock += Time.deltaTime; // сколько уже на земле
         TickStatus(ref stunTimer);
         TickStatus(ref silenceTimer);
         TickStatus(ref charmTimer);
@@ -401,7 +430,7 @@ public class Fighter : MonoBehaviour
         }
         else if (HeldBy != null && (!HeldBy.IsAlive || HeldBy.State != FighterState.Holding || State != FighterState.Held))
             EndHeld(); // держащий выбыл или его сбили — свободен
-        else if (State == FighterState.KnockedDown && StateTime >= knockdownDuration)
+        else if (State == FighterState.KnockedDown && StateTime >= knockdownDuration && groundClock >= 0.4f) // сбитый в воздухе сначала падает, потом немного лежит
         {
             SetState(FighterState.Idle);
             invulnerableTimer = getUpInvulnerability;
@@ -442,15 +471,19 @@ public class Fighter : MonoBehaviour
                 return to == FighterState.Idle;
             case FighterState.Hurt:
                 return to == FighterState.Idle || to == FighterState.Hurt || to == FighterState.KnockedDown
-                       || to == FighterState.Dizzy || to == FighterState.Held;
+                       || to == FighterState.Dizzy || to == FighterState.Held || to == FighterState.Airborne;
             case FighterState.Attacking:
-                return to != FighterState.Moving && to != FighterState.Attacking && to != FighterState.Holding;
+                return to != FighterState.Moving && to != FighterState.Attacking && to != FighterState.Holding && to != FighterState.Jumping;
             case FighterState.Dizzy:
-                return to == FighterState.Idle || to == FighterState.KnockedDown || to == FighterState.Held;
+                return to == FighterState.Idle || to == FighterState.KnockedDown || to == FighterState.Held || to == FighterState.Airborne;
             case FighterState.Held:
                 return to == FighterState.Idle || to == FighterState.KnockedDown;
             case FighterState.Holding:
-                return to == FighterState.Idle || to == FighterState.KnockedDown || to == FighterState.Dizzy;
+                return to == FighterState.Idle || to == FighterState.KnockedDown || to == FighterState.Dizzy || to == FighterState.Airborne;
+            case FighterState.Jumping:
+                return to == FighterState.Idle || to == FighterState.KnockedDown || to == FighterState.Airborne;
+            case FighterState.Airborne:
+                return to == FighterState.KnockedDown || to == FighterState.Airborne;
             default: // Idle, Moving
                 return true;
         }

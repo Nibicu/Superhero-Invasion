@@ -54,6 +54,15 @@ public class CharacterSprites : ScriptableObject
     [Tooltip("Удар с разбега (пусто — кадры добивающего удара или атаки)")]
     public Sprite[] dashAttack = new Sprite[0];
 
+    [Tooltip("Прыжок (пусто — первый кадр бега)")]
+    public Sprite[] jump = new Sprite[0];
+
+    [Tooltip("Удар в прыжке (пусто — кадры добивающего удара или атаки)")]
+    public Sprite[] jumpAttack = new Sprite[0];
+
+    [Tooltip("Подброшен — летит в воздухе (пусто — первый кадр покоя)")]
+    public Sprite[] launched = new Sprite[0];
+
     [Header("Захват (пусто — обычные кадры)")]
     [Tooltip("Шатается (пусто — кадры покоя)")]
     public Sprite[] dizzy = new Sprite[0];

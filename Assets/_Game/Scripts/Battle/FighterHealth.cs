@@ -117,12 +117,23 @@ public class FighterHealth : MonoBehaviour
         lastHitTime = Time.time;
         if (!knockdown) stagger += hit.stagger;
         FighterState st = fighter.State;
+        bool inAir = st == FighterState.Airborne || st == FighterState.Jumping;
 
         if (knockdown)
         {
+            // Сильный удар валит с ног (и летящего — отбрасывает в сторону, он падает)
             stagger = 0;
             fighter.SetState(FighterState.KnockedDown);
             fighter.Movement.ApplyKnockback(FallKnockback(hit));
+        }
+        else if (hit.launch > 0f && st != FighterState.Held)
+        {
+            stagger = 0;
+            fighter.Launch(hit.launch, hit.knockback); // подбрасывающий скил
+        }
+        else if (inAir)
+        {
+            // В воздухе: урон проходит, боец продолжает лететь
         }
         else if (st == FighterState.Held)
         {

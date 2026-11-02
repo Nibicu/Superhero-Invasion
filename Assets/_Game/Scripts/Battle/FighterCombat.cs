@@ -16,6 +16,8 @@ using UnityEngine;
 ///  Держащего сбили с ног (или он зашатался) — захват срывается.
 /// УДАР С РАЗБЕГА: бегущий боец рядом с врагом бьёт в прыжке (TryDashAttack) — урон ×1.5,
 ///  отбрасывает и сбивает с ног. Не чаще раза в dashCooldown секунд.
+/// ПРЫЖОК (TryJump): дуга вверх и к цели; в прыжке, как только враг рядом, — удар в прыжке:
+///  урон ×1.3, отбрасывает и сбивает с ног (подброшенного врага — отбрасывает в сторону). Не чаще раза в jumpCooldown секунд.
 /// Зачарованный (Шарм Суккуба) бьёт своих союзников.
 /// Скилы есть только у героев со своим набором (HeroKit): они тратят энергию через TrySpendEnergy
 /// и стреляют через FireShot. Энергия восстанавливается в energyRegenRate раз медленнее параметра "Реген энергии".
@@ -81,6 +83,20 @@ public class FighterCombat : MonoBehaviour
     [Tooltip("Не чаще раза в столько секунд")]
     [SerializeField] private float dashCooldown = 4f;
 
+    [Header("Прыжок")]
+    [Tooltip("Скорость прыжка вверх (выше — дольше в воздухе)")]
+    [SerializeField] private float jumpSpeed = 8f;
+    [Tooltip("Самая большая скорость прыжка вперёд")]
+    [SerializeField] private float jumpMaxForward = 6f;
+    [Tooltip("Урон удара в прыжке (× Авто атака)")]
+    [SerializeField] private float jumpAttackDamage = 1.3f;
+    [Tooltip("Сила отбрасывания удара в прыжке (× сила удара бойца)")]
+    [SerializeField] private float jumpKnockback = 2.2f;
+    [Tooltip("Дальность удара в прыжке (× дальность ближнего боя)")]
+    [SerializeField] private float jumpReach = 1.3f;
+    [Tooltip("Не чаще раза в столько секунд")]
+    [SerializeField] private float jumpCooldown = 3f;
+
     [Header("Авто атака на расстоянии")]
     [Tooltip("Скорость пуль авто атаки")]
     [SerializeField] private float autoShotSpeed = 11f;
@@ -98,6 +114,9 @@ public class FighterCombat : MonoBehaviour
     private int currentAttackId;      // Номер текущей атаки
     private float lastMeleeTime = -10f; // Когда был последний удар вплотную (для серии)
     private bool chainBroken = true;  // Серия прервалась (промах или удар прервали) — следующий удар будет первым
+    private bool jumpAttackDone;      // В этом прыжке уже ударил
+    private float jumpAttackAt = -10f; // Когда ударил в прыжке (StateTime) — для позы
+    private float jumpTimer;          // До следующего прыжка
     private bool dashing;             // Идёт удар с разбега
     private float dashTimer;          // До следующего удара с разбега
     private Fighter held;             // Кого держит в захвате (null — никого)
@@ -136,6 +155,61 @@ public class FighterCombat : MonoBehaviour
 
     /// <summary>Сейчас идёт удар с разбега (для внешнего вида).</summary>
     public bool IsDashAttack => dashing && attackActive;
+
+    /// <summary>Можно ли прыгнуть (боец свободен и прыжок перезарядился).</summary>
+    public bool CanJump => fighter.CanAct && jumpTimer <= 0f;
+
+    /// <summary>Сейчас бьёт в прыжке (первые 0.3 с после удара) — для внешнего вида.</summary>
+    public bool IsJumpAttacking => fighter.State == FighterState.Jumping && fighter.StateTime - jumpAttackAt < 0.3f;
+
+    /// <summary>Прыгнуть к target: дугой так, чтобы приземлиться у цели (вперёд не быстрее jumpMaxForward).</summary>
+    public bool TryJump(Fighter target)
+    {
+        if (!CanJump || target == null) return false;
+        float airTime = 2f * jumpSpeed / Mathf.Max(1f, fighter.Movement.Gravity);
+        Vector2 d = target.Position - fighter.Position;
+        float stopShort = Mathf.Sign(d.x) * fighter.meleeRange * 0.6f; // приземлиться перед целью, а не на ней
+        Vector2 ground = new Vector2(Mathf.Clamp((d.x - stopShort) / airTime, -jumpMaxForward, jumpMaxForward), d.y / airTime);
+        fighter.Movement.FaceTowards(target.Position.x);
+        if (!fighter.StartJump(jumpSpeed, ground)) return false;
+        jumpTimer = jumpCooldown;
+        jumpAttackDone = false;
+        jumpAttackAt = -10f;
+        attackActive = false;
+        ComboStep = 0;
+        chainBroken = true;
+        return true;
+    }
+
+    /// <summary>В прыжке: как только враг впереди рядом — удар в прыжке (один раз за прыжок).</summary>
+    private void UpdateJump()
+    {
+        if (jumpAttackDone) return;
+        int facing = fighter.Movement.Facing;
+        float reach = fighter.meleeRange * jumpReach;
+        bool any = false;
+        foreach (Fighter enemy in BattleManager.Instance.FoesOf(fighter))
+        {
+            if (!enemy.IsAlive || enemy.IsInvulnerable) continue;
+            Vector2 d = enemy.Position - fighter.Position;
+            if (d.x * facing < -0.2f || Mathf.Abs(d.x) > reach || Mathf.Abs(d.y) > fighter.depthTolerance) continue;
+            if (!any) { any = true; currentAttackId = ++nextAttackId; }
+            enemy.Health.TakeHit(new HitInfo
+            {
+                attacker = fighter,
+                attackId = currentAttackId,
+                damage = CalcDamage(fighter.Stats.autoAttack * jumpAttackDamage, enemy.Stats.defense),
+                knockback = new Vector2(facing * fighter.knockbackForce * jumpKnockback, UnityEngine.Random.Range(-0.3f, 0.3f)),
+                stagger = Knockdown,
+                special = false,
+                auto = true
+            });
+        }
+        if (!any) return;
+        jumpAttackDone = true;
+        jumpAttackAt = fighter.StateTime;
+        AttackStarted?.Invoke();
+    }
 
     /// <summary>Удар с разбега перезарядился (ИИ подбегает бегом, чтобы ударить).</summary>
     public bool DashReady => dashTimer <= 0f;
@@ -347,9 +421,11 @@ public class FighterCombat : MonoBehaviour
         float dt = Time.deltaTime;
         if (cooldownTimer > 0f) cooldownTimer -= dt;
         if (dashTimer > 0f) dashTimer -= dt;
+        if (jumpTimer > 0f) jumpTimer -= dt;
         if (fighter.IsAlive) Energy = Mathf.Min(MaxEnergy, Energy + energyRegen * energyRegenRate * dt);
         if (held != null) { UpdateGrab(dt); return; }
         if (dashing) { UpdateDash(); return; }
+        if (fighter.State == FighterState.Jumping) { UpdateJump(); return; }
 
         if (!attackActive) return;
         if (fighter.State != FighterState.Attacking) { attackActive = false; chainBroken = true; return; } // атаку прервали ударом — серия сначала
