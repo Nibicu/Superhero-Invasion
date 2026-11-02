@@ -4,13 +4,14 @@ using UnityEngine;
 /// Солдат (класс Боец, ближний бой). Навыки:
 ///  1) "Залп" (ур. 1) — достаёт винтовку и стреляет 3 раза с интервалом 0.5 с (каждая пуля — 70% Силы атаки,
 ///     отбрасывает). Анимация выстрела играет на каждую пулю. Не применяет, пока враг вплотную или близко.
-///  2) "Геном" (ур. 3, пассивный) — Реген HP идёт всегда, даже когда Солдата бьют.
+///  2) "Скачок" (ур. 3) — кувырок от врага на среднюю дистанцию (неуязвим). Срабатывает, когда Залп готов,
+///     а враг слишком близко, чтобы стрелять: Солдат отпрыгивает и стреляет. Только от врага; перезарядка — как у Залпа.
 ///  3) "Барьер" (ур. 5) — щит прочностью 30% HP на 6 с (впитывает любой урон), вокруг Солдата — тёмно-зелёный шар.
 /// Перезарядки — в файле героя (Data/Heroes/Hero_Soldier). Кадры — в Data/Characters/Sprites_Soldier.
 /// </summary>
 public class SoldierKit : HeroKit
 {
-    private const int Volley = 0, Genome = 1, Barrier = 2; // номера скилов
+    private const int Volley = 0, Leap = 1, Barrier = 2; // номера скилов
 
     [Header("Залп")]
     [SerializeField] private int volleyShots = 3;           // Сколько выстрелов
@@ -22,12 +23,17 @@ public class SoldierKit : HeroKit
     [SerializeField] private float volleyKeepRange = 5.5f;  // На какой дистанции Солдат держится, пока залп готов
     [SerializeField] private float shotDelay = 0.125f;      // Через сколько после начала анимации вылетает пуля (кадр выстрела)
 
+    [Header("Скачок")]
+    [SerializeField] private float leapDistance = 3.5f;     // Длина кувырка от врага
+    [SerializeField] private float leapTime = 0.45f;        // Сколько длится кувырок (неуязвим)
+
     [Header("Барьер")]
     [SerializeField] private float barrierHpPart = 0.3f;    // Прочность щита — доля макс. HP
     [SerializeField] private float barrierTime = 6f;        // Сколько держится щит
     [SerializeField] private float barrierRange = 4f;       // Ставит щит, когда враг ближе этого
 
     private const float AimTolerance = 0.35f; // Насколько точно встать на линию цели для выстрела
+    private const float KnockDrag = 10f;      // Как быстро гаснет движение кувырка (как отбрасывание в FighterMovement)
 
     private Fighter volleyTarget; // По кому идёт залп
     private int shotsFired;       // Сколько пуль уже выпущено
@@ -38,11 +44,6 @@ public class SoldierKit : HeroKit
     // ---------- Внешний вид ----------
 
     public override int AnimSkill => !ActionAlive ? -1 : Pose == KitPose.Aim ? Volley : castingBarrier ? Barrier : -1;
-
-    // ---------- Пассивка ----------
-
-    /// <summary>Геном: реген HP не прерывается ударами.</summary>
-    public override bool RegenAlways => IsUnlocked(Genome);
 
     // ---------- Решение ----------
 
@@ -66,6 +67,13 @@ public class SoldierKit : HeroKit
         if (IsReady(Volley) && absY <= AimTolerance && nearest >= volleyMinRange && absX >= volleyMinRange && absX <= volleyMaxRange)
             return StartVolley(target);
 
+        // 2) Скачок — Залп готов, но враг слишком близко, чтобы стрелять: отпрыгнуть от него на среднюю дистанцию
+        if (IsReady(Leap) && IsReady(Volley) && nearest < volleyMinRange)
+        {
+            Fighter from = NearestEnemy();
+            return StartLeap(from != null ? from : target);
+        }
+
         return false;
     }
 
@@ -82,6 +90,36 @@ public class SoldierKit : HeroKit
         cyclesStarted = 0;
         actionLength = 0.075f + shotDelay + volleyInterval * (volleyShots - 1) + 0.25f;
         self.Movement.FaceTowards(target.Position.x);
+        return true;
+    }
+
+    /// <summary>Ближайший живой противник (от него отпрыгивает Скачок). null — нет.</summary>
+    private Fighter NearestEnemy()
+    {
+        Fighter best = null;
+        float bestDist = float.MaxValue;
+        foreach (Fighter e in Enemies)
+        {
+            if (!e.IsAlive) continue;
+            float d = Vector2.Distance(e.Position, self.Position);
+            if (d < bestDist) { bestDist = d; best = e; }
+        }
+        return best;
+    }
+
+    /// <summary>Скачок: кувырок от врага (неуязвим на время кувырка).</summary>
+    private bool StartLeap(Fighter target)
+    {
+        if (!BeginAction(KitPose.Roll)) return false;
+        StartCooldown(Leap);
+        castingBarrier = false;
+        actionLength = leapTime;
+        self.SetInvulnerable(leapTime);
+        float away = -Mathf.Sign(target.Position.x - self.Position.x);
+        if (away == 0f) away = -self.Movement.Facing;
+        float speed = Mathf.Sqrt(2f * KnockDrag * leapDistance); // проедет ровно leapDistance, пока движение гаснет
+        self.Movement.FaceTowards(target.Position.x);
+        self.Movement.ApplyKnockback(new Vector2(away * speed, 0f));
         return true;
     }
 

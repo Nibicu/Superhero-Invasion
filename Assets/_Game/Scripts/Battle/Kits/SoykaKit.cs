@@ -21,8 +21,9 @@ public class SoykaKit : HeroKit
     [SerializeField] private float dashStartRange = 5f;     // Первый рывок — к врагу не дальше этого
     [SerializeField] private float dashMinRange = 1.2f;     // Ближе — бьёт рукой, а не рывком
     [SerializeField] private float dashChainRange = 4f;     // Следующий рывок — к врагу не дальше этого (небольшая дальность)
-    [SerializeField] private float dashSpeed = 16f;         // Скорость рывка
-    [SerializeField] private float dashMaxTime = 0.45f;     // Дольше этого один рывок не длится
+    [SerializeField] private float dashSpeed = 8f;          // Скорость рывка (видно, как она перескакивает от врага к врагу)
+    [SerializeField] private float dashMaxTime = 0.8f;      // Дольше этого один рывок не длится
+    [SerializeField] private float dashPause = 0.2f;        // Пауза между рывками
     [SerializeField] private float dashHitRadius = 0.8f;    // Кого задевает по пути (по горизонтали)
     [SerializeField] private float dashKnockback = 6f;      // Сила отбрасывания
     [SerializeField] private int dashMaxJumps = 8;          // Больше рывков за раз не бывает
@@ -45,6 +46,7 @@ public class SoykaKit : HeroKit
     private Fighter dashTarget;          // К кому сейчас рывок
     private Fighter lastStruck;          // Кого ударила последним (следующий рывок — к другому)
     private float dashClock;             // Сколько длится текущий рывок
+    private float pauseTimer;            // Пауза перед следующим рывком (сек; 0 — летим)
     private int jumps;                   // Сколько рывков уже сделано
     private readonly List<Fighter> hitThisDash = new List<Fighter>(); // Кого задела этим рывком
 
@@ -120,6 +122,7 @@ public class SoykaKit : HeroKit
         current = Agility;
         jumps = 0;
         lastStruck = null;
+        pauseTimer = 0f;
         Pop("ЛОВКОСТЬ", new Color(0.6f, 0.85f, 1f));
         if (!NextDash(target)) EndAgility();
         return true;
@@ -155,6 +158,13 @@ public class SoykaKit : HeroKit
     /// <summary>Рывок: летим к цели, задеваем всех по пути; долетели — следующий рывок или конец.</summary>
     private void UpdateDash(float dt)
     {
+        // Пауза между рывками: Сойка приземлилась — оглядывается и прыгает к следующему
+        if (pauseTimer > 0f)
+        {
+            pauseTimer -= dt;
+            if (pauseTimer <= 0f && !NextDash(NextDashTarget())) EndAgility();
+            return;
+        }
         BattleManager bm = BattleManager.Instance;
         dashClock += dt;
         Vector2 to = dashTarget != null ? dashTarget.Position - self.Position : Vector2.zero;
@@ -179,7 +189,7 @@ public class SoykaKit : HeroKit
 
         if (!arrived) return;
         if (dashTarget != null && !hitThisDash.Contains(dashTarget)) lastStruck = dashTarget; // не задели — всё равно к другому
-        if (!NextDash(NextDashTarget())) EndAgility();
+        pauseTimer = dashPause; // следующий рывок — после короткой паузы
     }
 
     /// <summary>Закончить серию рывков.</summary>
