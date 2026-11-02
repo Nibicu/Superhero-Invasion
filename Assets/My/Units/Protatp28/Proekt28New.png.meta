@@ -59,6 +59,63 @@ TextureImporter:
   - first:
       213: -4310308405776232120
     second: Proekt28New_18
+  - first:
+      213: -7077380105433872566
+    second: Protatp28_0
+  - first:
+      213: 4668061853939019770
+    second: Protatp28_1
+  - first:
+      213: 7510408342651224967
+    second: Protatp28_2
+  - first:
+      213: -1113618820699951883
+    second: Protatp28_3
+  - first:
+      213: -2602304961967752588
+    second: Protatp28_4
+  - first:
+      213: 5914362187532191902
+    second: Protatp28_5
+  - first:
+      213: 8318737654400448900
+    second: Protatp28_6
+  - first:
+      213: 4622001686977631596
+    second: Protatp28_7
+  - first:
+      213: 2218953842521262396
+    second: Protatp28_8
+  - first:
+      213: -5429827918924402349
+    second: Protatp28_9
+  - first:
+      213: -9173768873991740781
+    second: Protatp28_10
+  - first:
+      213: -6863693878418147875
+    second: Protatp28_11
+  - first:
+      213: -8662223748760794378
+    second: Protatp28_12
+  - first:
+      213: 730871883978437400
+    second: Protatp28_13
+  - first:
+      213: 2238631885176188194
+    second: Protatp28_14
+  - first:
+      213: -3020629072179092545
+    second: Protatp28_15
+  - first:
+      213: 5358476540403485928
+    second: Protatp28_16
+  - first:
+      213: 303844015254950835
+    second: Protatp28_17
+  - first:
+      213: 3246720133542760440
+    second: Protatp28_18
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -91,7 +148,7 @@ TextureImporter:
   maxTextureSize: 2048
   textureSettings:
     serializedVersion: 2
-    filterMode: 1
+    filterMode: 0
     aniso: 1
     mipBias: 0
     wrapU: 1
@@ -105,7 +162,7 @@ TextureImporter:
   spriteMeshType: 1
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
-  spritePixelsToUnits: 100
+  spritePixelsToUnits: 32
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
@@ -131,7 +188,7 @@ TextureImporter:
     maxTextureSize: 2048
     resizeAlgorithm: 0
     textureFormat: -1
-    textureCompression: 1
+    textureCompression: 0
     compressionQuality: 50
     crunchedCompression: 0
     allowsAlphaSplitting: 0
@@ -182,419 +239,419 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Proekt28New_0
+      name: Protatp28_0
       rect:
         serializedVersion: 2
-        x: 12
-        y: 191
-        width: 28
-        height: 34
+        x: 0
+        y: 192
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: f1803ff9546ea54e0800000000000000
-      internalID: -1992026698447386593
+      spriteID: a47823baa4818cd90800000000000000
+      internalID: -7077380105433872566
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Proekt28New_1
+      name: Protatp28_1
       rect:
         serializedVersion: 2
-        x: 76
-        y: 191
-        width: 28
-        height: 33
+        x: 64
+        y: 192
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: edab08e353627c890800000000000000
-      internalID: -7437934249455338786
+      spriteID: aff2691168948c040800000000000000
+      internalID: 4668061853939019770
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Proekt28New_2
+      name: Protatp28_2
       rect:
         serializedVersion: 2
-        x: 140
-        y: 191
-        width: 28
-        height: 33
+        x: 128
+        y: 192
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 71e198b3a2e0b6ea0800000000000000
-      internalID: -5878589314051793385
+      spriteID: 7834bd588945a3860800000000000000
+      internalID: 7510408342651224967
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Proekt28New_3
+      name: Protatp28_3
       rect:
         serializedVersion: 2
-        x: 204
-        y: 191
-        width: 28
-        height: 33
+        x: 192
+        y: 192
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: ce0fe5f5fcc5fc4d0800000000000000
-      internalID: -3112166771761680148
+      spriteID: 5fc6df03591ab80f0800000000000000
+      internalID: -1113618820699951883
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Proekt28New_4
+      name: Protatp28_4
       rect:
         serializedVersion: 2
-        x: 12
-        y: 127
-        width: 28
-        height: 33
+        x: 0
+        y: 128
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 4c12b4281e21696e0800000000000000
-      internalID: -1831255438716624444
+      spriteID: 47afca8bc61c2ebd0800000000000000
+      internalID: -2602304961967752588
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Proekt28New_5
+      name: Protatp28_5
       rect:
         serializedVersion: 2
-        x: 76
-        y: 127
-        width: 27
-        height: 34
+        x: 64
+        y: 128
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: ad0670d45cac2a310800000000000000
-      internalID: 1414916181697454298
+      spriteID: e98cbdce219041250800000000000000
+      internalID: 5914362187532191902
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Proekt28New_6
+      name: Protatp28_6
       rect:
         serializedVersion: 2
-        x: 140
-        y: 127
-        width: 27
-        height: 35
+        x: 128
+        y: 128
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 5062e665bae33e750800000000000000
-      internalID: 6332974406623438341
+      spriteID: 489743672d7127370800000000000000
+      internalID: 8318737654400448900
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Proekt28New_7
+      name: Protatp28_7
       rect:
         serializedVersion: 2
-        x: 204
-        y: 127
-        width: 28
-        height: 34
+        x: 192
+        y: 128
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 2731dae39f9518fe0800000000000000
-      internalID: -1188569899615841422
+      spriteID: c65de8fbb06a42040800000000000000
+      internalID: 4622001686977631596
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Proekt28New_8
+      name: Protatp28_8
       rect:
         serializedVersion: 2
-        x: 268
-        y: 127
-        width: 28
-        height: 33
+        x: 256
+        y: 128
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: f088a5516fed65960800000000000000
-      internalID: 7590499370481125391
+      spriteID: c39c77463ce4bce10800000000000000
+      internalID: 2218953842521262396
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Proekt28New_9
+      name: Protatp28_9
       rect:
         serializedVersion: 2
-        x: 332
-        y: 127
-        width: 27
-        height: 34
+        x: 320
+        y: 128
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: c80d7ae3f450041a0800000000000000
-      internalID: -6827451197181931380
+      spriteID: 3513305b64065a4b0800000000000000
+      internalID: -5429827918924402349
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Proekt28New_10
+      name: Protatp28_10
       rect:
         serializedVersion: 2
-        x: 396
-        y: 127
-        width: 27
-        height: 34
+        x: 384
+        y: 128
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: e6f9986edce932580800000000000000
-      internalID: -8853057835306999954
+      spriteID: 392ef2650d930b080800000000000000
+      internalID: -9173768873991740781
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Proekt28New_11
+      name: Protatp28_11
       rect:
         serializedVersion: 2
-        x: 11
+        x: 0
         y: 64
-        width: 30
-        height: 33
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: e874607104e63f620800000000000000
-      internalID: 2806708214325200782
+      spriteID: dd5fcd178c24fb0a0800000000000000
+      internalID: -6863693878418147875
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Proekt28New_12
+      name: Protatp28_12
       rect:
         serializedVersion: 2
-        x: 76
-        y: 63
-        width: 29
-        height: 33
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: c4e1fcd17e375db50800000000000000
-      internalID: 6617322663965564492
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Proekt28New_13
-      rect:
-        serializedVersion: 2
-        x: 140
-        y: 63
-        width: 29
-        height: 32
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 2327ab80272b42100800000000000000
-      internalID: 82386896041964082
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Proekt28New_14
-      rect:
-        serializedVersion: 2
-        x: 205
-        y: 63
-        width: 29
-        height: 33
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 187106a038faf2d30800000000000000
-      internalID: 4408935537568651137
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Proekt28New_15
-      rect:
-        serializedVersion: 2
-        x: 269
+        x: 64
         y: 64
-        width: 29
-        height: 33
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 4cb846e44fb5e5940800000000000000
-      internalID: 5286764117424901060
+      spriteID: 6fa092a156999c780800000000000000
+      internalID: -8662223748760794378
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Proekt28New_16
+      name: Protatp28_13
       rect:
         serializedVersion: 2
-        x: 333
-        y: 63
-        width: 29
-        height: 33
+        x: 128
+        y: 64
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 727ac79f526718320800000000000000
-      internalID: 2558455968794715943
+      spriteID: 813fadc2b14942a00800000000000000
+      internalID: 730871883978437400
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Proekt28New_17
+      name: Protatp28_14
       rect:
         serializedVersion: 2
-        x: 395
-        y: 63
-        width: 31
-        height: 33
+        x: 192
+        y: 64
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 565f2f51037ccda80800000000000000
-      internalID: -8440652592258550427
+      spriteID: 22d2acab6d7311f10800000000000000
+      internalID: 2238631885176188194
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Proekt28New_18
+      name: Protatp28_15
       rect:
         serializedVersion: 2
-        x: 11
+        x: 256
+        y: 64
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fb32c82ecd19416d0800000000000000
+      internalID: -3020629072179092545
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Protatp28_16
+      rect:
+        serializedVersion: 2
+        x: 320
+        y: 64
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8ec8308e5022d5a40800000000000000
+      internalID: 5358476540403485928
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Protatp28_17
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 64
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3b35664a588773400800000000000000
+      internalID: 303844015254950835
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Protatp28_18
+      rect:
+        serializedVersion: 2
+        x: 0
         y: 0
-        width: 41
-        height: 31
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 841d3598755be24c0800000000000000
-      internalID: -4310308405776232120
+      spriteID: 8ffcce472caae0d20800000000000000
+      internalID: 3246720133542760440
       vertices: []
       indices: 
       edges: []
@@ -632,6 +689,25 @@ TextureImporter:
       Proekt28New_7: -1188569899615841422
       Proekt28New_8: 7590499370481125391
       Proekt28New_9: -6827451197181931380
+      Protatp28_0: -7077380105433872566
+      Protatp28_1: 4668061853939019770
+      Protatp28_10: -9173768873991740781
+      Protatp28_11: -6863693878418147875
+      Protatp28_12: -8662223748760794378
+      Protatp28_13: 730871883978437400
+      Protatp28_14: 2238631885176188194
+      Protatp28_15: -3020629072179092545
+      Protatp28_16: 5358476540403485928
+      Protatp28_17: 303844015254950835
+      Protatp28_18: 3246720133542760440
+      Protatp28_2: 7510408342651224967
+      Protatp28_3: -1113618820699951883
+      Protatp28_4: -2602304961967752588
+      Protatp28_5: 5914362187532191902
+      Protatp28_6: 8318737654400448900
+      Protatp28_7: 4622001686977631596
+      Protatp28_8: 2218953842521262396
+      Protatp28_9: -5429827918924402349
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

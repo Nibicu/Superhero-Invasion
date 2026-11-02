@@ -181,6 +181,9 @@ public class FighterCombat : MonoBehaviour
         return true;
     }
 
+    /// <summary>Этот прыжок — без удара в прыжке (полёт или прыжок скила: урон наносит сам скил).</summary>
+    public void SkipJumpAttack() => jumpAttackDone = true;
+
     /// <summary>В прыжке: как только враг впереди рядом — удар в прыжке (один раз за прыжок).</summary>
     private void UpdateJump()
     {
@@ -449,6 +452,7 @@ public class FighterCombat : MonoBehaviour
     private void DoAuto()
     {
         float power = fighter.Stats.autoAttack;
+        if (fighter.Kit != null) fighter.Kit.OnAutoAttack(); // например, каждая 5-я авто атака Рейнджера — доп. стрела
         if (autoMelee)
         {
             bool finisher = IsFinisher;

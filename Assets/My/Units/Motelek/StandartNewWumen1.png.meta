@@ -59,6 +59,63 @@ TextureImporter:
   - first:
       213: 3099912666330468655
     second: StandartNewWumen1_18
+  - first:
+      213: -4361822801290531519
+    second: Motelek_0
+  - first:
+      213: 5151158402480171256
+    second: Motelek_1
+  - first:
+      213: 7124918125157141588
+    second: Motelek_2
+  - first:
+      213: 2781918373944103233
+    second: Motelek_3
+  - first:
+      213: -1177680614818763264
+    second: Motelek_4
+  - first:
+      213: -4861883285418016894
+    second: Motelek_5
+  - first:
+      213: -4817972843523778025
+    second: Motelek_6
+  - first:
+      213: -7548331265581329620
+    second: Motelek_7
+  - first:
+      213: -5084555828497477923
+    second: Motelek_8
+  - first:
+      213: 8441093198273663050
+    second: Motelek_9
+  - first:
+      213: 8094766037330503941
+    second: Motelek_10
+  - first:
+      213: -5954073136481414374
+    second: Motelek_11
+  - first:
+      213: -3677855615101819833
+    second: Motelek_12
+  - first:
+      213: 1922942220569361084
+    second: Motelek_13
+  - first:
+      213: 1685438977052625118
+    second: Motelek_14
+  - first:
+      213: 1317170725574720825
+    second: Motelek_15
+  - first:
+      213: 2213619772569764714
+    second: Motelek_16
+  - first:
+      213: -2767061804277803088
+    second: Motelek_17
+  - first:
+      213: 5018377271272578334
+    second: Motelek_18
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -91,7 +148,7 @@ TextureImporter:
   maxTextureSize: 2048
   textureSettings:
     serializedVersion: 2
-    filterMode: 1
+    filterMode: 0
     aniso: 1
     mipBias: 0
     wrapU: 1
@@ -105,7 +162,7 @@ TextureImporter:
   spriteMeshType: 1
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
-  spritePixelsToUnits: 100
+  spritePixelsToUnits: 32
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
@@ -131,7 +188,7 @@ TextureImporter:
     maxTextureSize: 2048
     resizeAlgorithm: 0
     textureFormat: -1
-    textureCompression: 1
+    textureCompression: 0
     compressionQuality: 50
     crunchedCompression: 0
     allowsAlphaSplitting: 0
@@ -182,419 +239,419 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: StandartNewWumen1_0
+      name: Motelek_0
       rect:
         serializedVersion: 2
-        x: 18
-        y: 191
-        width: 24
-        height: 34
+        x: 0
+        y: 192
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 12148d0d771de20b0800000000000000
-      internalID: -5751429361570397919
+      spriteID: 14de0eba541b773c0800000000000000
+      internalID: -4361822801290531519
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: StandartNewWumen1_1
+      name: Motelek_1
       rect:
         serializedVersion: 2
-        x: 82
-        y: 191
-        width: 24
-        height: 33
+        x: 64
+        y: 192
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: f1da1976079473260800000000000000
-      internalID: 7077206086558788895
+      spriteID: 8f8699966479c7740800000000000000
+      internalID: 5151158402480171256
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: StandartNewWumen1_2
+      name: Motelek_2
       rect:
         serializedVersion: 2
-        x: 146
-        y: 191
-        width: 24
-        height: 33
+        x: 128
+        y: 192
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 373f06c41c98782a0800000000000000
-      internalID: -6735263254406171789
+      spriteID: 45ccbbf094bc0e260800000000000000
+      internalID: 7124918125157141588
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: StandartNewWumen1_3
+      name: Motelek_3
       rect:
         serializedVersion: 2
-        x: 210
-        y: 191
-        width: 24
-        height: 33
+        x: 192
+        y: 192
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 88586ab2732305c50800000000000000
-      internalID: 6651871862163146120
+      spriteID: 1411219950c5b9620800000000000000
+      internalID: 2781918373944103233
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: StandartNewWumen1_4
+      name: Motelek_4
       rect:
         serializedVersion: 2
-        x: 18
-        y: 127
-        width: 23
-        height: 33
+        x: 0
+        y: 128
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: b9fc724f23b6bd2d0800000000000000
-      internalID: -3252888439256264805
+      spriteID: 00e2dde68b908afe0800000000000000
+      internalID: -1177680614818763264
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: StandartNewWumen1_5
+      name: Motelek_5
       rect:
         serializedVersion: 2
-        x: 82
-        y: 127
-        width: 23
-        height: 34
+        x: 64
+        y: 128
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 045eae775c8529d50800000000000000
-      internalID: 6742549197270738240
+      spriteID: 28fff3949ee178cb0800000000000000
+      internalID: -4861883285418016894
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: StandartNewWumen1_6
+      name: Motelek_6
       rect:
         serializedVersion: 2
-        x: 146
-        y: 127
-        width: 23
-        height: 35
+        x: 128
+        y: 128
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 29bc07d79746dbd70800000000000000
-      internalID: 9060508498297670546
+      spriteID: 71a594cb93f132db0800000000000000
+      internalID: -4817972843523778025
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: StandartNewWumen1_7
+      name: Motelek_7
       rect:
         serializedVersion: 2
-        x: 210
-        y: 127
-        width: 23
-        height: 34
+        x: 192
+        y: 128
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 99a375182bad4fe80800000000000000
-      internalID: -8145645365797373287
+      spriteID: c23dc0ce4b0fe3790800000000000000
+      internalID: -7548331265581329620
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: StandartNewWumen1_8
+      name: Motelek_8
       rect:
         serializedVersion: 2
-        x: 274
-        y: 127
-        width: 23
-        height: 33
+        x: 256
+        y: 128
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 98284c7f415aa80d0800000000000000
-      internalID: -3419739457559690615
+      spriteID: dde04c1c9670079b0800000000000000
+      internalID: -5084555828497477923
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: StandartNewWumen1_9
+      name: Motelek_9
       rect:
         serializedVersion: 2
-        x: 338
-        y: 127
-        width: 23
-        height: 34
+        x: 320
+        y: 128
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: b68423789f9939480800000000000000
-      internalID: -8893595542132471701
+      spriteID: a40511f7a89c42570800000000000000
+      internalID: 8441093198273663050
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: StandartNewWumen1_10
+      name: Motelek_10
       rect:
         serializedVersion: 2
-        x: 402
-        y: 127
-        width: 23
-        height: 34
+        x: 384
+        y: 128
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 4e3bcf62fd53b6590800000000000000
-      internalID: -7679985507002174492
+      spriteID: 5092bf2b2d2665070800000000000000
+      internalID: 8094766037330503941
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: StandartNewWumen1_11
+      name: Motelek_11
       rect:
         serializedVersion: 2
-        x: 20
-        y: 63
-        width: 23
-        height: 33
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 2ff2122d364be5260800000000000000
-      internalID: 7088301204347891698
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: StandartNewWumen1_12
-      rect:
-        serializedVersion: 2
-        x: 84
+        x: 0
         y: 64
-        width: 23
-        height: 33
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 00875ff14441bdf30800000000000000
-      internalID: 4601293727115606016
+      spriteID: a1354554702ee5da0800000000000000
+      internalID: -5954073136481414374
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: StandartNewWumen1_13
+      name: Motelek_12
       rect:
         serializedVersion: 2
-        x: 148
-        y: 65
-        width: 23
-        height: 33
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: b7e3c6bb5e2285ce0800000000000000
-      internalID: -1416343712720732549
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: StandartNewWumen1_14
-      rect:
-        serializedVersion: 2
-        x: 212
-        y: 66
-        width: 23
-        height: 33
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: dc224aa9956483010800000000000000
-      internalID: 1168761453963125453
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: StandartNewWumen1_15
-      rect:
-        serializedVersion: 2
-        x: 276
-        y: 65
-        width: 23
-        height: 33
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 095c8b42635587b10800000000000000
-      internalID: 1979425727262016912
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: StandartNewWumen1_16
-      rect:
-        serializedVersion: 2
-        x: 340
+        x: 64
         y: 64
-        width: 23
-        height: 33
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 7a01981f647308820800000000000000
-      internalID: 2918393336375611559
+      spriteID: 7442eaeddc1a5fcc0800000000000000
+      internalID: -3677855615101819833
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: StandartNewWumen1_17
+      name: Motelek_13
       rect:
         serializedVersion: 2
-        x: 404
-        y: 63
-        width: 23
-        height: 33
+        x: 128
+        y: 64
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 49f286e0c3d41c650800000000000000
-      internalID: 6251362678102044564
+      spriteID: cba33ace2c9afaa10800000000000000
+      internalID: 1922942220569361084
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: StandartNewWumen1_18
+      name: Motelek_14
       rect:
         serializedVersion: 2
-        x: 20
+        x: 192
+        y: 64
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ed8c1ddd1d1e36710800000000000000
+      internalID: 1685438977052625118
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Motelek_15
+      rect:
+        serializedVersion: 2
+        x: 256
+        y: 64
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 93dbc66dbc7874210800000000000000
+      internalID: 1317170725574720825
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Motelek_16
+      rect:
+        serializedVersion: 2
+        x: 320
+        y: 64
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a634dc3747b58be10800000000000000
+      internalID: 2213619772569764714
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Motelek_17
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 64
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0b7587413fb6999d0800000000000000
+      internalID: -2767061804277803088
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Motelek_18
+      rect:
+        serializedVersion: 2
+        x: 0
         y: 0
-        width: 32
-        height: 31
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: f219c5f552a150b20800000000000000
-      internalID: 3099912666330468655
+      spriteID: e1d981b2a8bd4a540800000000000000
+      internalID: 5018377271272578334
       vertices: []
       indices: 
       edges: []
@@ -613,6 +670,25 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
+      Motelek_0: -4361822801290531519
+      Motelek_1: 5151158402480171256
+      Motelek_10: 8094766037330503941
+      Motelek_11: -5954073136481414374
+      Motelek_12: -3677855615101819833
+      Motelek_13: 1922942220569361084
+      Motelek_14: 1685438977052625118
+      Motelek_15: 1317170725574720825
+      Motelek_16: 2213619772569764714
+      Motelek_17: -2767061804277803088
+      Motelek_18: 5018377271272578334
+      Motelek_2: 7124918125157141588
+      Motelek_3: 2781918373944103233
+      Motelek_4: -1177680614818763264
+      Motelek_5: -4861883285418016894
+      Motelek_6: -4817972843523778025
+      Motelek_7: -7548331265581329620
+      Motelek_8: -5084555828497477923
+      Motelek_9: 8441093198273663050
       StandartNewWumen1_0: -5751429361570397919
       StandartNewWumen1_1: 7077206086558788895
       StandartNewWumen1_10: -7679985507002174492

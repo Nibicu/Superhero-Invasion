@@ -201,6 +201,13 @@ public class FighterAI : MonoBehaviour
         }
         if (retreating)
         {
+            HealSpot spot = FindHealSpot(bm, itemSearchRadius); // цветок Дерева, пыль Мотылька
+            if (spot != null)
+            {
+                destination = spot.Position;
+                hasDestination = true;
+                return;
+            }
             BattleBuffItem potion = FindBuff(bm, true, itemSearchRadius);
             if (potion != null)
             {
@@ -384,9 +391,21 @@ public class FighterAI : MonoBehaviour
 
     // ---------- Предметы ----------
 
-    /// <summary>Пойти к баффу или коробке в радиусе radius (если до них можно дойти). Вернёт true, если нашли.</summary>
+    /// <summary>Пойти к лечебному месту, баффу или коробке в радиусе radius (если до них можно дойти). Вернёт true, если нашли.</summary>
     private bool TryTakeItem(BattleManager bm, float radius)
     {
+        // Лечебное место своей стороны (цветок, пыль) — если ранен
+        if (self.Health.Fraction < 0.85f)
+        {
+            HealSpot spot = FindHealSpot(bm, radius);
+            if (spot != null)
+            {
+                destination = spot.Position;
+                hasDestination = true;
+                return true;
+            }
+        }
+
         // Бафф: лечение — только если ранен, усиление — всегда
         BattleBuffItem buff = FindBuff(bm, false, radius);
         if (buff != null)
@@ -413,6 +432,20 @@ public class FighterAI : MonoBehaviour
         destination = new Vector2(box.Position.x + side * range, box.Position.y);
         hasDestination = true;
         return true;
+    }
+
+    /// <summary>Ближайшее лечебное место своей стороны в радиусе, где можно вылечиться (null — нет).</summary>
+    private HealSpot FindHealSpot(BattleManager bm, float radius)
+    {
+        HealSpot best = null;
+        float bestDist = radius;
+        foreach (HealSpot s in HealSpot.All)
+        {
+            if (s == null || !s.CanHeal(self)) continue;
+            float dist = Vector2.Distance(s.Position, self.Position);
+            if (dist < bestDist && bm.IsReachable(self, s.Position)) { bestDist = dist; best = s; }
+        }
+        return best;
     }
 
     /// <summary>Ближайший бафф в радиусе. healOnly — только лечение (для отступающих).</summary>

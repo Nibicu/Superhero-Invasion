@@ -59,6 +59,63 @@ TextureImporter:
   - first:
       213: -7740114231343364549
     second: StandartNewWumen4_18
+  - first:
+      213: 4497423159679518821
+    second: Reyndger_0
+  - first:
+      213: 5219974786434535155
+    second: Reyndger_1
+  - first:
+      213: -154393399392904341
+    second: Reyndger_2
+  - first:
+      213: -4430962544452969111
+    second: Reyndger_3
+  - first:
+      213: -753331713133626827
+    second: Reyndger_4
+  - first:
+      213: 6093805354871401777
+    second: Reyndger_5
+  - first:
+      213: 6307306625177068221
+    second: Reyndger_6
+  - first:
+      213: -8631464823403130997
+    second: Reyndger_7
+  - first:
+      213: -1490279569771664272
+    second: Reyndger_8
+  - first:
+      213: 4224177072200668831
+    second: Reyndger_9
+  - first:
+      213: 3831812169474613938
+    second: Reyndger_10
+  - first:
+      213: -3180245820838440326
+    second: Reyndger_11
+  - first:
+      213: -7347456412577905616
+    second: Reyndger_12
+  - first:
+      213: 2989333030293955655
+    second: Reyndger_13
+  - first:
+      213: -8068988919479724275
+    second: Reyndger_14
+  - first:
+      213: -8053937731719216767
+    second: Reyndger_15
+  - first:
+      213: 7119250404131326898
+    second: Reyndger_16
+  - first:
+      213: 9048543976544281937
+    second: Reyndger_17
+  - first:
+      213: 3845135043544736664
+    second: Reyndger_18
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -91,7 +148,7 @@ TextureImporter:
   maxTextureSize: 2048
   textureSettings:
     serializedVersion: 2
-    filterMode: 1
+    filterMode: 0
     aniso: 1
     mipBias: 0
     wrapU: 1
@@ -105,7 +162,7 @@ TextureImporter:
   spriteMeshType: 1
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
-  spritePixelsToUnits: 100
+  spritePixelsToUnits: 32
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
@@ -131,7 +188,7 @@ TextureImporter:
     maxTextureSize: 2048
     resizeAlgorithm: 0
     textureFormat: -1
-    textureCompression: 1
+    textureCompression: 0
     compressionQuality: 50
     crunchedCompression: 0
     allowsAlphaSplitting: 0
@@ -182,419 +239,419 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: StandartNewWumen4_0
+      name: Reyndger_0
       rect:
         serializedVersion: 2
-        x: 21
-        y: 191
-        width: 26
-        height: 34
+        x: 0
+        y: 192
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 54c8cfa5be44aaf60800000000000000
-      internalID: 8046319461885316165
+      spriteID: 568005d098e0a6e30800000000000000
+      internalID: 4497423159679518821
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: StandartNewWumen4_1
+      name: Reyndger_1
       rect:
         serializedVersion: 2
-        x: 85
-        y: 191
-        width: 26
-        height: 33
+        x: 64
+        y: 192
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 1281b5741352f9690800000000000000
-      internalID: -7593309553142589407
+      spriteID: 3fe0de16963117840800000000000000
+      internalID: 5219974786434535155
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: StandartNewWumen4_2
+      name: Reyndger_2
       rect:
         serializedVersion: 2
-        x: 149
-        y: 191
-        width: 26
-        height: 33
+        x: 128
+        y: 192
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: cf65d4e147812f2c0800000000000000
-      internalID: -4399426998983895300
+      spriteID: b6b5581750c7bddf0800000000000000
+      internalID: -154393399392904341
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: StandartNewWumen4_3
+      name: Reyndger_3
       rect:
         serializedVersion: 2
-        x: 213
-        y: 191
-        width: 26
-        height: 33
+        x: 192
+        y: 192
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 0812cac2ddb4f2b20800000000000000
-      internalID: 3111789280845635968
+      spriteID: 96dd1d4ca0f0282c0800000000000000
+      internalID: -4430962544452969111
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: StandartNewWumen4_4
+      name: Reyndger_4
       rect:
         serializedVersion: 2
-        x: 21
-        y: 127
-        width: 23
-        height: 33
+        x: 0
+        y: 128
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 35c9db23ba6418ab0800000000000000
-      internalID: -5007643609554641837
+      spriteID: 53a32a85cc0ab85f0800000000000000
+      internalID: -753331713133626827
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: StandartNewWumen4_5
+      name: Reyndger_5
       rect:
         serializedVersion: 2
-        x: 85
-        y: 127
-        width: 24
-        height: 34
+        x: 64
+        y: 128
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 117f30dabf9477bc0800000000000000
-      internalID: -3785475616493275375
+      spriteID: 13dab731fab819450800000000000000
+      internalID: 6093805354871401777
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: StandartNewWumen4_6
+      name: Reyndger_6
       rect:
         serializedVersion: 2
-        x: 149
-        y: 127
-        width: 25
-        height: 35
+        x: 128
+        y: 128
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: a52cf9af37192d180800000000000000
-      internalID: -9092044770395569574
+      spriteID: db2a52345fd088750800000000000000
+      internalID: 6307306625177068221
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: StandartNewWumen4_7
+      name: Reyndger_7
       rect:
         serializedVersion: 2
-        x: 213
-        y: 127
-        width: 25
-        height: 34
+        x: 192
+        y: 128
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 2d6202c792e015ff0800000000000000
-      internalID: -49242549585434926
+      spriteID: b8fc6cd7970e63880800000000000000
+      internalID: -8631464823403130997
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: StandartNewWumen4_8
+      name: Reyndger_8
       rect:
         serializedVersion: 2
-        x: 277
-        y: 127
-        width: 25
-        height: 33
+        x: 256
+        y: 128
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 381370cfb40125090800000000000000
-      internalID: -8047351665620733565
+      spriteID: 07cecbb80a6715be0800000000000000
+      internalID: -1490279569771664272
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: StandartNewWumen4_9
+      name: Reyndger_9
       rect:
         serializedVersion: 2
-        x: 341
-        y: 127
-        width: 24
-        height: 34
+        x: 320
+        y: 128
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 804e684892c3687a0800000000000000
-      internalID: -6375342073481599992
+      spriteID: f96ded0aaaa4f9a30800000000000000
+      internalID: 4224177072200668831
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: StandartNewWumen4_10
+      name: Reyndger_10
       rect:
         serializedVersion: 2
-        x: 405
-        y: 127
-        width: 24
-        height: 34
+        x: 384
+        y: 128
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: d01eec47e8d60f4e0800000000000000
-      internalID: -1949938180038926067
+      spriteID: 2b2ad87cdd45d2530800000000000000
+      internalID: 3831812169474613938
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: StandartNewWumen4_11
+      name: Reyndger_11
       rect:
         serializedVersion: 2
-        x: 22
+        x: 0
         y: 64
-        width: 23
-        height: 33
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 7210a0dbcc6bc2a80800000000000000
-      internalID: -8490210207039094489
+      spriteID: a72118e864f7dd3d0800000000000000
+      internalID: -3180245820838440326
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: StandartNewWumen4_12
+      name: Reyndger_12
       rect:
         serializedVersion: 2
-        x: 86
-        y: 63
-        width: 23
-        height: 33
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 74162326884d03aa0800000000000000
-      internalID: -6183208606151581369
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: StandartNewWumen4_13
-      rect:
-        serializedVersion: 2
-        x: 151
-        y: 63
-        width: 23
-        height: 32
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: d362e22247388ee00800000000000000
-      internalID: 1074253045940758077
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: StandartNewWumen4_14
-      rect:
-        serializedVersion: 2
-        x: 215
-        y: 63
-        width: 24
-        height: 33
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 86f02592707eb0f60800000000000000
-      internalID: 8001743180897849192
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: StandartNewWumen4_15
-      rect:
-        serializedVersion: 2
-        x: 279
+        x: 64
         y: 64
-        width: 24
-        height: 33
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 8a26e63ddaa904ff0800000000000000
-      internalID: -53873124161199448
+      spriteID: 034c0ad3257980a90800000000000000
+      internalID: -7347456412577905616
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: StandartNewWumen4_16
+      name: Reyndger_13
       rect:
         serializedVersion: 2
-        x: 343
-        y: 63
-        width: 24
-        height: 33
+        x: 128
+        y: 64
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 797f4468704918390800000000000000
-      internalID: -7817804718100121705
+      spriteID: 744630a8d8e3c7920800000000000000
+      internalID: 2989333030293955655
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: StandartNewWumen4_17
+      name: Reyndger_14
       rect:
         serializedVersion: 2
-        x: 406
-        y: 63
-        width: 24
-        height: 33
+        x: 192
+        y: 64
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 08c9f4a61e54b1e10800000000000000
-      internalID: 2169404479962586240
+      spriteID: d0719dd3451350090800000000000000
+      internalID: -8068988919479724275
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: StandartNewWumen4_18
+      name: Reyndger_15
       rect:
         serializedVersion: 2
-        x: 22
+        x: 256
+        y: 64
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 181c2c9fd4aaa3090800000000000000
+      internalID: -8053937731719216767
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Reyndger_16
+      rect:
+        serializedVersion: 2
+        x: 320
+        y: 64
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2bbcd4de588acc260800000000000000
+      internalID: 7119250404131326898
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Reyndger_17
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 64
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1552c603ec2e29d70800000000000000
+      internalID: 9048543976544281937
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Reyndger_18
+      rect:
+        serializedVersion: 2
+        x: 0
         y: 0
-        width: 30
-        height: 31
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: b3645df8d17959490800000000000000
-      internalID: -7740114231343364549
+      spriteID: 893e3ef13f9ac5530800000000000000
+      internalID: 3845135043544736664
       vertices: []
       indices: 
       edges: []
@@ -613,6 +670,25 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
+      Reyndger_0: 4497423159679518821
+      Reyndger_1: 5219974786434535155
+      Reyndger_10: 3831812169474613938
+      Reyndger_11: -3180245820838440326
+      Reyndger_12: -7347456412577905616
+      Reyndger_13: 2989333030293955655
+      Reyndger_14: -8068988919479724275
+      Reyndger_15: -8053937731719216767
+      Reyndger_16: 7119250404131326898
+      Reyndger_17: 9048543976544281937
+      Reyndger_18: 3845135043544736664
+      Reyndger_2: -154393399392904341
+      Reyndger_3: -4430962544452969111
+      Reyndger_4: -753331713133626827
+      Reyndger_5: 6093805354871401777
+      Reyndger_6: 6307306625177068221
+      Reyndger_7: -8631464823403130997
+      Reyndger_8: -1490279569771664272
+      Reyndger_9: 4224177072200668831
       StandartNewWumen4_0: 8046319461885316165
       StandartNewWumen4_1: -7593309553142589407
       StandartNewWumen4_10: -1949938180038926067

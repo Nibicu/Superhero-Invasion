@@ -53,6 +53,14 @@ public class FighterMovement : MonoBehaviour
     /// <summary>Сила тяжести (для расчёта прыжка).</summary>
     public float Gravity => gravity;
 
+    /// <summary>Держать в воздухе на высоте height (торнадо крутит врага). Перестали держать — падает сам.</summary>
+    public void HoldInAir(float height)
+    {
+        Height = Mathf.Max(0.001f, height);
+        verticalSpeed = 0f;
+        airVelocity = Vector2.zero;
+    }
+
     /// <summary>Оторваться от земли: скорость вверх up и скорость по земле ground (прыжок; 0 — только вверх).</summary>
     public void StartAir(float up, Vector2 ground)
     {

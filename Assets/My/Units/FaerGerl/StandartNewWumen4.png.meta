@@ -59,6 +59,63 @@ TextureImporter:
   - first:
       213: -7740114231343364549
     second: StandartNewWumen4_18
+  - first:
+      213: -1589821240853838978
+    second: FaerGerl_0
+  - first:
+      213: -6860874647404330927
+    second: FaerGerl_1
+  - first:
+      213: -4801044405299933113
+    second: FaerGerl_2
+  - first:
+      213: 8479812011189448706
+    second: FaerGerl_3
+  - first:
+      213: -1356500190076545260
+    second: FaerGerl_4
+  - first:
+      213: 6418028310339709429
+    second: FaerGerl_5
+  - first:
+      213: 6624089929050821191
+    second: FaerGerl_6
+  - first:
+      213: -3982244672044736545
+    second: FaerGerl_7
+  - first:
+      213: 1765151205932968795
+    second: FaerGerl_8
+  - first:
+      213: 37044442951654383
+    second: FaerGerl_9
+  - first:
+      213: -9004734608623862299
+    second: FaerGerl_10
+  - first:
+      213: -615108922799720157
+    second: FaerGerl_11
+  - first:
+      213: 4177991224296718528
+    second: FaerGerl_12
+  - first:
+      213: -1974071900619909232
+    second: FaerGerl_13
+  - first:
+      213: -3979089402498392915
+    second: FaerGerl_14
+  - first:
+      213: 3791790203924054401
+    second: FaerGerl_15
+  - first:
+      213: -74080291112238051
+    second: FaerGerl_16
+  - first:
+      213: -3166082030820542259
+    second: FaerGerl_17
+  - first:
+      213: 696470345709791539
+    second: FaerGerl_18
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -91,7 +148,7 @@ TextureImporter:
   maxTextureSize: 2048
   textureSettings:
     serializedVersion: 2
-    filterMode: 1
+    filterMode: 0
     aniso: 1
     mipBias: 0
     wrapU: 1
@@ -105,7 +162,7 @@ TextureImporter:
   spriteMeshType: 1
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
-  spritePixelsToUnits: 100
+  spritePixelsToUnits: 32
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
@@ -131,7 +188,7 @@ TextureImporter:
     maxTextureSize: 2048
     resizeAlgorithm: 0
     textureFormat: -1
-    textureCompression: 1
+    textureCompression: 0
     compressionQuality: 50
     crunchedCompression: 0
     allowsAlphaSplitting: 0
@@ -182,419 +239,419 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: StandartNewWumen4_0
+      name: FaerGerl_0
       rect:
         serializedVersion: 2
-        x: 20
-        y: 191
-        width: 21
-        height: 36
+        x: 0
+        y: 192
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 54c8cfa5be44aaf60800000000000000
-      internalID: 8046319461885316165
+      spriteID: e7349823102dfe9e0800000000000000
+      internalID: -1589821240853838978
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: StandartNewWumen4_1
+      name: FaerGerl_1
       rect:
         serializedVersion: 2
-        x: 84
-        y: 191
-        width: 21
-        height: 35
+        x: 64
+        y: 192
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 1281b5741352f9690800000000000000
-      internalID: -7593309553142589407
+      spriteID: 1504bf0dbd649c0a0800000000000000
+      internalID: -6860874647404330927
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: StandartNewWumen4_2
+      name: FaerGerl_2
       rect:
         serializedVersion: 2
-        x: 148
-        y: 191
-        width: 21
-        height: 35
+        x: 128
+        y: 192
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: cf65d4e147812f2c0800000000000000
-      internalID: -4399426998983895300
+      spriteID: 7409837ec834f5db0800000000000000
+      internalID: -4801044405299933113
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: StandartNewWumen4_3
+      name: FaerGerl_3
       rect:
         serializedVersion: 2
-        x: 212
-        y: 191
-        width: 21
-        height: 35
+        x: 192
+        y: 192
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 0812cac2ddb4f2b20800000000000000
-      internalID: 3111789280845635968
+      spriteID: 200b901a8185ea570800000000000000
+      internalID: 8479812011189448706
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: StandartNewWumen4_4
+      name: FaerGerl_4
       rect:
         serializedVersion: 2
-        x: 20
-        y: 127
-        width: 21
-        height: 35
+        x: 0
+        y: 128
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 35c9db23ba6418ab0800000000000000
-      internalID: -5007643609554641837
+      spriteID: 417dcb0a34ebc2de0800000000000000
+      internalID: -1356500190076545260
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: StandartNewWumen4_5
+      name: FaerGerl_5
       rect:
         serializedVersion: 2
-        x: 84
-        y: 127
-        width: 21
-        height: 36
+        x: 64
+        y: 128
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 117f30dabf9477bc0800000000000000
-      internalID: -3785475616493275375
+      spriteID: 5f9e23c7eba611950800000000000000
+      internalID: 6418028310339709429
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: StandartNewWumen4_6
+      name: FaerGerl_6
       rect:
         serializedVersion: 2
-        x: 148
-        y: 127
-        width: 21
-        height: 37
+        x: 128
+        y: 128
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: a52cf9af37192d180800000000000000
-      internalID: -9092044770395569574
+      spriteID: 742115dc1be7deb50800000000000000
+      internalID: 6624089929050821191
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: StandartNewWumen4_7
+      name: FaerGerl_7
       rect:
         serializedVersion: 2
-        x: 212
-        y: 127
-        width: 21
-        height: 36
+        x: 192
+        y: 128
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 2d6202c792e015ff0800000000000000
-      internalID: -49242549585434926
+      spriteID: fdfd412d1993cb8c0800000000000000
+      internalID: -3982244672044736545
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: StandartNewWumen4_8
+      name: FaerGerl_8
       rect:
         serializedVersion: 2
-        x: 276
-        y: 127
-        width: 21
-        height: 35
+        x: 256
+        y: 128
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 381370cfb40125090800000000000000
-      internalID: -8047351665620733565
+      spriteID: b5bac7c6ba31f7810800000000000000
+      internalID: 1765151205932968795
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: StandartNewWumen4_9
+      name: FaerGerl_9
       rect:
         serializedVersion: 2
-        x: 340
-        y: 127
-        width: 21
-        height: 36
+        x: 320
+        y: 128
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 804e684892c3687a0800000000000000
-      internalID: -6375342073481599992
+      spriteID: feb190f79bb938000800000000000000
+      internalID: 37044442951654383
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: StandartNewWumen4_10
+      name: FaerGerl_10
       rect:
         serializedVersion: 2
-        x: 404
-        y: 127
-        width: 21
-        height: 36
+        x: 384
+        y: 128
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: d01eec47e8d60f4e0800000000000000
-      internalID: -1949938180038926067
+      spriteID: 5edfe442591c80380800000000000000
+      internalID: -9004734608623862299
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: StandartNewWumen4_11
+      name: FaerGerl_11
       rect:
         serializedVersion: 2
-        x: 22
-        y: 63
-        width: 21
-        height: 35
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 7210a0dbcc6bc2a80800000000000000
-      internalID: -8490210207039094489
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: StandartNewWumen4_12
-      rect:
-        serializedVersion: 2
-        x: 86
+        x: 0
         y: 64
-        width: 21
-        height: 35
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 74162326884d03aa0800000000000000
-      internalID: -6183208606151581369
+      spriteID: 329795691b1b677f0800000000000000
+      internalID: -615108922799720157
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: StandartNewWumen4_13
+      name: FaerGerl_12
       rect:
         serializedVersion: 2
-        x: 150
-        y: 65
-        width: 21
-        height: 35
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: d362e22247388ee00800000000000000
-      internalID: 1074253045940758077
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: StandartNewWumen4_14
-      rect:
-        serializedVersion: 2
-        x: 213
+        x: 64
         y: 64
-        width: 22
-        height: 35
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 86f02592707eb0f60800000000000000
-      internalID: 8001743180897849192
+      spriteID: 0c0c7eee1e43bf930800000000000000
+      internalID: 4177991224296718528
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: StandartNewWumen4_15
+      name: FaerGerl_13
       rect:
         serializedVersion: 2
-        x: 277
-        y: 63
-        width: 22
-        height: 35
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 8a26e63ddaa904ff0800000000000000
-      internalID: -53873124161199448
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: StandartNewWumen4_16
-      rect:
-        serializedVersion: 2
-        x: 342
+        x: 128
         y: 64
-        width: 21
-        height: 35
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 797f4468704918390800000000000000
-      internalID: -7817804718100121705
+      spriteID: 0975872c010ba94e0800000000000000
+      internalID: -1974071900619909232
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: StandartNewWumen4_17
+      name: FaerGerl_14
       rect:
         serializedVersion: 2
-        x: 406
+        x: 192
         y: 64
-        width: 21
-        height: 35
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 08c9f4a61e54b1e10800000000000000
-      internalID: 2169404479962586240
+      spriteID: dacdf82454f67c8c0800000000000000
+      internalID: -3979089402498392915
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: StandartNewWumen4_18
+      name: FaerGerl_15
       rect:
         serializedVersion: 2
-        x: 20
+        x: 256
+        y: 64
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 18103b7c9152f9430800000000000000
+      internalID: 3791790203924054401
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: FaerGerl_16
+      rect:
+        serializedVersion: 2
+        x: 320
+        y: 64
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d14c5632e50d8fef0800000000000000
+      internalID: -74080291112238051
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: FaerGerl_17
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 64
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: dc8b137ea21df04d0800000000000000
+      internalID: -3166082030820542259
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: FaerGerl_18
+      rect:
+        serializedVersion: 2
+        x: 0
         y: 0
-        width: 32
-        height: 33
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: b3645df8d17959490800000000000000
-      internalID: -7740114231343364549
+      spriteID: 33920a0e61c5aa900800000000000000
+      internalID: 696470345709791539
       vertices: []
       indices: 
       edges: []
@@ -613,6 +670,25 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
+      FaerGerl_0: -1589821240853838978
+      FaerGerl_1: -6860874647404330927
+      FaerGerl_10: -9004734608623862299
+      FaerGerl_11: -615108922799720157
+      FaerGerl_12: 4177991224296718528
+      FaerGerl_13: -1974071900619909232
+      FaerGerl_14: -3979089402498392915
+      FaerGerl_15: 3791790203924054401
+      FaerGerl_16: -74080291112238051
+      FaerGerl_17: -3166082030820542259
+      FaerGerl_18: 696470345709791539
+      FaerGerl_2: -4801044405299933113
+      FaerGerl_3: 8479812011189448706
+      FaerGerl_4: -1356500190076545260
+      FaerGerl_5: 6418028310339709429
+      FaerGerl_6: 6624089929050821191
+      FaerGerl_7: -3982244672044736545
+      FaerGerl_8: 1765151205932968795
+      FaerGerl_9: 37044442951654383
       StandartNewWumen4_0: 8046319461885316165
       StandartNewWumen4_1: -7593309553142589407
       StandartNewWumen4_10: -1949938180038926067

@@ -59,6 +59,63 @@ TextureImporter:
   - first:
       213: -7609196735255710770
     second: DerevoNew_18
+  - first:
+      213: 3993667182681257692
+    second: Derevo_0
+  - first:
+      213: -355680553581462870
+    second: Derevo_1
+  - first:
+      213: 6855268452249991573
+    second: Derevo_2
+  - first:
+      213: 4591466025854397644
+    second: Derevo_3
+  - first:
+      213: 2519637954287445898
+    second: Derevo_4
+  - first:
+      213: -2049814596236508341
+    second: Derevo_5
+  - first:
+      213: -8712875355381145050
+    second: Derevo_6
+  - first:
+      213: 2171049960841426916
+    second: Derevo_7
+  - first:
+      213: 2754686418639682105
+    second: Derevo_8
+  - first:
+      213: -7279253639863486922
+    second: Derevo_9
+  - first:
+      213: -1913927627144988460
+    second: Derevo_10
+  - first:
+      213: -5364343968245935959
+    second: Derevo_11
+  - first:
+      213: -1640503632018931867
+    second: Derevo_12
+  - first:
+      213: 5179292085596986032
+    second: Derevo_13
+  - first:
+      213: 988175526300532136
+    second: Derevo_14
+  - first:
+      213: 1671522837318954474
+    second: Derevo_15
+  - first:
+      213: 1015958775803827743
+    second: Derevo_16
+  - first:
+      213: -1672788976056758744
+    second: Derevo_17
+  - first:
+      213: 4149507725065628283
+    second: Derevo_18
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -91,7 +148,7 @@ TextureImporter:
   maxTextureSize: 2048
   textureSettings:
     serializedVersion: 2
-    filterMode: 1
+    filterMode: 0
     aniso: 1
     mipBias: 0
     wrapU: 1
@@ -105,7 +162,7 @@ TextureImporter:
   spriteMeshType: 1
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
-  spritePixelsToUnits: 100
+  spritePixelsToUnits: 32
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
@@ -131,7 +188,7 @@ TextureImporter:
     maxTextureSize: 2048
     resizeAlgorithm: 0
     textureFormat: -1
-    textureCompression: 1
+    textureCompression: 0
     compressionQuality: 50
     crunchedCompression: 0
     allowsAlphaSplitting: 0
@@ -182,419 +239,419 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: DerevoNew_0
+      name: Derevo_0
       rect:
         serializedVersion: 2
-        x: 20
-        y: 191
-        width: 20
-        height: 35
+        x: 0
+        y: 192
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 0283146979e11d4f0800000000000000
-      internalID: -805829221912856544
+      spriteID: cd6f9dea42b5c6730800000000000000
+      internalID: 3993667182681257692
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: DerevoNew_1
+      name: Derevo_1
       rect:
         serializedVersion: 2
-        x: 84
-        y: 191
-        width: 20
-        height: 34
+        x: 64
+        y: 192
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 1b9be315af3911f00800000000000000
-      internalID: 1085811688487172529
+      spriteID: aaa3346cb6e501bf0800000000000000
+      internalID: -355680553581462870
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: DerevoNew_2
+      name: Derevo_2
       rect:
         serializedVersion: 2
-        x: 148
-        y: 191
-        width: 20
-        height: 34
+        x: 128
+        y: 192
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 2e21a5f5cf39478e0800000000000000
-      internalID: -1696568447471054110
+      spriteID: 5997d48265ec22f50800000000000000
+      internalID: 6855268452249991573
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: DerevoNew_3
+      name: Derevo_3
       rect:
         serializedVersion: 2
-        x: 212
-        y: 191
-        width: 20
-        height: 34
+        x: 192
+        y: 192
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 40ec2b6f89bebfe80800000000000000
-      internalID: -8143656458962940412
+      spriteID: ccc635d160a28bf30800000000000000
+      internalID: 4591466025854397644
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: DerevoNew_4
+      name: Derevo_4
       rect:
         serializedVersion: 2
-        x: 20
-        y: 127
-        width: 20
-        height: 34
+        x: 0
+        y: 128
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 30295df3402450450800000000000000
-      internalID: 6054317860087763459
+      spriteID: a8725ebae5d87f220800000000000000
+      internalID: 2519637954287445898
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: DerevoNew_5
+      name: Derevo_5
       rect:
         serializedVersion: 2
-        x: 84
-        y: 127
-        width: 19
-        height: 35
+        x: 64
+        y: 128
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 433dfe913e71938d0800000000000000
-      internalID: -2866233423684447436
+      spriteID: b4389ef2c789d83e0800000000000000
+      internalID: -2049814596236508341
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: DerevoNew_6
+      name: Derevo_6
       rect:
         serializedVersion: 2
-        x: 148
-        y: 127
-        width: 19
-        height: 36
+        x: 128
+        y: 128
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 2e7d40a46abfc1380800000000000000
-      internalID: -8999041263768119326
+      spriteID: 622604ee606a51780800000000000000
+      internalID: -8712875355381145050
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: DerevoNew_7
+      name: Derevo_7
       rect:
         serializedVersion: 2
-        x: 212
-        y: 127
-        width: 20
-        height: 35
+        x: 192
+        y: 128
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 2da82cabcb3d7edd0800000000000000
-      internalID: -2456762264166692142
+      spriteID: 4e73499cf6e112e10800000000000000
+      internalID: 2171049960841426916
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: DerevoNew_8
+      name: Derevo_8
       rect:
         serializedVersion: 2
-        x: 276
-        y: 127
-        width: 20
-        height: 34
+        x: 256
+        y: 128
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 7748043fa401ce660800000000000000
-      internalID: 7416320600467080311
+      spriteID: 93a7c9ae3bc9a3620800000000000000
+      internalID: 2754686418639682105
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: DerevoNew_9
+      name: Derevo_9
       rect:
         serializedVersion: 2
-        x: 340
-        y: 127
-        width: 19
-        height: 35
+        x: 320
+        y: 128
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 6ac06608e7a1c6a90800000000000000
-      internalID: -7319446163761525594
+      spriteID: 636b7f5b165eafa90800000000000000
+      internalID: -7279253639863486922
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: DerevoNew_10
+      name: Derevo_10
       rect:
         serializedVersion: 2
-        x: 404
-        y: 127
-        width: 19
-        height: 35
+        x: 384
+        y: 128
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 5b1ee96ab5033e370800000000000000
-      internalID: 8350571304270619061
+      spriteID: 4d8773aa6fc5075e0800000000000000
+      internalID: -1913927627144988460
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: DerevoNew_11
+      name: Derevo_11
       rect:
         serializedVersion: 2
-        x: 22
+        x: 0
         y: 64
-        width: 19
-        height: 34
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 93ba1ca8788a332c0800000000000000
-      internalID: -4453030306437289159
+      spriteID: 9a011b715950e85b0800000000000000
+      internalID: -5364343968245935959
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: DerevoNew_12
+      name: Derevo_12
       rect:
         serializedVersion: 2
-        x: 86
-        y: 63
-        width: 19
-        height: 34
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 27ea4fd3f1a4c79c0800000000000000
-      internalID: -3928183276930027918
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: DerevoNew_13
-      rect:
-        serializedVersion: 2
-        x: 150
-        y: 63
-        width: 19
-        height: 33
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 2951794c5c12d7f80800000000000000
-      internalID: -8107286620906515054
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: DerevoNew_14
-      rect:
-        serializedVersion: 2
-        x: 214
-        y: 63
-        width: 20
-        height: 34
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: dcddd9e54273e07b0800000000000000
-      internalID: -5256203085749035571
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: DerevoNew_15
-      rect:
-        serializedVersion: 2
-        x: 278
+        x: 64
         y: 64
-        width: 20
-        height: 34
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 62f0160c853d44480800000000000000
-      internalID: -8915768984148570330
+      spriteID: 56ff5c073a2cb39e0800000000000000
+      internalID: -1640503632018931867
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: DerevoNew_16
+      name: Derevo_13
       rect:
         serializedVersion: 2
-        x: 342
-        y: 63
-        width: 20
-        height: 34
+        x: 128
+        y: 64
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 6f6afa2935e2e4040800000000000000
-      internalID: 4633692003088967414
+      spriteID: 0ba1006f5ba80e740800000000000000
+      internalID: 5179292085596986032
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: DerevoNew_17
+      name: Derevo_14
       rect:
         serializedVersion: 2
-        x: 406
-        y: 63
-        width: 20
-        height: 34
+        x: 192
+        y: 64
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 518cd3a2df56cae40800000000000000
-      internalID: 5669018168962435093
+      spriteID: 8adb0e4d764b6bd00800000000000000
+      internalID: 988175526300532136
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: DerevoNew_18
+      name: Derevo_15
       rect:
         serializedVersion: 2
-        x: 22
+        x: 256
+        y: 64
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: aed69581a21723710800000000000000
+      internalID: 1671522837318954474
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Derevo_16
+      rect:
+        serializedVersion: 2
+        x: 320
+        y: 64
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f165a32bf19691e00800000000000000
+      internalID: 1015958775803827743
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Derevo_17
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 64
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 82e82f10a4f09c8e0800000000000000
+      internalID: -1672788976056758744
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Derevo_18
+      rect:
+        serializedVersion: 2
+        x: 0
         y: 0
-        width: 30
-        height: 32
+        width: 64
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: ec3750172e3b66690800000000000000
-      internalID: -7609196735255710770
+      spriteID: b7aa6497a43069930800000000000000
+      internalID: 4149507725065628283
       vertices: []
       indices: 
       edges: []
@@ -632,6 +689,25 @@ TextureImporter:
       DerevoNew_7: -2456762264166692142
       DerevoNew_8: 7416320600467080311
       DerevoNew_9: -7319446163761525594
+      Derevo_0: 3993667182681257692
+      Derevo_1: -355680553581462870
+      Derevo_10: -1913927627144988460
+      Derevo_11: -5364343968245935959
+      Derevo_12: -1640503632018931867
+      Derevo_13: 5179292085596986032
+      Derevo_14: 988175526300532136
+      Derevo_15: 1671522837318954474
+      Derevo_16: 1015958775803827743
+      Derevo_17: -1672788976056758744
+      Derevo_18: 4149507725065628283
+      Derevo_2: 6855268452249991573
+      Derevo_3: 4591466025854397644
+      Derevo_4: 2519637954287445898
+      Derevo_5: -2049814596236508341
+      Derevo_6: -8712875355381145050
+      Derevo_7: 2171049960841426916
+      Derevo_8: 2754686418639682105
+      Derevo_9: -7279253639863486922
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

@@ -72,6 +72,12 @@ public abstract class HeroKit : MonoBehaviour
             case HeroKitType.Soyka: return f.gameObject.AddComponent<SoykaKit>();
             case HeroKitType.Sukub: return f.gameObject.AddComponent<SukubKit>();
             case HeroKitType.Charovnica: return f.gameObject.AddComponent<CharovnicaKit>();
+            case HeroKitType.Aqua: return f.gameObject.AddComponent<AquaKit>();
+            case HeroKitType.Derevo: return f.gameObject.AddComponent<DerevoKit>();
+            case HeroKitType.Motelek: return f.gameObject.AddComponent<MotelekKit>();
+            case HeroKitType.Reyndger: return f.gameObject.AddComponent<ReyndgerKit>();
+            case HeroKitType.FaerGerl: return f.gameObject.AddComponent<FaerGerlKit>();
+            case HeroKitType.Protatp28: return f.gameObject.AddComponent<Protatp28Kit>();
             default: return null;
         }
     }
@@ -108,6 +114,9 @@ public abstract class HeroKit : MonoBehaviour
 
     /// <summary>Авто атака героя попала по target (по умолчанию — ничего).</summary>
     public virtual void OnAutoHit(Fighter target) { }
+
+    /// <summary>Герой сделал авто атаку — удар или выстрел (по умолчанию — ничего). Например, каждая 5-я — доп. стрела.</summary>
+    public virtual void OnAutoAttack() { }
 
     /// <summary>
     /// Решение ИИ: применить скил против target (retreating — боец отступает).
@@ -174,8 +183,8 @@ public abstract class HeroKit : MonoBehaviour
         return list;
     }
 
-    /// <summary>Перенестись в точку неподалёку (до radius по арене), которая дальше всех от противников.</summary>
-    protected void TeleportAway(float radius)
+    /// <summary>Точка неподалёку (до radius по арене), которая дальше всех от противников (безопасное место).</summary>
+    protected Vector3 SafePoint(float radius)
     {
         BattleManager bm = BattleManager.Instance;
         Vector3 best = self.transform.position;
@@ -186,8 +195,11 @@ public abstract class HeroKit : MonoBehaviour
             float dist = NearestEnemyDistance(p);
             if (dist > bestDist) { bestDist = dist; best = p; }
         }
-        self.transform.position = best;
+        return best;
     }
+
+    /// <summary>Перенестись в безопасное место неподалёку (до radius по арене).</summary>
+    protected void TeleportAway(float radius) => self.transform.position = SafePoint(radius);
 
     /// <summary>Ударить врага скилом (урон power × сила; vsSpecial — против Спец. защиты).</summary>
     protected bool HitEnemy(Fighter e, float power, bool vsSpecial, Vector2 knockback, int stagger)
