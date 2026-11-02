@@ -35,6 +35,8 @@ public class FighterHealth : MonoBehaviour
     [SerializeField] private float regenDelay = 3f;
     [Tooltip("Какая доля параметра 'Реген HP' восстанавливается в секунду (0.5 = половина)")]
     [SerializeField] private float regenRate = 0.5f;
+    [Tooltip("Сбитый с ног отлетает не слабее этого (скорость отлёта)")]
+    [SerializeField] private float minFallKnockback = 6f;
 
     /// <summary>Здоровье изменилось (для полоски HP).</summary>
     public event Action<FighterHealth> Changed;
@@ -85,6 +87,7 @@ public class FighterHealth : MonoBehaviour
     public bool TakeHit(HitInfo hit)
     {
         if (!fighter.IsAlive || fighter.IsInvulnerable) return false;
+        if (fighter.HeldBy != null && hit.attacker != fighter.HeldBy) return false; // схваченного бьёт только тот, кто держит
         if (recentHits.Contains(hit.attackId)) return false;
         Remember(hit.attackId);
 
@@ -107,20 +110,38 @@ public class FighterHealth : MonoBehaviour
             return true;
         }
 
-        // Удары подряд копят "сбивание"; набралось — боец падает
+        // С ног валит только сильный удар (добивающий, бросок, скил). Лёгкие удары подряд копят "сбивание" —
+        // набралось — боец шатается (его можно схватить)
+        bool knockdown = hit.stagger >= Fighter.KnockdownStagger;
         if (Time.time - lastHitTime > fighter.staggerResetTime) stagger = 0;
         lastHitTime = Time.time;
-        stagger += hit.stagger;
+        if (!knockdown) stagger += hit.stagger;
+        FighterState st = fighter.State;
 
-        if (stagger >= fighter.staggerToKnockdown)
+        if (knockdown)
         {
             stagger = 0;
             fighter.SetState(FighterState.KnockedDown);
-            fighter.Movement.ApplyKnockback(hit.knockback * 1.6f);
+            fighter.Movement.ApplyKnockback(FallKnockback(hit));
+        }
+        else if (st == FighterState.Held)
+        {
+            // Схваченный: урон проходит, стоит на месте (держит захват)
+        }
+        else if (stagger >= fighter.staggerToDizzy && fighter.CanBecomeDizzy && st != FighterState.Dizzy)
+        {
+            stagger = 0;
+            fighter.BecomeDizzy();
+            if (st != FighterState.Holding) fighter.Movement.ApplyKnockback(hit.knockback);
+        }
+        else if (st == FighterState.Dizzy || st == FighterState.Holding)
+        {
+            // Шатается — продолжает шататься; держит захват — не отпускает от обычного удара
+            if (st == FighterState.Dizzy) fighter.Movement.ApplyKnockback(hit.knockback);
         }
         else if (fighter.Kit != null && fighter.Kit.Unstoppable)
         {
-            // Залп, кувырок и т.п.: обычный удар не прерывает (урон проходит), сбить с ног — может
+            // Залп, рывок и т.п.: обычный удар не прерывает (урон проходит), сбить с ног — может
         }
         else
         {
@@ -128,6 +149,19 @@ public class FighterHealth : MonoBehaviour
             fighter.Movement.ApplyKnockback(hit.knockback);
         }
         return true;
+    }
+
+    /// <summary>
+    /// Отлёт при падении: сила удара × 1.6, но не меньше minFallKnockback — сбитый с ног всегда отлетает
+    /// (от того, кто ударил), а не падает на месте.
+    /// </summary>
+    private Vector2 FallKnockback(HitInfo hit)
+    {
+        Vector2 k = hit.knockback * 1.6f;
+        if (Mathf.Abs(k.x) >= minFallKnockback) return k;
+        float dir = Mathf.Abs(k.x) > 0.01f ? Mathf.Sign(k.x)
+            : hit.attacker != null ? Mathf.Sign(fighter.Position.x - hit.attacker.Position.x + 0.001f) : -fighter.Movement.Facing;
+        return new Vector2(dir * minFallKnockback, k.y);
     }
 
     /// <summary>

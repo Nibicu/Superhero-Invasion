@@ -42,8 +42,30 @@ public class CharacterSprites : ScriptableObject
     [Tooltip("Бег")]
     public Sprite[] run = new Sprite[0];
 
-    [Tooltip("Авто атака (и скилы, у которых нет своих кадров). Можно один кадр")]
+    [Tooltip("Авто атака (1-й удар серии; и скилы, у которых нет своих кадров). Можно один кадр")]
     public Sprite[] attack = new Sprite[0];
+
+    [Tooltip("2-й удар серии (пусто — кадры атаки)")]
+    public Sprite[] attack2 = new Sprite[0];
+
+    [Tooltip("Добивающий удар серии — последний, сбивает с ног (пусто — кадры атаки)")]
+    public Sprite[] attackFinisher = new Sprite[0];
+
+    [Tooltip("Удар с разбега (пусто — кадры добивающего удара или атаки)")]
+    public Sprite[] dashAttack = new Sprite[0];
+
+    [Header("Захват (пусто — обычные кадры)")]
+    [Tooltip("Шатается (пусто — кадры покоя)")]
+    public Sprite[] dizzy = new Sprite[0];
+
+    [Tooltip("Держит врага в захвате (пусто — кадр атаки)")]
+    public Sprite[] grab = new Sprite[0];
+
+    [Tooltip("Удар коленом в захвате (играют на каждый удар; пусто — кадры атаки)")]
+    public Sprite[] knee = new Sprite[0];
+
+    [Tooltip("Схвачен (пусто — первый кадр покоя)")]
+    public Sprite[] held = new Sprite[0];
 
     [Header("Скилы (1–4 по порядку). Пусто — кадр атаки")]
     public SkillSprites[] skills = new SkillSprites[0];
@@ -63,7 +85,15 @@ public class CharacterSprites : ScriptableObject
     [Tooltip("Сдвиг по горизонтали в пикселях, если персонаж нарисован не по центру кадра")]
     public float offsetXPx = 0f;
 
-    /// <summary>Кадры скила i (0..3) или null, если их нет.</summary>
+    /// <summary>Кадры удара серии: добивающий, 2-й или обычный (чего не нарисовано — обычная атака).</summary>
+    public Sprite[] GetAttack(int step, bool finisher)
+    {
+        if (finisher && attackFinisher != null && attackFinisher.Length > 0) return attackFinisher;
+        if (step == 2 && attack2 != null && attack2.Length > 0) return attack2;
+        return attack;
+    }
+
+    /// <summary>Кадры скила i (0..2) или null, если их нет.</summary>
     public SkillSprites GetSkill(int i) => skills != null && i >= 0 && i < skills.Length ? skills[i] : null;
 
     /// <summary>Кадр анимации по времени (по кругу).</summary>

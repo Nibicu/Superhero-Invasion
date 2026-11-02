@@ -71,6 +71,7 @@ public class FighterView : MonoBehaviour
     private SpriteRenderer spriteBody;   // Картинка персонажа (кадры анимации)
     private Sprite[] currentFrames;      // Какая анимация сейчас играет
     private int animCycle;               // Последний повтор анимации скила (HeroKit.AnimCycle)
+    private int kneeCycle;               // Последний удар коленом (FighterCombat.KneeCycle)
     private SpriteRenderer shieldBubble; // Шар щита вокруг бойца
     private float animClock;             // Время текущей анимации
     private Transform staminaFill;       // Заполнение шкалы бега
@@ -301,11 +302,27 @@ public class FighterView : MonoBehaviour
                 break;
             case FighterState.Attacking:
                 if (fighter.Kit != null && fighter.Kit.Pose == KitPose.Roll) { frames = sheet.run; fps = sheet.runFps * 1.5f; }
-                else { frames = sheet.attack; fps = 8f; }
+                else if (fighter.Combat.IsDashAttack) { frames = Has(sheet.dashAttack) ? sheet.dashAttack : sheet.GetAttack(3, true); fps = 10f; }
+                else { frames = sheet.GetAttack(fighter.Combat.ComboStep, fighter.Combat.IsFinisher); fps = 8f; }
                 break;
             case FighterState.Idle:
                 frames = sheet.idle;
                 fps = sheet.idleFps;
+                break;
+            case FighterState.Dizzy:
+                frames = Has(sheet.dizzy) ? sheet.dizzy : sheet.idle;
+                fps = sheet.idleFps;
+                break;
+            case FighterState.Held:
+                frames = Has(sheet.held) ? sheet.held : sheet.idle;
+                fps = Has(sheet.held) ? sheet.idleFps : 0f;
+                break;
+            case FighterState.Holding:
+                bool kneeNow = fighter.Combat.SinceKnee >= 0f && fighter.Combat.SinceKnee < 0.25f;
+                frames = kneeNow ? (Has(sheet.knee) ? sheet.knee : sheet.attack) : (Has(sheet.grab) ? sheet.grab : sheet.attack);
+                fps = 10f;
+                once = kneeNow;
+                if (fighter.Combat.KneeCycle != kneeCycle) { kneeCycle = fighter.Combat.KneeCycle; currentFrames = null; } // новый удар
                 break;
             default: // реакция на удар, лежит, выбыл — первый кадр покоя (наклон и падение делает поза)
                 frames = sheet.idle;
@@ -318,6 +335,9 @@ public class FighterView : MonoBehaviour
         Sprite s = once ? CharacterSprites.FrameOnce(frames, animClock, fps) : CharacterSprites.Frame(frames, animClock, fps);
         if (s != null) spriteBody.sprite = s;
     }
+
+    /// <summary>Есть ли кадры.</summary>
+    private static bool Has(Sprite[] frames) => frames != null && frames.Length > 0;
 
     /// <summary>Короткая надпись над головой на полсекунды ("МЕТКО!", "БАРЬЕР").</summary>
     public void Pop(string text, Color color)
@@ -339,6 +359,8 @@ public class FighterView : MonoBehaviour
         string t = fighter.Data.displayName + (fighter.IsClone ? " (клон)" : "");
         if (fighter.HasBuff) t += $"\n<size=75%><color=#FFD84A>+{BoostNames.Get(fighter.BuffStat)}</color></size>";
         string status = "";
+        if (fighter.State == FighterState.Dizzy) status += "<color=#FFE066>ШАТАЕТСЯ</color> ";
+        if (fighter.State == FighterState.Held) status += "<color=#FFB060>В ЗАХВАТЕ</color> ";
         if (fighter.IsStunned) status += "<color=#9FD0FF>СТАН</color> ";
         if (fighter.IsSilenced) status += "<color=#C58BFF>НЕМОТА</color> ";
         if (fighter.IsCharmed) status += "<color=#FF8AD8>ШАРМ</color> ";
@@ -371,6 +393,7 @@ public class FighterView : MonoBehaviour
     {
         if (animator != null) animator.SetInteger(StateParam, (int)state);
         if (state == FighterState.Dead && nameTag != null) nameTag.gameObject.SetActive(false);
+        else RefreshTag(); // "ШАТАЕТСЯ", "В ЗАХВАТЕ" 
     }
 
     private void OnAttackStarted()
@@ -453,17 +476,43 @@ public class FighterView : MonoBehaviour
                         break;
                 }
                 break;
+            case FighterState.Attacking when fighter.Combat.IsDashAttack: // удар с разбега: наклон вперёд, рука вытянута
+                armAngle = 15f;
+                armStretch = 1.7f;
+                rotZ = -22f * facing;
+                offset.y = 0.12f * Mathf.Sin(Mathf.Clamp01(t / 0.4f) * Mathf.PI); // небольшой прыжок
+                break;
             case FighterState.Attacking:
                 float p = Mathf.Clamp01(t / fighter.attackDuration);
                 float punch = Mathf.Sin(p * Mathf.PI); // 0 → 1 → 0
-                armAngle = Mathf.Lerp(-70f, 0f, punch);
-                armStretch = 1f + punch * 0.6f;
-                rotZ = -8f * punch * facing;
+                bool fin = fighter.Combat.IsFinisher;   // добивающий — шире замах и рывок вперёд
+                armAngle = Mathf.Lerp(-70f, fin ? 20f : 0f, punch);
+                armStretch = 1f + punch * (fin ? 0.9f : 0.6f);
+                rotZ = (fin ? -16f : -8f) * punch * facing;
+                if (fin) offset.x = 0.12f * punch * facing;
                 break;
             case FighterState.Hurt:
                 rotZ = 14f * facing;
                 offset.x = -0.05f * facing;
                 armAngle = -20f;
+                break;
+            case FighterState.Dizzy: // шатается: раскачивается из стороны в сторону
+                rotZ = Mathf.Sin(Time.time * 7f) * 10f;
+                offset.x = Mathf.Sin(Time.time * 7f) * 0.05f;
+                armAngle = -40f + Mathf.Sin(Time.time * 7f) * 20f;
+                break;
+            case FighterState.Held: // схвачен: согнулся вперёд, вздрагивает от ударов
+                rotZ = -18f * facing;
+                offset.y = 0.03f;
+                break;
+            case FighterState.Holding: // держит: руки вперёд, на удар коленом — толчок вперёд
+                float sk = fighter.Combat.SinceKnee;
+                float kick = sk >= 0f && sk < 0.25f ? Mathf.Sin(sk / 0.25f * Mathf.PI) : 0f;
+                armAngle = 0f;
+                armStretch = 1.3f;
+                backArmAngle = 60f;
+                rotZ = -10f * kick * facing;
+                offset.x = 0.08f * kick * facing;
                 break;
             case FighterState.KnockedDown:
                 rotZ = 90f * facing;

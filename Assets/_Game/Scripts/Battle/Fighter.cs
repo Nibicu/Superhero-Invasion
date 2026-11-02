@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 /// <summary>
 /// Боец на арене — "сердце" персонажа: команда, характеристики, настройки боя и состояние.
@@ -24,7 +25,7 @@ public class Fighter : MonoBehaviour
     public float meleeRange = 1.15f;
     [Tooltip("Насколько цель может отличаться по глубине (Y), чтобы удар попал")]
     public float depthTolerance = 0.45f;
-    [Tooltip("Время между атаками (сек)")]
+    [Tooltip("Время между выстрелами Стрелка (сек). Удары вплотную идут сериями — их паузы в FighterCombat")]
     public float attackCooldown = 0.8f;
     [Tooltip("Длительность фазы атаки (сек) — в это время боец стоит")]
     public float attackDuration = 0.35f;
@@ -38,8 +39,12 @@ public class Fighter : MonoBehaviour
     public float knockdownDuration = 1.1f;
     [Tooltip("Неуязвимость после подъёма (сек)")]
     public float getUpInvulnerability = 0.5f;
-    [Tooltip("Сколько 'очков сбивания' подряд валит с ног (обычный удар = 1, снаряд = 2)")]
-    public int staggerToKnockdown = 3;
+    [Tooltip("Сколько 'очков сбивания' подряд — и боец шатается (лёгкий удар = 1). С ног валят только добивающие удары, броски и скилы")]
+    [FormerlySerializedAs("staggerToKnockdown")] public int staggerToDizzy = 3;
+    [Tooltip("Сколько секунд боец шатается (в это время его можно схватить)")]
+    public float dizzyDuration = 1f;
+    [Tooltip("После того как перестал шататься, столько секунд снова зашататься нельзя")]
+    public float dizzyImmunity = 1.5f;
     [Tooltip("Через сколько секунд без ударов очки сбивания обнуляются")]
     public float staggerResetTime = 1.5f;
 
@@ -52,6 +57,10 @@ public class Fighter : MonoBehaviour
     public float projectileSpeed = 9f;
 
     private float invulnerableTimer; // Неуязвимость после подъёма
+    private float dizzyImmuneTimer;  // Сколько ещё нельзя снова зашататься
+
+    /// <summary>"Очки сбивания" удара, который сразу валит с ног (добивающий удар, бросок, сильный скил).</summary>
+    public const int KnockdownStagger = 99;
 
     // ---------- Данные бойца ----------
 
@@ -118,6 +127,15 @@ public class Fighter : MonoBehaviour
 
     /// <summary>Метка проклятья (Суккуб): до конца боя.</summary>
     public bool IsCursed { get; private set; }
+
+    /// <summary>Кто держит этого бойца в захвате (null — свободен).</summary>
+    public Fighter HeldBy { get; private set; }
+
+    /// <summary>Можно ли сейчас зашататься (не сразу после прошлого раза).</summary>
+    public bool CanBecomeDizzy => dizzyImmuneTimer <= 0f;
+
+    /// <summary>Беззащитен: шатается или оглушён — такого можно схватить.</summary>
+    public bool IsDefenseless => IsAlive && (State == FighterState.Dizzy || IsStunned) && State != FighterState.KnockedDown;
 
     /// <summary>Клон (Фантом): без скилов, его HP не считается в итоге боя, исчезает вместе с хозяином.</summary>
     public bool IsClone { get; set; }
@@ -201,8 +219,8 @@ public class Fighter : MonoBehaviour
     /// <summary>Неуязвим ли сейчас (лежит или только что поднялся).</summary>
     public bool IsInvulnerable => State == FighterState.KnockedDown || invulnerableTimer > 0f;
 
-    /// <summary>Можно ли выбрать бойца целью (жив, не лежит, не неуязвим).</summary>
-    public bool IsTargetable => IsAlive && !IsInvulnerable;
+    /// <summary>Можно ли выбрать бойца целью (жив, не лежит, не неуязвим, его никто не держит в захвате).</summary>
+    public bool IsTargetable => IsAlive && !IsInvulnerable && HeldBy == null;
 
     /// <summary>Положение на арене (X — по горизонтали, Y — глубина).</summary>
     public Vector2 Position => transform.position;
@@ -285,6 +303,30 @@ public class Fighter : MonoBehaviour
         return true;
     }
 
+    /// <summary>Зашататься: стоит, не бьёт, его можно схватить (на dizzyDuration секунд).</summary>
+    public void BecomeDizzy()
+    {
+        if (SetState(FighterState.Dizzy)) StatusChanged?.Invoke(this);
+    }
+
+    /// <summary>Попасть в захват бойца by. Вернёт false, если сейчас нельзя (лежит, выбыл, уже схвачен).</summary>
+    public bool BeginHeld(Fighter by)
+    {
+        if (HeldBy != null || !SetState(FighterState.Held)) return false;
+        HeldBy = by;
+        StatusChanged?.Invoke(this);
+        return true;
+    }
+
+    /// <summary>Освободиться из захвата (бросок, держащего сбили, время вышло).</summary>
+    public void EndHeld()
+    {
+        if (HeldBy == null) return;
+        HeldBy = null;
+        if (State == FighterState.Held) SetState(FighterState.Idle);
+        StatusChanged?.Invoke(this);
+    }
+
     /// <summary>Поставить метку проклятья (до конца боя).</summary>
     public void MarkCursed()
     {
@@ -337,6 +379,7 @@ public class Fighter : MonoBehaviour
             if (buffTimer <= 0f) BuffChanged?.Invoke(this);
         }
         if (invulnerableTimer > 0f) invulnerableTimer -= Time.deltaTime;
+        if (dizzyImmuneTimer > 0f) dizzyImmuneTimer -= Time.deltaTime;
         TickStatus(ref stunTimer);
         TickStatus(ref silenceTimer);
         TickStatus(ref charmTimer);
@@ -350,6 +393,14 @@ public class Fighter : MonoBehaviour
 
         if (State == FighterState.Hurt && StateTime >= hurtDuration)
             SetState(FighterState.Idle);
+        else if (State == FighterState.Dizzy && StateTime >= dizzyDuration)
+        {
+            SetState(FighterState.Idle); // пришёл в себя — какое-то время снова не зашатается
+            dizzyImmuneTimer = dizzyImmunity;
+            StatusChanged?.Invoke(this);
+        }
+        else if (HeldBy != null && (!HeldBy.IsAlive || HeldBy.State != FighterState.Holding || State != FighterState.Held))
+            EndHeld(); // держащий выбыл или его сбили — свободен
         else if (State == FighterState.KnockedDown && StateTime >= knockdownDuration)
         {
             SetState(FighterState.Idle);
@@ -368,7 +419,8 @@ public class Fighter : MonoBehaviour
     /// <summary>
     /// Сменить состояние. Вернёт false, если такой переход запрещён:
     /// из Dead — никуда; лежачий может только встать (Idle) или умереть;
-    /// начать атаку можно только стоя или на ходу.
+    /// начать атаку можно только стоя или на ходу; шатающегося можно схватить или сбить;
+    /// схваченный только освобождается (Idle) или падает; держащего можно сбить или раскачать (Dizzy).
     /// </summary>
     public bool SetState(FighterState next)
     {
@@ -389,9 +441,16 @@ public class Fighter : MonoBehaviour
             case FighterState.KnockedDown:
                 return to == FighterState.Idle;
             case FighterState.Hurt:
-                return to == FighterState.Idle || to == FighterState.Hurt || to == FighterState.KnockedDown;
+                return to == FighterState.Idle || to == FighterState.Hurt || to == FighterState.KnockedDown
+                       || to == FighterState.Dizzy || to == FighterState.Held;
             case FighterState.Attacking:
-                return to != FighterState.Moving && to != FighterState.Attacking;
+                return to != FighterState.Moving && to != FighterState.Attacking && to != FighterState.Holding;
+            case FighterState.Dizzy:
+                return to == FighterState.Idle || to == FighterState.KnockedDown || to == FighterState.Held;
+            case FighterState.Held:
+                return to == FighterState.Idle || to == FighterState.KnockedDown;
+            case FighterState.Holding:
+                return to == FighterState.Idle || to == FighterState.KnockedDown || to == FighterState.Dizzy;
             default: // Idle, Moving
                 return true;
         }

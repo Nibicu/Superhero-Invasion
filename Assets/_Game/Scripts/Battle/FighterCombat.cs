@@ -8,6 +8,14 @@ using UnityEngine;
 /// АВТО АТАКА (урон — от "Авто атаки", ослабляется Защитой цели, разбивает коробки):
 ///  - все, кроме Стрелка, — удар вплотную;
 ///  - Стрелок — пуля издалека, а если враг подошёл вплотную — тоже бьёт рукой (TryAuto(true)).
+/// СЕРИЯ УДАРОВ (вплотную): удары идут сериями — у Танка 2 удара, у остальных 3.
+///  Лёгкие удары быстрые (chainHitCooldown), последний — добивающий: урон ×1.5, отбрасывает и сбивает с ног,
+///  после него передышка (finisherRecovery). Промах, прерванный удар или пауза дольше comboResetTime — серия сначала.
+/// ЗАХВАТ: шатающегося или оглушённого врага вплотную можно схватить (TryGrab) — 3 удара коленом,
+///  третий — бросок: отбрасывает и сбивает с ног. Пока держит, другие бить схваченного не могут.
+///  Держащего сбили с ног (или он зашатался) — захват срывается.
+/// УДАР С РАЗБЕГА: бегущий боец рядом с врагом бьёт в прыжке (TryDashAttack) — урон ×1.5,
+///  отбрасывает и сбивает с ног. Не чаще раза в dashCooldown секунд.
 /// Зачарованный (Шарм Суккуба) бьёт своих союзников.
 /// Скилы есть только у героев со своим набором (HeroKit): они тратят энергию через TrySpendEnergy
 /// и стреляют через FireShot. Энергия восстанавливается в energyRegenRate раз медленнее параметра "Реген энергии".
@@ -29,6 +37,50 @@ public class FighterCombat : MonoBehaviour
     [Tooltip("Какая доля параметра 'Реген энергии' восстанавливается в секунду (0.5 = половина). Меньше — реже скилы")]
     [SerializeField] private float energyRegenRate = 0.5f;
 
+    [Header("Серия ударов (вплотную)")]
+    [Tooltip("Через сколько секунд от начала удара можно бить следующим ударом серии")]
+    [SerializeField] private float chainHitCooldown = 0.45f;
+    [Tooltip("Передышка после добивающего удара (от его начала)")]
+    [SerializeField] private float finisherRecovery = 1.1f;
+    [Tooltip("Если следующий удар позже этого (сек после прошлого) — серия начинается сначала")]
+    [SerializeField] private float comboResetTime = 0.7f;
+    [Tooltip("Урон добивающего удара (× Авто атака)")]
+    [SerializeField] private float finisherDamage = 1.5f;
+    [Tooltip("Сила отбрасывания добивающего удара (× сила удара бойца)")]
+    [SerializeField] private float finisherKnockback = 2.2f;
+    [Tooltip("Лёгкие удары серии лишь подталкивают (× сила удара бойца) — враг остаётся рядом для следующего удара")]
+    [SerializeField] private float lightKnockback = 0.15f;
+    [Tooltip("Танк бьёт медленнее: во столько раз дольше паузы серии")]
+    [SerializeField] private float tankSlowdown = 1.3f;
+
+    [Header("Захват")]
+    [Tooltip("Урон удара коленом (× Авто атака)")]
+    [SerializeField] private float kneeDamage = 0.8f;
+    [Tooltip("Когда первый удар коленом (сек после захвата)")]
+    [SerializeField] private float kneeFirst = 0.3f;
+    [Tooltip("Интервал между ударами коленом")]
+    [SerializeField] private float kneeInterval = 0.35f;
+    [Tooltip("Сколько ударов коленом (последний — бросок)")]
+    [SerializeField] private int kneeCount = 3;
+    [Tooltip("Сила броска (× сила удара бойца)")]
+    [SerializeField] private float throwKnockback = 2.5f;
+    [Tooltip("Дольше этого захват не держится (сек)")]
+    [SerializeField] private float grabMaxTime = 1.6f;
+
+    [Header("Удар с разбега")]
+    [Tooltip("Урон удара с разбега (× Авто атака)")]
+    [SerializeField] private float dashDamage = 1.5f;
+    [Tooltip("Сила отбрасывания (× сила удара бойца)")]
+    [SerializeField] private float dashKnockback = 2.4f;
+    [Tooltip("С какого расстояния (по горизонтали) бегущий боец бьёт с разбега")]
+    [SerializeField] private float dashRange = 1.8f;
+    [Tooltip("Скорость прыжка вперёд")]
+    [SerializeField] private float dashLunge = 7f;
+    [Tooltip("Сколько длится удар с разбега (сек)")]
+    [SerializeField] private float dashDuration = 0.4f;
+    [Tooltip("Не чаще раза в столько секунд")]
+    [SerializeField] private float dashCooldown = 4f;
+
     [Header("Авто атака на расстоянии")]
     [Tooltip("Скорость пуль авто атаки")]
     [SerializeField] private float autoShotSpeed = 11f;
@@ -36,6 +88,7 @@ public class FighterCombat : MonoBehaviour
     [SerializeField] private float autoShotSize = 0.5f;
 
     private static int nextAttackId; // Счётчик номеров атак (общий для всех)
+    private const int Knockdown = 99; // "Очки сбивания" добивающего удара — сразу с ног
 
     private Fighter fighter;
     private float cooldownTimer;      // До следующей атаки
@@ -43,6 +96,13 @@ public class FighterCombat : MonoBehaviour
     private bool hitDone;             // Удар в этой атаке уже нанесён
     private bool autoMelee;           // Текущая авто атака — вплотную (рукой), а не выстрелом
     private int currentAttackId;      // Номер текущей атаки
+    private float lastMeleeTime = -10f; // Когда был последний удар вплотную (для серии)
+    private bool chainBroken = true;  // Серия прервалась (промах или удар прервали) — следующий удар будет первым
+    private bool dashing;             // Идёт удар с разбега
+    private float dashTimer;          // До следующего удара с разбега
+    private Fighter held;             // Кого держит в захвате (null — никого)
+    private float grabClock;          // Сколько уже держит
+    private int kneesDone;            // Сколько ударов коленом нанесено
     private readonly List<Fighter> hitThisAttack = new List<Fighter>(); // Кого уже ударили этой атакой
 
     /// <summary>Текущая энергия.</summary>
@@ -64,6 +124,167 @@ public class FighterCombat : MonoBehaviour
 
     /// <summary>Можно ли сейчас сделать авто атаку.</summary>
     public bool CanAuto => fighter.CanAct && cooldownTimer <= 0f;
+
+    /// <summary>Сколько ударов в серии: у Танка 2, у остальных 3.</summary>
+    public int ChainLength => fighter.Class == UnitClass.Tank ? 2 : 3;
+
+    /// <summary>Какой по счёту удар серии сейчас (1..ChainLength; 0 — выстрел). Для внешнего вида.</summary>
+    public int ComboStep { get; private set; }
+
+    /// <summary>Текущий удар — добивающий (последний в серии).</summary>
+    public bool IsFinisher => ComboStep > 0 && ComboStep >= ChainLength;
+
+    /// <summary>Сейчас идёт удар с разбега (для внешнего вида).</summary>
+    public bool IsDashAttack => dashing && attackActive;
+
+    /// <summary>Удар с разбега перезарядился (ИИ подбегает бегом, чтобы ударить).</summary>
+    public bool DashReady => dashTimer <= 0f;
+
+    /// <summary>Можно ли ударить target с разбега: боец бежит, удар готов, враг впереди рядом на той же глубине.</summary>
+    public bool CanDashAttack(Fighter target)
+    {
+        if (!CanAuto || !DashReady || !fighter.Movement.IsRunning || target == null || !target.IsTargetable) return false;
+        Vector2 d = target.Position - fighter.Position;
+        return d.x * fighter.Movement.Facing > 0f && Mathf.Abs(d.x) <= dashRange
+               && Mathf.Abs(d.x) >= fighter.meleeRange * 0.9f && Mathf.Abs(d.y) <= fighter.depthTolerance; // вплотную — не с разбега
+    }
+
+    /// <summary>Удар с разбега: прыжок вперёд, кого задел — урон, отлетает и падает.</summary>
+    public bool TryDashAttack(Fighter target)
+    {
+        if (!CanDashAttack(target) || !fighter.SetState(FighterState.Attacking)) return false;
+        attackActive = true;
+        dashing = true;
+        hitDone = false;
+        autoMelee = true;
+        ComboStep = 0;
+        chainBroken = true;
+        currentAttackId = ++nextAttackId;
+        hitThisAttack.Clear();
+        dashTimer = dashCooldown;
+        cooldownTimer = finisherRecovery;
+        int facing = fighter.Movement.Facing;
+        fighter.Movement.ApplyKnockback(new Vector2(facing * dashLunge, 0f)); // прыжок вперёд
+        AttackStarted?.Invoke();
+        return true;
+    }
+
+    /// <summary>Удар с разбега идёт: пока летим — бьём всех, кого задели (один раз каждого).</summary>
+    private void UpdateDash()
+    {
+        if (fighter.State != FighterState.Attacking) { attackActive = false; dashing = false; return; } // сбили в прыжке
+        if (fighter.StateTime >= 0.08f)
+        {
+            float power = fighter.Stats.autoAttack * dashDamage;
+            int facing = fighter.Movement.Facing;
+            foreach (Fighter enemy in BattleManager.Instance.FoesOf(fighter))
+            {
+                if (!enemy.IsAlive || hitThisAttack.Contains(enemy)) continue;
+                Vector2 d = enemy.Position - fighter.Position;
+                if (d.x * facing < -0.2f || Mathf.Abs(d.x) > fighter.meleeRange || Mathf.Abs(d.y) > fighter.depthTolerance) continue;
+                hitThisAttack.Add(enemy);
+                enemy.Health.TakeHit(new HitInfo
+                {
+                    attacker = fighter,
+                    attackId = currentAttackId,
+                    damage = CalcDamage(power, enemy.Stats.defense),
+                    knockback = new Vector2(facing * fighter.knockbackForce * dashKnockback, UnityEngine.Random.Range(-0.3f, 0.3f)),
+                    stagger = Knockdown,
+                    special = false,
+                    auto = true
+                });
+            }
+        }
+        if (fighter.StateTime >= dashDuration)
+        {
+            attackActive = false;
+            dashing = false;
+            fighter.SetState(FighterState.Idle);
+        }
+    }
+
+    /// <summary>Счётчик ударов коленом (изменился — кадры удара играют сначала). Для внешнего вида.</summary>
+    public int KneeCycle { get; private set; }
+
+    /// <summary>Сколько секунд прошло с последнего удара коленом (для позы).</summary>
+    public float SinceKnee => grabClock - (kneeFirst + (kneesDone - 1) * kneeInterval);
+
+    /// <summary>Можно ли схватить target: свободен, враг беззащитен (шатается или оглушён) и стоит вплотную.</summary>
+    public bool CanGrab(Fighter target)
+    {
+        if (!CanAuto || target == null || !target.IsDefenseless || target.HeldBy != null || target.IsInvulnerable) return false;
+        Vector2 d = target.Position - fighter.Position;
+        return Mathf.Abs(d.x) <= fighter.meleeRange * 1.15f && Mathf.Abs(d.y) <= fighter.depthTolerance;
+    }
+
+    /// <summary>Схватить target (если можно). Дальше всё идёт само: 3 удара коленом и бросок.</summary>
+    public bool TryGrab(Fighter target)
+    {
+        if (!CanGrab(target) || !fighter.SetState(FighterState.Holding)) return false;
+        if (!target.BeginHeld(fighter)) { fighter.SetState(FighterState.Idle); return false; }
+        held = target;
+        grabClock = 0f;
+        kneesDone = 0;
+        attackActive = false;
+        ComboStep = 0;
+        fighter.Movement.FaceTowards(target.Position.x);
+        target.Movement.FaceTowards(fighter.Position.x);
+        if (fighter.View != null) fighter.View.Pop("ЗАХВАТ!", new Color(1f, 0.75f, 0.3f));
+        return true;
+    }
+
+    /// <summary>Держим: схваченный стоит перед нами; удары коленом по расписанию; последний — бросок.</summary>
+    private void UpdateGrab(float dt)
+    {
+        if (fighter.State != FighterState.Holding || !held.IsAlive || held.HeldBy != fighter)
+        {
+            ReleaseGrab(); // нас сбили, враг выбыл или вырвался
+            return;
+        }
+        grabClock += dt;
+        int facing = fighter.Movement.Facing;
+        Vector3 spot = transform.position + new Vector3(facing * fighter.meleeRange * 0.75f, 0f, 0f);
+        held.transform.position = BattleManager.Instance.ClampToArena(held, spot);
+
+        if (kneesDone < kneeCount && grabClock >= kneeFirst + kneesDone * kneeInterval)
+        {
+            kneesDone++;
+            Knee(kneesDone == kneeCount);
+            return;
+        }
+        if (grabClock >= grabMaxTime) ReleaseGrab();
+    }
+
+    /// <summary>Удар коленом; последний — бросок (сначала отпускаем, чтобы удар сбил с ног и отбросил).</summary>
+    private void Knee(bool last)
+    {
+        Fighter target = held;
+        int facing = fighter.Movement.Facing;
+        KneeCycle++;
+        if (last) ReleaseGrab();
+        target.Health.TakeHit(new HitInfo
+        {
+            attacker = fighter,
+            attackId = ++nextAttackId,
+            damage = CalcDamage(fighter.Stats.autoAttack * kneeDamage, target.Stats.defense),
+            knockback = last ? new Vector2(facing * fighter.knockbackForce * throwKnockback, 0f) : Vector2.zero,
+            stagger = last ? Knockdown : 0,
+            special = false,
+            auto = true
+        });
+        if (!last) return;
+        cooldownTimer = finisherRecovery;
+        if (fighter.View != null) fighter.View.Pop("БРОСОК", new Color(1f, 0.75f, 0.3f));
+    }
+
+    /// <summary>Отпустить схваченного (бросок, нас сбили, время вышло).</summary>
+    private void ReleaseGrab()
+    {
+        Fighter target = held;
+        held = null;
+        if (target != null) target.EndHeld();
+        if (fighter.State == FighterState.Holding) fighter.SetState(FighterState.Idle);
+    }
 
     private void Awake() => fighter = GetComponent<Fighter>();
 
@@ -102,7 +323,20 @@ public class FighterCombat : MonoBehaviour
         hitDone = false;
         currentAttackId = ++nextAttackId;
         hitThisAttack.Clear();
-        cooldownTimer = fighter.attackCooldown;
+        if (autoMelee)
+        {
+            // Серия: следующий удар или сначала (промах, прервали, долгая пауза, серия кончилась)
+            bool fresh = chainBroken || Time.time - lastMeleeTime > comboResetTime || ComboStep >= ChainLength;
+            ComboStep = fresh ? 1 : ComboStep + 1;
+            chainBroken = false;
+            float slow = fighter.Class == UnitClass.Tank ? tankSlowdown : 1f;
+            cooldownTimer = (IsFinisher ? finisherRecovery : chainHitCooldown) * slow;
+        }
+        else
+        {
+            ComboStep = 0;
+            cooldownTimer = fighter.attackCooldown;
+        }
         AttackStarted?.Invoke();
         return true;
     }
@@ -112,10 +346,13 @@ public class FighterCombat : MonoBehaviour
     {
         float dt = Time.deltaTime;
         if (cooldownTimer > 0f) cooldownTimer -= dt;
+        if (dashTimer > 0f) dashTimer -= dt;
         if (fighter.IsAlive) Energy = Mathf.Min(MaxEnergy, Energy + energyRegen * energyRegenRate * dt);
+        if (held != null) { UpdateGrab(dt); return; }
+        if (dashing) { UpdateDash(); return; }
 
         if (!attackActive) return;
-        if (fighter.State != FighterState.Attacking) { attackActive = false; return; } // атаку прервали ударом
+        if (fighter.State != FighterState.Attacking) { attackActive = false; chainBroken = true; return; } // атаку прервали ударом — серия сначала
 
         float duration = fighter.attackDuration;
         if (!hitDone && fighter.StateTime >= duration * hitMoment)
@@ -138,7 +375,10 @@ public class FighterCombat : MonoBehaviour
         float power = fighter.Stats.autoAttack;
         if (autoMelee)
         {
-            MeleeHit(power, fighter.knockbackForce, fighter.meleeRange);
+            bool finisher = IsFinisher;
+            MeleeHit(finisher ? power * finisherDamage : power,
+                     fighter.knockbackForce * (finisher ? finisherKnockback : lightKnockback),
+                     fighter.meleeRange, finisher);
             return;
         }
         Shoot(new ShotInfo
@@ -155,11 +395,16 @@ public class FighterCombat : MonoBehaviour
         });
     }
 
-    /// <summary>Удар вплотную по всем противникам перед бойцом (один раз за атаку), разбивает коробки.</summary>
-    private void MeleeHit(float power, float knock, float range)
+    /// <summary>
+    /// Удар вплотную по всем противникам перед бойцом (один раз за атаку), разбивает коробки.
+    /// finisher — добивающий удар серии: сбивает с ног. Никого не задел — серия прерывается.
+    /// </summary>
+    private void MeleeHit(float power, float knock, float range, bool finisher)
     {
         Vector2 me = fighter.Position;
         int facing = fighter.Movement.Facing;
+        lastMeleeTime = Time.time;
+        bool any = false;
         foreach (Fighter enemy in BattleManager.Instance.FoesOf(fighter))
         {
             if (!enemy.IsAlive || hitThisAttack.Contains(enemy)) continue;
@@ -175,12 +420,14 @@ public class FighterCombat : MonoBehaviour
                 attackId = currentAttackId,
                 damage = CalcDamage(power, enemy.Stats.defense),
                 knockback = new Vector2(facing * knock, UnityEngine.Random.Range(-0.4f, 0.4f)),
-                stagger = 1,
+                stagger = finisher ? Knockdown : 1,
                 special = false,
                 auto = true
             });
+            any |= landed;
             if (landed && fighter.Kit != null) fighter.Kit.OnAutoHit(enemy); // например, кровотечение Сойки
         }
+        if (!any) chainBroken = true; // промах — серия сначала
 
         foreach (BattleBox box in BattleManager.Instance.Boxes)
         {

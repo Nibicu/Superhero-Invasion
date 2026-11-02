@@ -30,6 +30,10 @@ public class FighterAI : MonoBehaviour
     [Tooltip("Не толпиться: союзники ближе этого расстояния отталкиваются")]
     [SerializeField] private float separationRadius = 0.7f;
 
+    [Header("Захват")]
+    [Tooltip("Шанс схватить беззащитного (шатается или оглушён) врага вплотную — за одно решение")]
+    [SerializeField, Range(0f, 1f)] private float grabChance = 0.5f;
+
     [Header("Отступление")]
     [Tooltip("Боец считается 'под атакой' (не может убежать), если его били меньше столько секунд назад")]
     [SerializeField] private float underAttackTime = 1.2f;
@@ -56,9 +60,12 @@ public class FighterAI : MonoBehaviour
     private Vector2 destination;  // Куда идём
     private bool hasDestination;
     private bool wantAuto;        // Решили сделать авто атаку
+    private bool wantGrab;        // Решили схватить цель
+    private bool wantDash;        // Решили ударить с разбега
     private bool autoClose;       // Авто атака вплотную (Стрелок бьёт рукой)
     private bool retreating;      // Режим отступления
     private bool wantRun;         // Решили бежать к точке (а не идти)
+    private bool dashApproach;    // Подбегаем к цели для удара с разбега (бежим даже на короткой дистанции)
     private float thinkTimer;
 
     /// <summary>Отступает ли сейчас (для отладки и интерфейса).</summary>
@@ -85,6 +92,16 @@ public class FighterAI : MonoBehaviour
         }
 
         // Выполняем решение
+        if (wantGrab)
+        {
+            wantGrab = false;
+            if (target != null && self.Combat.TryGrab(target)) return;
+        }
+        if (wantDash && target != null && self.Combat.CanDashAttack(target))
+        {
+            wantDash = false;
+            if (self.Combat.TryDashAttack(target)) return;
+        }
         if (wantAuto)
         {
             self.Movement.FaceTowards(aimPoint.x);
@@ -95,7 +112,7 @@ public class FighterAI : MonoBehaviour
         {
             Vector2 dir = destination - self.Position;
             if (dir.magnitude < 0.08f) hasDestination = false;
-            else self.Movement.Move(dir.normalized + Separation(bm) * 0.6f, wantRun && dir.magnitude > runMinDistance);
+            else self.Movement.Move(dir.normalized + Separation(bm) * 0.6f, wantRun && (dir.magnitude > runMinDistance || dashApproach));
         }
     }
 
@@ -105,10 +122,17 @@ public class FighterAI : MonoBehaviour
     private void Think(BattleManager bm)
     {
         wantAuto = false;
+        wantGrab = false;
+        wantDash = false;
         autoClose = false;
         ClassProfile profile = self.Profile;
         try { ThinkInner(bm, profile); }
-        finally { wantRun = ShouldRun(bm); }
+        finally
+        {
+            wantRun = ShouldRun(bm);
+            dashApproach = wantRun && !retreating && target != null && target.Faction != self.Faction
+                           && self.Combat.DashReady && Vector2.Distance(target.Position, self.Position) > self.meleeRange;
+        }
     }
 
     /// <summary>
@@ -119,6 +143,8 @@ public class FighterAI : MonoBehaviour
     {
         if (!hasDestination || !self.Movement.CanRun) return false;
         if (retreating) return true;
+        // Удар с разбега готов — к цели подбегаем бегом (чтобы ударить с разбега)
+        if (target != null && target.Faction != self.Faction && self.Combat.DashReady && !self.IsCharmed) return true;
         Fighter near = NearestOpponent(bm, runSafeDistance);
         return near == null;
     }
@@ -238,17 +264,25 @@ public class FighterAI : MonoBehaviour
         else FightRanged(profile);
     }
 
-    /// <summary>Ближний бой (Танк, Боец, Маг, Поддержка): подходит вплотную и бьёт авто атаками.</summary>
+    /// <summary>Ближний бой (Танк, Боец, Маг, Поддержка): подходит вплотную и бьёт авто атаками (с разбега — сильный удар).</summary>
     private void FightMelee()
     {
         Vector2 d = target.Position - self.Position;
         aimPoint = target.Position;
 
-        // В зоне удара — бьём
+        // Бежим к цели и она рядом — удар с разбега (решение держится, пока ИИ думает)
+        if (self.Combat.CanDashAttack(target))
+        {
+            wantDash = true;
+            hasDestination = true;
+        }
+
+        // В зоне удара — бьём (беззащитного — иногда хватаем)
         if (Mathf.Abs(d.x) <= self.meleeRange && Mathf.Abs(d.y) <= self.depthTolerance * 0.8f)
         {
             hasDestination = false;
-            wantAuto = true;
+            if (WantGrab()) wantGrab = true;
+            else wantAuto = true;
             return;
         }
 
@@ -268,10 +302,11 @@ public class FighterAI : MonoBehaviour
         float absX = Mathf.Abs(d.x), absY = Mathf.Abs(d.y);
         aimPoint = target.Position;
 
-        // Враг вплотную — бьём рукой (пока не отлетит)
+        // Враг вплотную — бьём рукой (пока не отлетит); беззащитного — иногда хватаем
         if (absX <= self.meleeRange * 1.1f && absY <= self.depthTolerance * 0.8f)
         {
             hasDestination = false;
+            if (WantGrab()) { wantGrab = true; return; }
             wantAuto = true;
             autoClose = true;
             return;
@@ -414,6 +449,9 @@ public class FighterAI : MonoBehaviour
         }
         return best;
     }
+
+    /// <summary>Хватать ли цель сейчас: она беззащитна и вплотную, и выпал шанс.</summary>
+    private bool WantGrab() => self.Combat.CanGrab(target) && Random.value < grabChance;
 
     /// <summary>Шарм: ближайший живой союзник (его бьёт зачарованный). null — союзников нет.</summary>
     private Fighter NearestCharmTarget(BattleManager bm)

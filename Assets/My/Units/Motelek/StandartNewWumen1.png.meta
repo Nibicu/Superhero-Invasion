@@ -1,0 +1,639 @@
+fileFormatVersion: 2
+guid: 92698e02606380a46bcd251498285741
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -5751429361570397919
+    second: StandartNewWumen1_0
+  - first:
+      213: 7077206086558788895
+    second: StandartNewWumen1_1
+  - first:
+      213: -6735263254406171789
+    second: StandartNewWumen1_2
+  - first:
+      213: 6651871862163146120
+    second: StandartNewWumen1_3
+  - first:
+      213: -3252888439256264805
+    second: StandartNewWumen1_4
+  - first:
+      213: 6742549197270738240
+    second: StandartNewWumen1_5
+  - first:
+      213: 9060508498297670546
+    second: StandartNewWumen1_6
+  - first:
+      213: -8145645365797373287
+    second: StandartNewWumen1_7
+  - first:
+      213: -3419739457559690615
+    second: StandartNewWumen1_8
+  - first:
+      213: -8893595542132471701
+    second: StandartNewWumen1_9
+  - first:
+      213: -7679985507002174492
+    second: StandartNewWumen1_10
+  - first:
+      213: 7088301204347891698
+    second: StandartNewWumen1_11
+  - first:
+      213: 4601293727115606016
+    second: StandartNewWumen1_12
+  - first:
+      213: -1416343712720732549
+    second: StandartNewWumen1_13
+  - first:
+      213: 1168761453963125453
+    second: StandartNewWumen1_14
+  - first:
+      213: 1979425727262016912
+    second: StandartNewWumen1_15
+  - first:
+      213: 2918393336375611559
+    second: StandartNewWumen1_16
+  - first:
+      213: 6251362678102044564
+    second: StandartNewWumen1_17
+  - first:
+      213: 3099912666330468655
+    second: StandartNewWumen1_18
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationMethod: 0
+  spriteTessellationDetail: -1
+  spriteGeometrySubdivision: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: StandartNewWumen1_0
+      rect:
+        serializedVersion: 2
+        x: 18
+        y: 191
+        width: 24
+        height: 34
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 12148d0d771de20b0800000000000000
+      internalID: -5751429361570397919
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: StandartNewWumen1_1
+      rect:
+        serializedVersion: 2
+        x: 82
+        y: 191
+        width: 24
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f1da1976079473260800000000000000
+      internalID: 7077206086558788895
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: StandartNewWumen1_2
+      rect:
+        serializedVersion: 2
+        x: 146
+        y: 191
+        width: 24
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 373f06c41c98782a0800000000000000
+      internalID: -6735263254406171789
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: StandartNewWumen1_3
+      rect:
+        serializedVersion: 2
+        x: 210
+        y: 191
+        width: 24
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 88586ab2732305c50800000000000000
+      internalID: 6651871862163146120
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: StandartNewWumen1_4
+      rect:
+        serializedVersion: 2
+        x: 18
+        y: 127
+        width: 23
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b9fc724f23b6bd2d0800000000000000
+      internalID: -3252888439256264805
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: StandartNewWumen1_5
+      rect:
+        serializedVersion: 2
+        x: 82
+        y: 127
+        width: 23
+        height: 34
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 045eae775c8529d50800000000000000
+      internalID: 6742549197270738240
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: StandartNewWumen1_6
+      rect:
+        serializedVersion: 2
+        x: 146
+        y: 127
+        width: 23
+        height: 35
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 29bc07d79746dbd70800000000000000
+      internalID: 9060508498297670546
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: StandartNewWumen1_7
+      rect:
+        serializedVersion: 2
+        x: 210
+        y: 127
+        width: 23
+        height: 34
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 99a375182bad4fe80800000000000000
+      internalID: -8145645365797373287
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: StandartNewWumen1_8
+      rect:
+        serializedVersion: 2
+        x: 274
+        y: 127
+        width: 23
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 98284c7f415aa80d0800000000000000
+      internalID: -3419739457559690615
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: StandartNewWumen1_9
+      rect:
+        serializedVersion: 2
+        x: 338
+        y: 127
+        width: 23
+        height: 34
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b68423789f9939480800000000000000
+      internalID: -8893595542132471701
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: StandartNewWumen1_10
+      rect:
+        serializedVersion: 2
+        x: 402
+        y: 127
+        width: 23
+        height: 34
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4e3bcf62fd53b6590800000000000000
+      internalID: -7679985507002174492
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: StandartNewWumen1_11
+      rect:
+        serializedVersion: 2
+        x: 20
+        y: 63
+        width: 23
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2ff2122d364be5260800000000000000
+      internalID: 7088301204347891698
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: StandartNewWumen1_12
+      rect:
+        serializedVersion: 2
+        x: 84
+        y: 64
+        width: 23
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 00875ff14441bdf30800000000000000
+      internalID: 4601293727115606016
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: StandartNewWumen1_13
+      rect:
+        serializedVersion: 2
+        x: 148
+        y: 65
+        width: 23
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b7e3c6bb5e2285ce0800000000000000
+      internalID: -1416343712720732549
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: StandartNewWumen1_14
+      rect:
+        serializedVersion: 2
+        x: 212
+        y: 66
+        width: 23
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: dc224aa9956483010800000000000000
+      internalID: 1168761453963125453
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: StandartNewWumen1_15
+      rect:
+        serializedVersion: 2
+        x: 276
+        y: 65
+        width: 23
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 095c8b42635587b10800000000000000
+      internalID: 1979425727262016912
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: StandartNewWumen1_16
+      rect:
+        serializedVersion: 2
+        x: 340
+        y: 64
+        width: 23
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7a01981f647308820800000000000000
+      internalID: 2918393336375611559
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: StandartNewWumen1_17
+      rect:
+        serializedVersion: 2
+        x: 404
+        y: 63
+        width: 23
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 49f286e0c3d41c650800000000000000
+      internalID: 6251362678102044564
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: StandartNewWumen1_18
+      rect:
+        serializedVersion: 2
+        x: 20
+        y: 0
+        width: 32
+        height: 31
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f219c5f552a150b20800000000000000
+      internalID: 3099912666330468655
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      StandartNewWumen1_0: -5751429361570397919
+      StandartNewWumen1_1: 7077206086558788895
+      StandartNewWumen1_10: -7679985507002174492
+      StandartNewWumen1_11: 7088301204347891698
+      StandartNewWumen1_12: 4601293727115606016
+      StandartNewWumen1_13: -1416343712720732549
+      StandartNewWumen1_14: 1168761453963125453
+      StandartNewWumen1_15: 1979425727262016912
+      StandartNewWumen1_16: 2918393336375611559
+      StandartNewWumen1_17: 6251362678102044564
+      StandartNewWumen1_18: 3099912666330468655
+      StandartNewWumen1_2: -6735263254406171789
+      StandartNewWumen1_3: 6651871862163146120
+      StandartNewWumen1_4: -3252888439256264805
+      StandartNewWumen1_5: 6742549197270738240
+      StandartNewWumen1_6: 9060508498297670546
+      StandartNewWumen1_7: -8145645365797373287
+      StandartNewWumen1_8: -3419739457559690615
+      StandartNewWumen1_9: -8893595542132471701
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

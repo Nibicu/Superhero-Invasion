@@ -1,0 +1,795 @@
+fileFormatVersion: 2
+guid: 67c673b3229bc1943b3d2881d9137309
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 6064733163869677090
+    second: PhantomV1_0
+  - first:
+      213: -7301268058774889208
+    second: PhantomV1_1
+  - first:
+      213: 8100728750905011953
+    second: PhantomV1_2
+  - first:
+      213: -2848783574416574140
+    second: PhantomV1_3
+  - first:
+      213: 370671056906182188
+    second: PhantomV1_4
+  - first:
+      213: 8879980768069662240
+    second: PhantomV1_5
+  - first:
+      213: -1407590265047195361
+    second: PhantomV1_6
+  - first:
+      213: 2964185386196300753
+    second: PhantomV1_7
+  - first:
+      213: 5247178624163666419
+    second: PhantomV1_8
+  - first:
+      213: 7572135398339368835
+    second: PhantomV1_9
+  - first:
+      213: -5969343019570496959
+    second: PhantomV1_10
+  - first:
+      213: -1803292573548126327
+    second: PhantomV1_11
+  - first:
+      213: -7463952880202702583
+    second: PhantomV1_12
+  - first:
+      213: -1083825712899102039
+    second: PhantomV1_13
+  - first:
+      213: 4631644892730310751
+    second: PhantomV1_14
+  - first:
+      213: -1575532867325500282
+    second: PhantomV1_15
+  - first:
+      213: -7893322874413252524
+    second: PhantomV1_16
+  - first:
+      213: 641795263027856618
+    second: PhantomV1_17
+  - first:
+      213: -4178555091717070448
+    second: PhantomV1_18
+  - first:
+      213: 1474218521163438423
+    second: PhantomV1_19
+  - first:
+      213: 8379783609536950980
+    second: PhantomV1_20
+  - first:
+      213: 8534947481687452082
+    second: PhantomV1_21
+  - first:
+      213: -5774140959020878209
+    second: PhantomV1_22
+  - first:
+      213: 8596479203488996082
+    second: PhantomV1_23
+  - first:
+      213: -4431210144550513727
+    second: PhantomV1_24
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationMethod: 0
+  spriteTessellationDetail: -1
+  spriteGeometrySubdivision: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: PhantomV1_0
+      rect:
+        serializedVersion: 2
+        x: 22
+        y: 319
+        width: 23
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 226abf12ea24a2450800000000000000
+      internalID: 6064733163869677090
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: PhantomV1_1
+      rect:
+        serializedVersion: 2
+        x: 86
+        y: 319
+        width: 23
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 80d11d2626facaa90800000000000000
+      internalID: -7301268058774889208
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: PhantomV1_2
+      rect:
+        serializedVersion: 2
+        x: 150
+        y: 319
+        width: 23
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1feac7321e19b6070800000000000000
+      internalID: 8100728750905011953
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: PhantomV1_3
+      rect:
+        serializedVersion: 2
+        x: 214
+        y: 319
+        width: 23
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 449beecbe661778d0800000000000000
+      internalID: -2848783574416574140
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: PhantomV1_4
+      rect:
+        serializedVersion: 2
+        x: 22
+        y: 255
+        width: 20
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c2e5963cc53e42500800000000000000
+      internalID: 370671056906182188
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: PhantomV1_5
+      rect:
+        serializedVersion: 2
+        x: 86
+        y: 255
+        width: 21
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 026b71dd5770c3b70800000000000000
+      internalID: 8879980768069662240
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: PhantomV1_6
+      rect:
+        serializedVersion: 2
+        x: 150
+        y: 255
+        width: 22
+        height: 34
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f1160969c1c377ce0800000000000000
+      internalID: -1407590265047195361
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: PhantomV1_7
+      rect:
+        serializedVersion: 2
+        x: 213
+        y: 255
+        width: 24
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1d372a067e6e22920800000000000000
+      internalID: 2964185386196300753
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: PhantomV1_8
+      rect:
+        serializedVersion: 2
+        x: 278
+        y: 255
+        width: 22
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3f95c4e6829b1d840800000000000000
+      internalID: 5247178624163666419
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: PhantomV1_9
+      rect:
+        serializedVersion: 2
+        x: 342
+        y: 255
+        width: 21
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 387dd21a601a51960800000000000000
+      internalID: 7572135398339368835
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: PhantomV1_10
+      rect:
+        serializedVersion: 2
+        x: 406
+        y: 255
+        width: 21
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 14afa009622a82da0800000000000000
+      internalID: -5969343019570496959
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: PhantomV1_11
+      rect:
+        serializedVersion: 2
+        x: 22
+        y: 192
+        width: 23
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 98f509765fa69f6e0800000000000000
+      internalID: -1803292573548126327
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: PhantomV1_12
+      rect:
+        serializedVersion: 2
+        x: 88
+        y: 191
+        width: 23
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 901a343b666ba6890800000000000000
+      internalID: -7463952880202702583
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: PhantomV1_13
+      rect:
+        serializedVersion: 2
+        x: 150
+        y: 191
+        width: 25
+        height: 31
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9aae638a14a75f0f0800000000000000
+      internalID: -1083825712899102039
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: PhantomV1_14
+      rect:
+        serializedVersion: 2
+        x: 215
+        y: 191
+        width: 27
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f5041fc8d78e64040800000000000000
+      internalID: 4631644892730310751
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: PhantomV1_15
+      rect:
+        serializedVersion: 2
+        x: 278
+        y: 192
+        width: 28
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6846c176435922ae0800000000000000
+      internalID: -1575532867325500282
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: PhantomV1_16
+      rect:
+        serializedVersion: 2
+        x: 343
+        y: 191
+        width: 25
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 45002259aa8457290800000000000000
+      internalID: -7893322874413252524
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: PhantomV1_17
+      rect:
+        serializedVersion: 2
+        x: 408
+        y: 191
+        width: 23
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ae4cd4f246d18e800800000000000000
+      internalID: 641795263027856618
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: PhantomV1_18
+      rect:
+        serializedVersion: 2
+        x: 22
+        y: 127
+        width: 30
+        height: 31
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 091edc3784ac206c0800000000000000
+      internalID: -4178555091717070448
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: PhantomV1_19
+      rect:
+        serializedVersion: 2
+        x: 22
+        y: 63
+        width: 30
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7599f3b2fe9757410800000000000000
+      internalID: 1474218521163438423
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: PhantomV1_20
+      rect:
+        serializedVersion: 2
+        x: 85
+        y: 63
+        width: 32
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4c2371d7bc8fa4470800000000000000
+      internalID: 8379783609536950980
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: PhantomV1_21
+      rect:
+        serializedVersion: 2
+        x: 149
+        y: 63
+        width: 32
+        height: 34
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2b96896b389327670800000000000000
+      internalID: 8534947481687452082
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: PhantomV1_22
+      rect:
+        serializedVersion: 2
+        x: 23
+        y: 0
+        width: 22
+        height: 30
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f76f686f3612edfa0800000000000000
+      internalID: -5774140959020878209
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: PhantomV1_23
+      rect:
+        serializedVersion: 2
+        x: 86
+        y: 0
+        width: 22
+        height: 30
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2fa9efa1a44dc4770800000000000000
+      internalID: 8596479203488996082
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: PhantomV1_24
+      rect:
+        serializedVersion: 2
+        x: 151
+        y: 0
+        width: 22
+        height: 30
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1c395f0e9dd2182c0800000000000000
+      internalID: -4431210144550513727
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      PhantomV1_0: 6064733163869677090
+      PhantomV1_1: -7301268058774889208
+      PhantomV1_10: -5969343019570496959
+      PhantomV1_11: -1803292573548126327
+      PhantomV1_12: -7463952880202702583
+      PhantomV1_13: -1083825712899102039
+      PhantomV1_14: 4631644892730310751
+      PhantomV1_15: -1575532867325500282
+      PhantomV1_16: -7893322874413252524
+      PhantomV1_17: 641795263027856618
+      PhantomV1_18: -4178555091717070448
+      PhantomV1_19: 1474218521163438423
+      PhantomV1_2: 8100728750905011953
+      PhantomV1_20: 8379783609536950980
+      PhantomV1_21: 8534947481687452082
+      PhantomV1_22: -5774140959020878209
+      PhantomV1_23: 8596479203488996082
+      PhantomV1_24: -4431210144550513727
+      PhantomV1_3: -2848783574416574140
+      PhantomV1_4: 370671056906182188
+      PhantomV1_5: 8879980768069662240
+      PhantomV1_6: -1407590265047195361
+      PhantomV1_7: 2964185386196300753
+      PhantomV1_8: 5247178624163666419
+      PhantomV1_9: 7572135398339368835
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

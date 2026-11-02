@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1eb09ca89b6c4e942acb943b440a973c, type: 3}
-  m_Name: Hero_Spark
+  m_Name: Hero_Motelek
   m_EditorClassIdentifier: Assembly-CSharp::HeroData
-  displayName: "\u0418\u0441\u043A\u0440\u0430"
+  displayName: "\u041C\u043E\u0442\u044B\u043B\u0451\u043A"
   portrait: {fileID: 0}
   color: {r: 1, g: 0.5411765, b: 0.23921569, a: 1}
   sprites: {fileID: 0}
@@ -21,7 +21,7 @@ MonoBehaviour:
   stars: 1
   hireCost: 350
   hireable: 1
-  unitClass: 2
+  unitClass: 4
   skillDamage: 1
   baseStats:
     hp: 560
