@@ -12,6 +12,19 @@ public class MotelekKit : HeroKit
 {
     private const int Orbs = 0, Dust = 1, Release = 2; // номера скилов
 
+    /// <summary>Числа навыков — из файла героя (Skills → Values; по умолчанию — таблица KitParams).</summary>
+    protected override void LoadParams()
+    {
+        orbEnergy = Num(Orbs, "energy");
+        orbDamage = Num(Orbs, "damage");
+        orbsMin = Count(Orbs, "min");
+        orbsMax = Mathf.Max(orbsMin, Count(Orbs, "max"));
+        dustHeal = Num(Dust, "heal");
+        dustTime = Num(Dust, "time");
+        releaseDamage = Num(Release, "damage");
+        releaseRadius = Num(Release, "radius");
+    }
+
     [Header("Зачарованный снаряд")]
     [SerializeField] private int orbsMin = 2;               // Меньше этого не бросает (ждёт энергию)
     [SerializeField] private int orbsMax = 5;               // Больше этого не бросает
@@ -27,6 +40,9 @@ public class MotelekKit : HeroKit
     [Header("Волшебная пыль")]
     [SerializeField] private float dustHurtHp = 0.7f;       // Сыплет, когда кто-то рядом (или сам) ранен ниже этого
     [SerializeField] private float dustAllyRadius = 2.5f;   // Каких союзников считать "рядом"
+
+    private float dustHeal = 0.3f;     // Лечение пыли — доля макс. HP
+    private float dustTime = 4f;       // Сколько держится пыль
 
     [Header("Выброс энергии")]
     [SerializeField] private float releaseDamage = 0.5f;    // Урон (доля Силы атаки)
@@ -130,7 +146,7 @@ public class MotelekKit : HeroKit
     {
         if (!Begin(Dust, 0.4f)) return false;
         Sprite circle = self.View != null ? self.View.CircleSprite : null;
-        MotelekDust.Spread(self, self.transform.position, circle);
+        MotelekDust.Spread(self, self.transform.position, circle, dustHeal, dustTime);
         Pop("ВОЛШЕБНАЯ ПЫЛЬ", new Color(1f, 0.95f, 0.55f));
         return true;
     }

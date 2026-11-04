@@ -4,13 +4,12 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 
 /// <summary>
-/// Общая миссия на карте — круг со знаком "!". Её видят и могут выполнить обе стороны.
+/// Общая миссия на карте — круг со знаком "!" (случайное событие фазы миссий). Её видят и могут выполнить обе стороны.
 /// Работает как захват нейтрального объекта (порядок нападения — в AttackableSite):
-///  команда приезжает → подготовка 20 с → бой с охраной по территориям (волнам);
+///  команда приезжает → подготовка к бою → бой с охраной по территориям (волнам);
 ///  если за подготовку приедет команда соперника — битва за флаг.
-/// Победитель получает награду (золото, плутоний, артефакты), миссия исчезает,
-/// и GlobalMissionManager начинает отсчёт до следующей. Проиграли — миссия остаётся
-/// (охрана снова полная).
+/// Победитель получает награду (золото, плутоний, артефакты, герой), миссия исчезает.
+/// Проиграли — миссия остаётся (охрана снова полная) до конца фазы миссий.
 /// Создаётся GlobalMissionManager'ом из префаба GlobalMissionMarker.
 /// </summary>
 public class GlobalMission : AttackableSite
@@ -55,11 +54,8 @@ public class GlobalMission : AttackableSite
     public override string TargetName => Title;
     public override string SiteName => Title;
 
-    /// <summary>Название задания так, как его видит игрок (у героев и злодеев — по-своему).</summary>
+    /// <summary>Название миссии так, как его видит игрок (у героев и злодеев — по-своему).</summary>
     public string Title => Data.TitleFor(Team.Player);
-
-    /// <summary>Кто начал это задание фракции.</summary>
-    public Team LaunchedBy { get; set; }
     public override Color SiteColor => Data.color;
 
     /// <summary>Сила охраны миссии.</summary>
@@ -144,14 +140,8 @@ public class GlobalMission : AttackableSite
                 got.Add($"<color=#7FE0FF>герой {hero.Data.displayName} ({hero.Data.stars} зв.){(HeroManager.Instance.IsReserve(hero) ? " — в запасе" : "")}</color>");
         }
         rewardText = string.Join(",  ", got);
-        if (team != LaunchedBy && manager != null)
-        {
-            manager.OnMissionFailed(this); // выполнил соперник — задание начавшего провалено
-            return;
-        }
-
-        if (team == Team.Player) ToastUI.Show($"Задание «{Title}» выполнено!");
-        else ToastUI.Show($"Враг выполнил задание «{Title}»");
+        if (team == Team.Player) ToastUI.Show($"Общая миссия «{Title}» выполнена!");
+        else ToastUI.Show($"Враг выполнил общую миссию «{Title}»");
 
         if (manager != null) manager.OnMissionCompleted(this);
     }
@@ -159,40 +149,18 @@ public class GlobalMission : AttackableSite
     /// <summary>Текст для окна итога.</summary>
     protected override string AttackerWonText(Team winner) =>
         winner == Team.Player
-            ? $"Задание «{Title}» выполнено!\n<size=85%>Награда: {rewardText}</size>"
-            : $"Задание «{Title}» выполнил враг.";
+            ? $"Общая миссия «{Title}» выполнена!\n<size=85%>Награда: {rewardText}</size>"
+            : $"Общую миссию «{Title}» выполнил враг.";
 
     // ---------- Жизненный цикл ----------
 
-    /// <summary>Задание фракции — больше опыта за победу.</summary>
+    /// <summary>Общая миссия — больше опыта за победу.</summary>
     protected override int WinXp => 50;
-
-    /// <summary>Своя команда проиграла бой за своё задание — задание пропадает (следующая пауза — без задания).</summary>
-    protected override void OnAttackerLost(Squad squad)
-    {
-        if (completed || squad.Owner != LaunchedBy || manager == null) return;
-        completed = true;
-        manager.OnMissionFailed(this);
-    }
-
-    private bool shown = true; // Видно ли задание игроку сейчас
-
-    /// <summary>Задание врага игрок видит, только когда у него идёт подготовка к бою.</summary>
-    private void UpdateVisibility()
-    {
-        bool visible = GlobalMissionManager.IsVisibleTo(this, Team.Player);
-        if (visible == shown) return;
-        shown = visible;
-        foreach (Renderer r in GetComponentsInChildren<Renderer>(true)) r.enabled = visible;
-        foreach (Collider2D c in GetComponentsInChildren<Collider2D>(true)) c.enabled = visible;
-        if (visible && LaunchedBy != Team.Player) ToastUI.Show($"Враг начал подготовку к бою за «{Title}»! Успейте помешать — бой через {Mathf.CeilToInt(PrepLeft)} с");
-    }
 
     /// <summary>Пульсация и таймер подготовки.</summary>
     protected override void Update()
     {
         base.Update();
-        UpdateVisibility();
         if (pulse != null)
             pulse.localScale = Vector3.one * (1f + 0.1f * Mathf.Sin(Time.time * 3f));
     }
@@ -221,7 +189,7 @@ public class GlobalMission : AttackableSite
     protected override void UpdateAttackVisuals()
     {
         if (Data == null) return;
-        string status = LaunchedBy == Team.Player ? "<color=#7FB8FF>Наше задание фракции</color>" : "<color=#FF9A9A>Задание врага</color>";
+        string status = "<color=#FFD84A>Общая миссия</color>";
         if (IsUnderAttack)
         {
             string col = IsContested ? "#FFD84A" : AttackingTeam == Team.Player ? "#7FB8FF" : "#FF7A7A";

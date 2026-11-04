@@ -7,7 +7,7 @@ using UnityEngine.UI;
 /// Большое окно тактической паузы (игра стоит 2 минуты между фазами):
 ///  слева — ваши герои по иерархии (перетаскиванием меняется порядок; кто дальше лимита — в запасе),
 ///  в центре — база (HP, уровень, деньги) и кнопки: купить героев, инвентарь, база,
-///  справа — задания фракции (выбрать одно), внизу — "ГОТОВ" (закончить паузу раньше).
+///  внизу — "ГОТОВ" (закончить паузу раньше).
 /// Покупать героев можно только в паузе (и на драфте). Клик по герою — его карточка (прокачка, вещи).
 /// </summary>
 public class TacticalPauseUI : MonoBehaviour
@@ -32,12 +32,6 @@ public class TacticalPauseUI : MonoBehaviour
     [SerializeField] private Button inventoryButton; // "ИНВЕНТАРЬ"
     [SerializeField] private Button baseButton;      // "БАЗА"
 
-    [Header("Задания фракции")]
-    [SerializeField] private TMP_Text missionsHeader;          // "ЗАДАНИЯ ФРАКЦИИ: Трон"
-    [SerializeField] private TMP_Text missionsStatus;          // Что сейчас идёт (наше и врага)
-    [SerializeField] private Transform missionList;            // Карточки заданий
-    [SerializeField] private FactionMissionCardUI cardTemplate; // Шаблон карточки (выключен)
-
     [Header("Побеждённые герои")]
     [SerializeField] private TMP_Text defeatedHeader;     // "ПОБЕЖДЁННЫЕ ГЕРОИ"
     [SerializeField] private Transform defeatedList;      // Строки побеждённых
@@ -48,7 +42,7 @@ public class TacticalPauseUI : MonoBehaviour
     [SerializeField] private HeroInfoWindowUI heroInfo; // Карточка героя
     [SerializeField] private BaseWindowUI baseWindow;   // Окно базы
 
-    private readonly List<GameObject> spawned = new List<GameObject>(); // Созданные строки и карточки
+    private readonly List<GameObject> spawned = new List<GameObject>(); // Созданные строки
 
     /// <summary>Открыто ли окно паузы.</summary>
     public bool IsOpen => root != null && root.activeSelf;
@@ -58,7 +52,6 @@ public class TacticalPauseUI : MonoBehaviour
     {
         Instance = this;
         rowTemplate.gameObject.SetActive(false);
-        cardTemplate.gameObject.SetActive(false);
         if (defeatedTemplate != null) defeatedTemplate.SetActive(false);
         readyButton.onClick.AddListener(() => { if (PhaseManager.Instance != null) PhaseManager.Instance.Ready(); });
         buyButton.onClick.AddListener(() => roster.Open());
@@ -67,12 +60,11 @@ public class TacticalPauseUI : MonoBehaviour
         root.SetActive(false);
     }
 
-    /// <summary>Подписаться на изменения героев, денег и заданий.</summary>
+    /// <summary>Подписаться на изменения героев и денег.</summary>
     private void Start()
     {
         HeroManager.Instance.HeroesChanged += OnChanged;
         ResourceManager.Instance.ResourcesChanged += OnChanged;
-        if (GlobalMissionManager.Instance != null) GlobalMissionManager.Instance.Changed += RefreshIfOpen;
     }
 
     /// <summary>Отписаться.</summary>
@@ -81,7 +73,6 @@ public class TacticalPauseUI : MonoBehaviour
         if (Instance == this) Instance = null;
         if (HeroManager.Instance != null) HeroManager.Instance.HeroesChanged -= OnChanged;
         if (ResourceManager.Instance != null) ResourceManager.Instance.ResourcesChanged -= OnChanged;
-        if (GlobalMissionManager.Instance != null) GlobalMissionManager.Instance.Changed -= RefreshIfOpen;
     }
 
     private void OnChanged(Team team)
@@ -178,28 +169,6 @@ public class TacticalPauseUI : MonoBehaviour
         string baseInfo = b != null ? $"HP: <color=#6EE07A>{b.Hp} / {b.MaxHp}</color>   •   Уровень базы: {b.Level}" : "";
         baseText.text = $"{baseInfo}\n<color=#FFD84A>{rm.GetGold(Team.Player)} золота</color>   •   <color=#C58BFF>{rm.GetPlutonium(Team.Player)} плутония</color>\n" +
                         "<size=80%><color=#9AA4B5>Покупать героев можно только сейчас (в паузе)</color></size>";
-
-        // Задания фракции
-        GlobalMissionManager gmm = GlobalMissionManager.Instance;
-        string faction = GameSetup.PlayerFaction != null ? GameSetup.PlayerFaction.displayName : (hm.GetSide(Team.Player) == Side.Heroes ? "Герои" : "Злодеи");
-        missionsHeader.text = $"ЗАДАНИЯ ФРАКЦИИ\n<size=70%><color=#C9D3E6>{faction}</color></size>";
-        if (gmm == null) return;
-        GlobalMission mine = gmm.LaunchedBy(Team.Player), theirs = gmm.LaunchedBy(Team.Enemy);
-        missionsStatus.text =
-            (mine != null ? $"Ваше задание: <color=#7FB8FF>{mine.Title}</color>" : "Ваше задание: <color=#9AA4B5>не выбрано</color>") + "\n" +
-            (theirs != null && GlobalMissionManager.IsVisibleTo(theirs, Team.Player) ? $"Враг выполняет: <color=#FF7A7A>{theirs.Title}</color>" : "Враг: <color=#9AA4B5>неизвестно</color>");
-        foreach (GlobalMissionData d in gmm.Pool)
-        {
-            FactionMissionCardUI card = Instantiate(cardTemplate, missionList);
-            card.gameObject.SetActive(true);
-            spawned.Add(card.gameObject);
-            bool can = gmm.CanLaunch(Team.Player, d, out _);
-            string state = mine != null && mine.Data == d ? "Ваше — идёт"
-                : gmm.OnCooldown(Team.Player) ? "Провалено — ждите паузу"
-                : mine != null ? "Одно задание за раз" : "Сейчас недоступно";
-            GlobalMissionData captured = d;
-            card.Setup(d, can, state, () => gmm.Launch(Team.Player, captured));
-        }
     }
 
     /// <summary>Отпустили строку героя: новое место — по высоте курсора среди остальных строк.</summary>

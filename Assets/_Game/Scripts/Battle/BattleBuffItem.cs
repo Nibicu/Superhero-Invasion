@@ -5,6 +5,7 @@ using UnityEngine.Rendering;
 /// <summary>
 /// Предмет на арене, который подбирает первый подошедший боец. Бывает:
 ///  - Зелье (падает с неба во время боя): +15% HP;
+///  - Капсула с энергией (падает с неба во время боя): +20% энергии;
 ///  - Бафф из ящика: лечение +30% HP или усиление случайного параметра
 ///    (авто атака, атака, спец. атака, защита, спец. защита, скорость) +30% на 15 секунд.
 /// Внешний вид — в префабе Assets/_Game/Prefabs/BattleBuff.
@@ -15,6 +16,8 @@ public class BattleBuffItem : MonoBehaviour
     [SerializeField] private float healAmount = 0.3f;
     [Tooltip("Сколько HP (доля от максимума) даёт зелье")]
     [SerializeField] private float potionAmount = 0.15f;
+    [Tooltip("Сколько энергии (доля от максимума) даёт капсула с энергией")]
+    [SerializeField] private float energyAmount = 0.2f;
     [Tooltip("Во сколько раз бафф усиливает параметр (1.3 = +30%)")]
     [SerializeField] private float boostMultiplier = 1.3f;
     [Tooltip("Сколько секунд действует усиление")]
@@ -37,6 +40,9 @@ public class BattleBuffItem : MonoBehaviour
 
     /// <summary>Это зелье (падает с неба).</summary>
     public bool IsPotion { get; private set; }
+
+    /// <summary>Это капсула с энергией (падает с неба).</summary>
+    public bool IsEnergy { get; private set; }
 
     /// <summary>Какой параметр усиливает (если не лечение).</summary>
     public BoostStat Stat { get; private set; }
@@ -70,6 +76,13 @@ public class BattleBuffItem : MonoBehaviour
         IsPotion = true;
         heal = potionAmount;
         Paint(new Color(0.95f, 0.3f, 0.4f), $"+{Mathf.RoundToInt(potionAmount * 100)}% HP");
+    }
+
+    /// <summary>Капсула с энергией: +20% энергии.</summary>
+    public void SetupEnergy()
+    {
+        IsEnergy = true;
+        Paint(new Color(0.3f, 0.75f, 1f), $"+{Mathf.RoundToInt(energyAmount * 100)}% энергии");
     }
 
     /// <summary>Начать падение с неба с высоты height.</summary>
@@ -107,7 +120,12 @@ public class BattleBuffItem : MonoBehaviour
     private void PickUp(Fighter f)
     {
         Taken = true;
-        if (IsHeal)
+        if (IsEnergy)
+        {
+            f.Combat.AddEnergy(f.Combat.MaxEnergy * energyAmount);
+            if (f.View != null) f.View.Pop($"+{Mathf.RoundToInt(energyAmount * 100)}% ЭНЕРГИИ", new Color(0.4f, 0.8f, 1f));
+        }
+        else if (IsHeal)
         {
             f.Health.Heal(f.Health.Max * heal);
             if (f.View != null) f.View.FlashHeal();

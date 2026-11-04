@@ -502,7 +502,7 @@ public class FighterView : MonoBehaviour
                 offset.y = 0.12f * Mathf.Sin(Mathf.Clamp01(t / 0.4f) * Mathf.PI); // небольшой прыжок
                 break;
             case FighterState.Attacking:
-                float p = Mathf.Clamp01(t / fighter.attackDuration);
+                float p = Mathf.Clamp01(t / fighter.AttackDuration);
                 float punch = Mathf.Sin(p * Mathf.PI); // 0 → 1 → 0
                 bool fin = fighter.Combat.IsFinisher;   // добивающий — шире замах и рывок вперёд
                 armAngle = Mathf.Lerp(-70f, fin ? 20f : 0f, punch);

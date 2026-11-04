@@ -5,15 +5,14 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Шаг 4 (сцена Game): фазы игры (PhaseManager), окно тактической паузы, задания фракции
-/// (Data/GlobalMissions/Faction_*), разовые награды объектов, убирает кнопку РОСТЕР с экрана
-/// (героев покупают только в паузе). Меню: Tools → Superhero → Собрать фазы и паузу.
-/// Повторный запуск пересоздаёт окно паузы; данные заданий не перезаписываются.
+/// Шаг 4 (сцена Game): фазы игры (PhaseManager), окно тактической паузы, список общих миссий
+/// (все файлы Data/GlobalMissions — случайное событие фазы миссий), разовые награды объектов,
+/// убирает кнопку РОСТЕР с экрана (героев покупают только в паузе). Меню: Tools → Superhero → Собрать фазы и паузу.
+/// Повторный запуск пересоздаёт окно паузы; данные миссий не перезаписываются.
 /// </summary>
 public static class PhaseBuilder
 {
     private const string GameScenePath = "Assets/_Game/Scenes/Game.unity"; // Сцена карты
-    private const float PPU = 38f;                                          // Пикселей картинки города на единицу мира
 
     private static Sprite rounded; // Скруглённый прямоугольник
     private static TMP_FontAsset font;   // Шрифт
@@ -37,19 +36,14 @@ public static class PhaseBuilder
         eso.FindProperty("eventDuration").floatValue = 120f;
         eso.ApplyModifiedPropertiesWithoutUndo();
 
-        // 2) Задания фракции
-        GlobalMissionData plutonium = FactionMission("Faction_Plutonium", "GlobalMission_Reactor",
-            "Плутоний института", "Добыть плутоний в институте физики", "Захватить институт физики и украсть плутоний",
-            "Запасы плутония в Институте ядерной физики под угрозой.", new Color(0.55f, 0.85f, 0.3f), W(1110, 410), 200, 60, false);
-        GlobalMissionData capsule = FactionMission("Faction_Capsule", "GlobalMission_Robots",
-            "Капсула энергии", "Защита капсулы энергии", "Захватить капсулу энергии",
-            "В парке нашли капсулу энергии — внутри спит герой. Кто победит, тому он и достанется.", new Color(0.3f, 0.85f, 0.95f), W(350, 395), 0, 0, true);
+        // 2) Общие миссии — все файлы Data/GlobalMissions (появляются случайно в фазе миссий)
         var gmm = Object.FindAnyObjectByType<GlobalMissionManager>();
         var gso = new SerializedObject(gmm);
         var pool = gso.FindProperty("pool");
-        pool.arraySize = 2;
-        pool.GetArrayElementAtIndex(0).objectReferenceValue = plutonium;
-        pool.GetArrayElementAtIndex(1).objectReferenceValue = capsule;
+        string[] guids = AssetDatabase.FindAssets("t:GlobalMissionData", new[] { "Assets/_Game/Data/GlobalMissions" });
+        pool.arraySize = guids.Length;
+        for (int i = 0; i < guids.Length; i++)
+            pool.GetArrayElementAtIndex(i).objectReferenceValue = AssetDatabase.LoadAssetAtPath<GlobalMissionData>(AssetDatabase.GUIDToAssetPath(guids[i]));
         gso.ApplyModifiedPropertiesWithoutUndo();
 
         // 3) Разовые награды объектов (событие «Объект»)
@@ -100,7 +94,7 @@ public static class PhaseBuilder
         row.gameObject.SetActive(false);
 
         // В центре — база
-        var baseCol = Column(r, "Base", 0.5f, -150f, 560f, new Color(0.12f, 0.14f, 0.19f, 0.95f), out TMP_Text baseHeader);
+        var baseCol = Column(r, "Base", 0.5f, 0f, 560f, new Color(0.12f, 0.14f, 0.19f, 0.95f), out TMP_Text baseHeader);
         baseHeader.text = "БАЗА";
         var baseText = Text("BaseText", baseCol, "", 26, Color.white, TextAlignmentOptions.Top, false);
         Place(baseText.rectTransform, new Vector2(0.5f, 1f), new Vector2(0, -170), new Vector2(520, 130));
@@ -138,14 +132,6 @@ public static class PhaseBuilder
         Stretch(Text("Text", dBtnImg.rectTransform, "ВОССТАНОВИТЬ", 18, Color.white, TextAlignmentOptions.Center, false).rectTransform);
         defeatedRow.gameObject.SetActive(false);
 
-        // Справа — задания фракции
-        var missionCol = Column(r, "Missions", 1f, -320f, 560f, new Color(0.3f, 0.16f, 0.36f, 0.95f), out TMP_Text missionsHeader);
-        var missionsStatus = Text("Status", missionCol, "", 22, Color.white, TextAlignmentOptions.Center, false);
-        Place(missionsStatus.rectTransform, new Vector2(0.5f, 1f), new Vector2(0, -150), new Vector2(520, 90));
-        var missionList = List(missionCol, 205f);
-        missionList.GetComponent<VerticalLayoutGroup>().spacing = 12;
-        FactionMissionCardUI card = MakeCard(missionList);
-
         // Внизу — "ГОТОВ"
         var readyImg = Img("ReadyButton", r, rounded, new Color(0.247f, 0.639f, 0.302f));
         readyImg.type = Image.Type.Sliced;
@@ -166,10 +152,6 @@ public static class PhaseBuilder
         so.FindProperty("buyButton").objectReferenceValue = buy;
         so.FindProperty("inventoryButton").objectReferenceValue = inventory;
         so.FindProperty("baseButton").objectReferenceValue = baseBtn;
-        so.FindProperty("missionsHeader").objectReferenceValue = missionsHeader;
-        so.FindProperty("missionsStatus").objectReferenceValue = missionsStatus;
-        so.FindProperty("missionList").objectReferenceValue = missionList;
-        so.FindProperty("cardTemplate").objectReferenceValue = card;
         so.FindProperty("defeatedHeader").objectReferenceValue = defeatedHeader;
         so.FindProperty("defeatedList").objectReferenceValue = defeatedList;
         so.FindProperty("defeatedTemplate").objectReferenceValue = defeatedRow.gameObject;
@@ -183,35 +165,6 @@ public static class PhaseBuilder
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene);
         Debug.Log("Шаг 4: фазы и пауза собраны");
-    }
-
-    /// <summary>Пиксель картинки города → точка мира.</summary>
-    private static Vector2 W(float px, float py) => new Vector2((px - 806.5f) / PPU, (361.5f - py) / PPU);
-
-    /// <summary>Создать задание фракции (если его ещё нет): охрана — из готовой общей миссии.</summary>
-    private static GlobalMissionData FactionMission(string file, string guardsFrom, string title, string heroes, string villains,
-        string description, Color color, Vector2 pos, int gold, int plutonium, bool hero)
-    {
-        string path = $"Assets/_Game/Data/GlobalMissions/{file}.asset";
-        var d = AssetDatabase.LoadAssetAtPath<GlobalMissionData>(path);
-        if (d != null) return d;
-        var src = AssetDatabase.LoadAssetAtPath<GlobalMissionData>($"Assets/_Game/Data/GlobalMissions/{guardsFrom}.asset");
-        d = ScriptableObject.CreateInstance<GlobalMissionData>();
-        d.title = title;
-        d.heroesTitle = heroes;
-        d.villainsTitle = villains;
-        d.description = description;
-        d.color = color;
-        d.iconLetter = "!";
-        d.mapPosition = pos;
-        d.waves = src != null ? src.waves : new GuardWave[0];
-        d.rewardGold = gold;
-        d.rewardPlutonium = plutonium;
-        d.rewardArtifacts = 0;
-        d.rewardHero = hero;
-        d.rewardHeroMaxStars = 2;
-        AssetDatabase.CreateAsset(d, path);
-        return d;
     }
 
     /// <summary>Разовая награда объекта.</summary>
@@ -261,38 +214,6 @@ public static class PhaseBuilder
         v.childForceExpandHeight = false;
         v.childForceExpandWidth = true;
         return rt;
-    }
-
-    /// <summary>Шаблон карточки задания фракции.</summary>
-    private static FactionMissionCardUI MakeCard(Transform list)
-    {
-        var bg = Img("CardTemplate", list, rounded, new Color(0.2f, 0.2f, 0.25f, 0.95f));
-        bg.type = Image.Type.Sliced;
-        bg.rectTransform.sizeDelta = new Vector2(530, 190);
-        bg.gameObject.AddComponent<LayoutElement>().preferredHeight = 190;
-        var title = Text("Title", bg.rectTransform, "Задание", 28, Color.white, TextAlignmentOptions.Center, true);
-        Place(title.rectTransform, new Vector2(0.5f, 1f), new Vector2(0, -28), new Vector2(510, 44));
-        var info = Text("Info", bg.rectTransform, "", 20, new Color(0.9f, 0.92f, 0.96f), TextAlignmentOptions.Center, false);
-        Place(info.rectTransform, new Vector2(0.5f, 1f), new Vector2(0, -85), new Vector2(510, 64));
-        var btnImg = Img("Button", bg.rectTransform, rounded, new Color(0.247f, 0.639f, 0.302f));
-        btnImg.type = Image.Type.Sliced;
-        Place(btnImg.rectTransform, new Vector2(0.5f, 0f), new Vector2(0, 34), new Vector2(300, 52));
-        var button = btnImg.gameObject.AddComponent<Button>();
-        var colors = button.colors;
-        colors.disabledColor = new Color(0.45f, 0.45f, 0.5f, 0.8f);
-        button.colors = colors;
-        var btnText = Text("Text", btnImg.rectTransform, "НАЧАТЬ", 26, Color.white, TextAlignmentOptions.Center, false);
-        Stretch(btnText.rectTransform);
-        var card = bg.gameObject.AddComponent<FactionMissionCardUI>();
-        var so = new SerializedObject(card);
-        so.FindProperty("background").objectReferenceValue = bg;
-        so.FindProperty("titleText").objectReferenceValue = title;
-        so.FindProperty("infoText").objectReferenceValue = info;
-        so.FindProperty("button").objectReferenceValue = button;
-        so.FindProperty("buttonText").objectReferenceValue = btnText;
-        so.ApplyModifiedPropertiesWithoutUndo();
-        bg.gameObject.SetActive(false);
-        return card;
     }
 
     /// <summary>Кнопка в колонке (y — от верха колонки).</summary>

@@ -3,14 +3,27 @@ using UnityEngine;
 /// <summary>
 /// Фаер Герл (злодейка, класс Маг, урон от Магии). Навыки:
 ///  1) "Фаерболы" (ур. 1) — веером 2–5 огненных шаров (сколько хватит энергии, каждый — 15 энергии), каждый — 45% Магии.
-///  2) "Огненное торнадо" (ур. 3) — торнадо движется вперёд 3 с; задетые враги крутятся в нём по спирали
-///     и получают урон 20% Магии раз в 0.5 с, пока торнадо не кончится (FaerTornado).
+///  2) "Огненное торнадо" (ур. 3) — торнадо движется вперёд 3 с; задетый враг сразу получает 50% Магии,
+///     крутится в нём по спирали и получает урон 20% Магии раз в 0.5 с, пока торнадо не кончится (FaerTornado).
 ///  3) "Полёт" (ур. 5, пассивный) — когда HP падает до 20%, взлетает и улетает в безопасное место (неуязвима в полёте).
 /// Перезарядки — в файле героя (Data/Villains/Villain_FaerGerl). Кадры — в Data/Characters/Sprites_FaerGerl.
 /// </summary>
 public class FaerGerlKit : HeroKit
 {
     private const int Fireballs = 0, Tornado = 1, Flight = 2; // номера скилов
+
+    /// <summary>Числа навыков — из файла героя (Skills → Values; по умолчанию — таблица KitParams).</summary>
+    protected override void LoadParams()
+    {
+        ballEnergy = Num(Fireballs, "energy");
+        ballDamage = Num(Fireballs, "damage");
+        ballsMin = Count(Fireballs, "min");
+        ballsMax = Mathf.Max(ballsMin, Count(Fireballs, "max"));
+        tornadoTime = Num(Tornado, "time");
+        tornadoHit = Num(Tornado, "hit");
+        tornadoDamage = Num(Tornado, "damage");
+        flightHp = Num(Flight, "hp");
+    }
 
     [Header("Фаерболы")]
     [SerializeField] private int ballsMin = 2;              // Меньше этого не бросает (ждёт энергию)
@@ -26,6 +39,7 @@ public class FaerGerlKit : HeroKit
     [Header("Огненное торнадо")]
     [SerializeField] private float tornadoTime = 3f;        // Сколько живёт
     [SerializeField] private float tornadoSpeed = 3f;       // Как быстро движется
+    private float tornadoHit = 0.5f;                        // Разовый урон при попадании (доля Магии)
     [SerializeField] private float tornadoDamage = 0.2f;    // Урон раз в 0.5 с (доля Магии)
     [SerializeField] private float tornadoRange = 6f;       // Пускает, когда враг впереди ближе этого
 
@@ -117,7 +131,7 @@ public class FaerGerlKit : HeroKit
         int dir = self.Movement.Facing;
         Sprite circle = self.View != null ? self.View.CircleSprite : null;
         Vector3 start = BattleManager.Instance.ClampToArena(self, self.transform.position + new Vector3(dir * 1f, 0f, 0f));
-        FaerTornado.Launch(self, start, dir, tornadoTime, tornadoSpeed, self.Stats.specialAttack * tornadoDamage, circle);
+        FaerTornado.Launch(self, start, dir, tornadoTime, tornadoSpeed, self.Stats.specialAttack * tornadoHit, self.Stats.specialAttack * tornadoDamage, circle);
         Pop("ТОРНАДО", new Color(1f, 0.55f, 0.15f));
     }
 

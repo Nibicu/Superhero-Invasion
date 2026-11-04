@@ -5,7 +5,7 @@ using UnityEngine;
 public enum GamePhase
 {
     Draft,    // Драфт перед игрой (покупка героев)
-    Missions, // Фаза миссий: обычные миссии и задания фракции
+    Missions, // Фаза миссий: обычные миссии и (случайно) одна общая миссия
     Pause,    // Тактическая пауза между фазами (игра стоит)
     Event     // Фаза события: закрытие портала или битва за объект
 }
@@ -14,7 +14,10 @@ public enum GamePhase
 /// Фазы игры (объект Managers): Драфт → Миссии (2 мин) → тактическая пауза (2 мин) → Событие (2 мин) →
 /// пауза → Миссии → ... по кругу.
 /// В тактической паузе карта стоит: можно покупать героев (только в паузе и на драфте), надевать вещи,
-/// прокачивать героев, выбирать задание фракции. Кнопка "ГОТОВ" заканчивает паузу раньше.
+/// строить. Кнопка "ГОТОВ" заканчивает паузу раньше.
+/// За 20 с до конца фазы новые задания не отправить (и обычные миссии не появляются).
+/// Время фазы вышло, а команды ещё на заданиях — фаза ждёт их, и подготовка к бою и выполнение миссий
+/// идут в WrapUpSpeed раз быстрее (чтобы все быстрее вернулись на базу).
 /// Событие (портал или объект) запускает EventManager; фаза события кончается, когда вышло время
 /// и бой за цель события закончился.
 /// </summary>
@@ -34,6 +37,8 @@ public class PhaseManager : MonoBehaviour
 
     [Tooltip("За сколько секунд до конца фазы нельзя отправлять команды (защищаться можно всегда)")]
     [SerializeField] private float dispatchLockTime = 20f;
+    [Tooltip("Фаза кончилась, ждём команды: во сколько раз быстрее идут подготовка к бою и выполнение миссий")]
+    [SerializeField] private float wrapUpSpeed = 2f;
 
     [Header("Отладка")]
     [Tooltip("Клавиша E — сразу закончить текущую фазу")]
@@ -66,6 +71,11 @@ public class PhaseManager : MonoBehaviour
     /// Время фазы вышло, но команды ещё не вернулись: фаза ждёт, пока все герои и злодеи будут дома.
     /// </summary>
     public bool WaitingForSquads { get; private set; }
+
+    /// <summary>
+    /// Во сколько раз быстрее идут подготовка к бою и выполнение миссий: пока фаза ждёт возвращения команд — wrapUpSpeed, иначе 1.
+    /// </summary>
+    public static float WrapUpSpeed => Instance != null && Instance.WaitingForSquads ? Instance.wrapUpSpeed : 1f;
 
     /// <summary>Нельзя отправлять команды: до конца фазы меньше 20 с (или фаза уже ждёт возвращения команд).</summary>
     public bool DispatchLocked => (Phase == GamePhase.Missions || Phase == GamePhase.Event) && TimeLeft <= dispatchLockTime
@@ -128,7 +138,7 @@ public class PhaseManager : MonoBehaviour
         if (Phase != GamePhase.Draft && HeroManager.Instance != null) HeroManager.Instance.OnPhaseStarted();
         Phase = GamePhase.Missions;
         TimeLeft = Duration = missionsDuration;
-        ToastUI.Show($"ФАЗА МИССИЙ — {Mathf.RoundToInt(missionsDuration / 60f)} мин. Выполняйте миссии и задания фракции");
+        ToastUI.Show($"ФАЗА МИССИЙ — {Mathf.RoundToInt(missionsDuration / 60f)} мин. Выполняйте миссии");
         Changed?.Invoke();
     }
 
@@ -163,7 +173,6 @@ public class PhaseManager : MonoBehaviour
         if (Phase != GamePhase.Pause) return;
         WorldTime.Paused = false;
         if (TacticalPauseUI.Instance != null) TacticalPauseUI.Instance.Hide();
-        if (GlobalMissionManager.Instance != null) GlobalMissionManager.Instance.OnPauseEnded(); // "перезарядка" заданий фракции
         if (NextPhase == GamePhase.Event) BeginEvent();
         else BeginMissions();
     }

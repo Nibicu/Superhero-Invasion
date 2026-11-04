@@ -12,6 +12,17 @@ public class ReyndgerKit : HeroKit
 {
     private const int PowerShot = 0, Hawk = 1, EnergyArrow = 2; // номера скилов
 
+    /// <summary>Числа навыков — из файла героя (Skills → Values; по умолчанию — таблица KitParams).</summary>
+    protected override void LoadParams()
+    {
+        shotDamage = Num(PowerShot, "damage");
+        hawkStrikes = Count(Hawk, "strikes");
+        hawkInterval = Num(Hawk, "interval");
+        hawkDamage = Num(Hawk, "damage");
+        arrowEveryNth = Count(EnergyArrow, "every");
+        arrowDamage = Num(EnergyArrow, "damage");
+    }
+
     [Header("Мощный выстрел")]
     [SerializeField] private float shotDamage = 1.5f;        // Урон (доля Силы атаки)
     [SerializeField] private float shotSpeed = 16f;          // Скорость

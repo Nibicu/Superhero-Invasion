@@ -14,6 +14,18 @@ public class PhantomKit : HeroKit
 {
     private const int Clones = 0, Stars = 1, Immaterial = 2; // номера скилов
 
+    /// <summary>Числа навыков — из файла героя (Skills → Values; по умолчанию — таблица KitParams).</summary>
+    protected override void LoadParams()
+    {
+        cloneCount = Count(Clones, "count");
+        cloneStats = Num(Clones, "stats");
+        starEnergy = Num(Stars, "energy");
+        starDamage = Num(Stars, "damage");
+        starsMin = Count(Stars, "min");
+        starsMax = Mathf.Max(starsMin, Count(Stars, "max"));
+        dodgeChance = Num(Immaterial, "dodge");
+    }
+
     [Header("Клоны")]
     [SerializeField] private int cloneCount = 2;            // Сколько клонов
     [SerializeField] private float cloneStats = 0.3f;       // Характеристики клона — доля характеристик Фантома (кроме скорости)

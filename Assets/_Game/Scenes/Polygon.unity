@@ -36264,7 +36264,8 @@ MonoBehaviour:
   buffPrefab: {fileID: 1323230547022708166, guid: 23466ff8810f8194aaf9aafa6b85efef, type: 3}
   boxCount: {x: 1, y: 2}
   dropInterval: {x: 7, y: 12}
-  potionChance: 0.55
+  potionChance: 0.4
+  energyChance: 0.2
   maxBoxes: 6
   maxPotions: 6
   dropHeight: 7

@@ -181,7 +181,7 @@ public abstract class AttackableSite : MonoBehaviour, ISquadTarget
     protected virtual void Update()
     {
         if (phase != AttackPhase.Preparing) return;
-        prepLeft -= WorldTime.DeltaTime;
+        prepLeft -= WorldTime.DeltaTime * PhaseManager.WrapUpSpeed; // фаза кончилась, ждём команды — подготовка быстрее
         UpdateAttackVisuals();
         if (prepLeft <= 0f) StartBattlePhase();
     }
@@ -306,7 +306,7 @@ public abstract class AttackableSite : MonoBehaviour, ISquadTarget
             foreach (HeroData d in result.theirDead) hm.LoseLife(hm.FindHero(Team.Enemy, d));
     }
 
-    /// <summary>Нападающие проиграли бой (задание фракции здесь может провалиться).</summary>
+    /// <summary>Нападающие проиграли бой (наследник может что-то сделать).</summary>
     protected virtual void OnAttackerLost(Squad squad) { }
 
     /// <summary>Началась подготовка к бою (нападающие приехали). База здесь даёт выбрать защитников.</summary>

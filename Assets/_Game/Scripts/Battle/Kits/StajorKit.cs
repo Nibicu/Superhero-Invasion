@@ -13,6 +13,16 @@ public class StajorKit : HeroKit
 {
     private const int Wave = 0, Block = 1, Combo = 2; // номера скилов
 
+    /// <summary>Числа навыков — из файла героя (Skills → Values; по умолчанию — таблица KitParams).</summary>
+    protected override void LoadParams()
+    {
+        waveDamage = Num(Wave, "damage");
+        blockTime = Num(Block, "time");
+        comboHits = Count(Combo, "hits");
+        comboDamage = Num(Combo, "damage");
+        comboStun = Num(Combo, "stun");
+    }
+
     [Header("Волна")]
     [SerializeField] private float waveDamage = 1.2f;        // Урон (доля Силы атаки)
     [SerializeField] private float waveRange = 8f;           // Дальность полёта

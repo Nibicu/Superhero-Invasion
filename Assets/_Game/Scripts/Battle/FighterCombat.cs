@@ -8,7 +8,8 @@ using UnityEngine;
 /// АВТО АТАКА (урон — от "Авто атаки", ослабляется Защитой цели, разбивает коробки):
 ///  - все, кроме Стрелка, — удар вплотную;
 ///  - Стрелок — пуля издалека, а если враг подошёл вплотную — тоже бьёт рукой (TryAuto(true)).
-/// СЕРИЯ УДАРОВ (вплотную): удары идут сериями — у Танка 2 удара, у остальных 3.
+/// СЕРИЯ УДАРОВ (вплотную): удары идут сериями по 3 удара (у всех классов; Танк бьёт чуть медленнее).
+/// СКОРОСТЬ АВТО АТАК — в файле героя ("Скорость авто атак, %"): ускоряет замах, паузы серии и выстрелы.
 ///  Лёгкие удары быстрые (chainHitCooldown), последний — добивающий: урон ×1.5, отбрасывает и сбивает с ног,
 ///  после него передышка (finisherRecovery). Промах, прерванный удар или пауза дольше comboResetTime — серия сначала.
 /// ЗАХВАТ: шатающегося или оглушённого врага вплотную можно схватить (TryGrab) — 3 удара коленом,
@@ -41,9 +42,9 @@ public class FighterCombat : MonoBehaviour
 
     [Header("Серия ударов (вплотную)")]
     [Tooltip("Через сколько секунд от начала удара можно бить следующим ударом серии")]
-    [SerializeField] private float chainHitCooldown = 0.45f;
+    [SerializeField] private float chainHitCooldown = 0.38f;
     [Tooltip("Передышка после добивающего удара (от его начала)")]
-    [SerializeField] private float finisherRecovery = 1.1f;
+    [SerializeField] private float finisherRecovery = 0.95f;
     [Tooltip("Если следующий удар позже этого (сек после прошлого) — серия начинается сначала")]
     [SerializeField] private float comboResetTime = 0.7f;
     [Tooltip("Урон добивающего удара (× Авто атака)")]
@@ -144,8 +145,8 @@ public class FighterCombat : MonoBehaviour
     /// <summary>Можно ли сейчас сделать авто атаку.</summary>
     public bool CanAuto => fighter.CanAct && cooldownTimer <= 0f;
 
-    /// <summary>Сколько ударов в серии: у Танка 2, у остальных 3.</summary>
-    public int ChainLength => fighter.Class == UnitClass.Tank ? 2 : 3;
+    /// <summary>Сколько ударов в серии: 3 у всех классов.</summary>
+    public int ChainLength => 3;
 
     /// <summary>Какой по счёту удар серии сейчас (1..ChainLength; 0 — выстрел). Для внешнего вида.</summary>
     public int ComboStep { get; private set; }
@@ -379,6 +380,9 @@ public class FighterCombat : MonoBehaviour
     /// <summary>Хватает ли энергии на amount.</summary>
     public bool HasEnergy(float amount) => Energy >= amount;
 
+    /// <summary>Добавить энергию (капсула с энергией), не больше максимума.</summary>
+    public void AddEnergy(float amount) => Energy = Mathf.Min(MaxEnergy, Energy + Mathf.Max(0f, amount));
+
     /// <summary>Потратить энергию на скил. Вернёт false, если энергии не хватает (тогда ничего не тратится).</summary>
     public bool TrySpendEnergy(float amount)
     {
@@ -407,12 +411,12 @@ public class FighterCombat : MonoBehaviour
             ComboStep = fresh ? 1 : ComboStep + 1;
             chainBroken = false;
             float slow = fighter.Class == UnitClass.Tank ? tankSlowdown : 1f;
-            cooldownTimer = (IsFinisher ? finisherRecovery : chainHitCooldown) * slow;
+            cooldownTimer = (IsFinisher ? finisherRecovery : chainHitCooldown) * slow / fighter.AttackSpeed;
         }
         else
         {
             ComboStep = 0;
-            cooldownTimer = fighter.attackCooldown;
+            cooldownTimer = fighter.attackCooldown / fighter.AttackSpeed;
         }
         AttackStarted?.Invoke();
         return true;
@@ -433,7 +437,7 @@ public class FighterCombat : MonoBehaviour
         if (!attackActive) return;
         if (fighter.State != FighterState.Attacking) { attackActive = false; chainBroken = true; return; } // атаку прервали ударом — серия сначала
 
-        float duration = fighter.attackDuration;
+        float duration = fighter.AttackDuration;
         if (!hitDone && fighter.StateTime >= duration * hitMoment)
         {
             hitDone = true;

@@ -12,6 +12,16 @@ public class AquaKit : HeroKit
 {
     private const int Prison = 0, Helmet = 1, Burst = 2; // номера скилов
 
+    /// <summary>Числа навыков — из файла героя (Skills → Values; по умолчанию — таблица KitParams).</summary>
+    protected override void LoadParams()
+    {
+        prisonDamage = Num(Prison, "damage");
+        prisonStun = Num(Prison, "stun");
+        helmetDefense = Count(Helmet, "defense");
+        burstSpecialDefense = Count(Burst, "spdefense");
+        burstRadius = Num(Burst, "radius");
+    }
+
     [Header("Водяная тюрьма")]
     [SerializeField] private float prisonDamage = 0.7f;     // Урон (доля Магии)
     [SerializeField] private float prisonStun = 3f;         // Сколько заперт (стан)

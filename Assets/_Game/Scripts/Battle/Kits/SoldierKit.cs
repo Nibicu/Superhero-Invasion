@@ -13,6 +13,17 @@ public class SoldierKit : HeroKit
 {
     private const int Volley = 0, Leap = 1, Barrier = 2; // номера скилов
 
+    /// <summary>Числа навыков — из файла героя (Skills → Values; по умолчанию — таблица KitParams).</summary>
+    protected override void LoadParams()
+    {
+        volleyShots = Count(Volley, "shots");
+        volleyDamage = Num(Volley, "damage");
+        volleyInterval = Num(Volley, "interval");
+        leapDistance = Num(Leap, "distance");
+        barrierHpPart = Num(Barrier, "shield");
+        barrierTime = Num(Barrier, "time");
+    }
+
     [Header("Залп")]
     [SerializeField] private int volleyShots = 3;           // Сколько выстрелов
     [SerializeField] private float volleyInterval = 0.5f;   // Интервал между выстрелами

@@ -15,6 +15,17 @@ public class DerevoKit : HeroKit
 {
     private const int Roots = 0, NewLife = 1, Nature = 2; // номера скилов
 
+    /// <summary>Числа навыков — из файла героя (Skills → Values; по умолчанию — таблица KitParams).</summary>
+    protected override void LoadParams()
+    {
+        rootDamage = Num(Roots, "damage");
+        flowerHeal = Num(NewLife, "heal");
+        flowerLife = Num(NewLife, "life");
+        flowerSmoke = Num(NewLife, "smoke");
+        natureThresholds = new[] { Num(Nature, "step1"), Num(Nature, "step2") };
+        natureBonus = Num(Nature, "bonus");
+    }
+
     [Header("Корни")]
     [SerializeField] private float rootDamage = 0.6f;          // Урон каждого корня (доля Магии)
     [SerializeField] private float[] rootDistances = { 1.2f, 2.5f, 3.8f }; // Где вырастают корни (перед Деревом)
@@ -30,6 +41,9 @@ public class DerevoKit : HeroKit
 
     [Header("Сила природы (пассивка)")]
     [SerializeField] private float[] natureThresholds = { 1000f, 2500f }; // Сколько урона получить для каждой ступени
+    private float flowerHeal = 0.3f;    // Лечение цветка — доля недостающего HP
+    private float flowerLife = 10f;     // Сколько растёт цветок
+    private float flowerSmoke = 2f;     // Сколько держится дым цветка
     [SerializeField] private float natureBonus = 0.2f;          // Прибавка за каждую ступень (+20%)
 
     private int current = -1;          // Какой скил сейчас применяется (-1 — никакой)
@@ -138,7 +152,7 @@ public class DerevoKit : HeroKit
         foreach (float side in new[] { -1f, 1f })
         {
             Vector3 p = bm.ClampToArena(self, self.transform.position + new Vector3(side * flowerSpread, Random.Range(-0.4f, 0.4f), 0f));
-            DerevoFlower.Grow(self, p, circle);
+            DerevoFlower.Grow(self, p, circle, flowerHeal, flowerLife, flowerSmoke);
         }
         Pop("НОВАЯ ЖИЗНЬ", new Color(1f, 0.55f, 0.8f));
         return true;

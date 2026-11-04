@@ -28,7 +28,7 @@ public class Fighter : MonoBehaviour
     [Tooltip("Время между выстрелами Стрелка (сек). Удары вплотную идут сериями — их паузы в FighterCombat")]
     public float attackCooldown = 0.8f;
     [Tooltip("Длительность фазы атаки (сек) — в это время боец стоит")]
-    public float attackDuration = 0.35f;
+    public float attackDuration = 0.3f;
     [Tooltip("Сила отбрасывания при ударе")]
     public float knockbackForce = 4f;
 
@@ -79,6 +79,12 @@ public class Fighter : MonoBehaviour
 
     /// <summary>Описание героя/злодея (имя, цвет, портрет).</summary>
     public HeroData Data { get; private set; }
+
+    /// <summary>Скорость авто атак (из файла героя: 1 — обычная, 1.2 — на 20% быстрее).</summary>
+    public float AttackSpeed => Data != null ? Data.AutoAttackSpeedMultiplier : 1f;
+
+    /// <summary>Сколько длится авто атака с учётом скорости авто атак.</summary>
+    public float AttackDuration => attackDuration / AttackSpeed;
 
     /// <summary>Характеристики с учётом уровня, усилений и временного баффа из коробки.</summary>
     public HeroStats Stats

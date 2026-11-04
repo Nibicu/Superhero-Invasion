@@ -23,7 +23,8 @@ public enum KitPose
 ///  - TryBlock(...) — навык может отменить попавший по герою удар (блок, уворот);
 ///  - OnAutoHit(...) — авто атака героя попала (например, кровотечение);
 ///  - длинные действия (залп, рывок) идут в состоянии Attacking, удар по бойцу их прерывает.
-/// Перезарядка, название и описание скилов — в файле героя (HeroData.skills).
+/// Перезарядка, название, описание и числа скилов (урон, шансы, длительности) — в файле героя (HeroData.skills).
+/// Числа читаются в LoadParams (список чисел и значения по умолчанию — в KitParams).
 /// </summary>
 [RequireComponent(typeof(Fighter))]
 public abstract class HeroKit : MonoBehaviour
@@ -86,8 +87,18 @@ public abstract class HeroKit : MonoBehaviour
     public virtual void Setup(Fighter f)
     {
         self = f;
+        LoadParams();
         for (int i = 0; i < cooldowns.Length; i++) cooldowns[i] = Random.Range(0.3f, 1.5f);
     }
+
+    /// <summary>Взять числа навыков из файла героя (HeroData → Skills → Values; список чисел — KitParams).</summary>
+    protected virtual void LoadParams() { }
+
+    /// <summary>Число навыка skill по ключу key (проценты уже превращены в долю: 40 → 0.4).</summary>
+    protected float Num(int skill, string key) => KitParams.Get(self.Data, skill, key);
+
+    /// <summary>Целое число навыка (количество: выстрелы, клоны, удары).</summary>
+    protected int Count(int skill, string key) => Mathf.Max(0, Mathf.RoundToInt(Num(skill, key)));
 
     /// <summary>Открыт ли скил i на уровне героя (и придуман ли он).</summary>
     public bool IsUnlocked(int i) =>

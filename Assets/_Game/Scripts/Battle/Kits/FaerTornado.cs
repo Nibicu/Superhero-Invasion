@@ -3,7 +3,7 @@ using UnityEngine;
 
 /// <summary>
 /// Огненное торнадо Фаер Герл: движется вперёд 3 с и исчезает. Враг, которого оно задело, подхвачен:
-/// летит по спирали вокруг торнадо и всё это время получает урон (раз в 0.5 с). Торнадо кончилось — враги падают.
+/// сразу получает разовый урон, летит по спирали вокруг торнадо и всё это время получает урон (раз в 0.5 с). Торнадо кончилось — враги падают.
 /// Сильный удар по подхваченному (сбивает с ног) — он вылетает из торнадо. Как "Буря" в Little Fighter 2.
 /// Пока это стопка оранжевых кругов (временная графика).
 /// </summary>
@@ -16,12 +16,13 @@ public class FaerTornado : MonoBehaviour
     private float life;             // Сколько живёт
     private float age;              // Сколько уже прожило
     private float speed;            // Скорость движения (со знаком — куда)
+    private float hitPower;         // Разовый урон при попадании (Магия × доля)
     private float tickPower;        // Урон за раз (Магия × доля)
     private float tickTimer;        // До следующего урона
     private readonly List<Fighter> caught = new List<Fighter>(); // Кто крутится в торнадо
 
-    /// <summary>Запустить торнадо Фаер Герл owner из точки pos в сторону dir.</summary>
-    public static FaerTornado Launch(Fighter owner, Vector3 pos, int dir, float life, float speed, float tickPower, Sprite circle)
+    /// <summary>Запустить торнадо Фаер Герл owner из точки pos в сторону dir (hitPower — разовый урон при попадании, tickPower — урон раз в 0.5 с).</summary>
+    public static FaerTornado Launch(Fighter owner, Vector3 pos, int dir, float life, float speed, float hitPower, float tickPower, Sprite circle)
     {
         var go = new GameObject("FaerTornado");
         go.transform.SetParent(BattleManager.Instance.RuntimeRoot, false);
@@ -30,6 +31,7 @@ public class FaerTornado : MonoBehaviour
         t.owner = owner;
         t.life = life;
         t.speed = dir * speed;
+        t.hitPower = hitPower;
         t.tickPower = tickPower;
         t.tickTimer = TickEvery;
         if (circle != null)
@@ -63,6 +65,8 @@ public class FaerTornado : MonoBehaviour
             if (!e.IsAlive || e.IsInvulnerable || caught.Contains(e) || e.HeldBy != null) continue;
             Vector2 d = e.Position - (Vector2)transform.position;
             if (Mathf.Abs(d.x) > CatchRadius || Mathf.Abs(d.y) > 0.6f) continue;
+            Damage(e, hitPower); // разовый урон при попадании
+            if (!e.IsAlive) continue;
             e.Launch(1f, Vector2.zero);
             if (e.State == FighterState.Airborne) caught.Add(e);
         }
@@ -82,14 +86,20 @@ public class FaerTornado : MonoBehaviour
         tickTimer -= dt;
         if (tickTimer > 0f) return;
         tickTimer = TickEvery;
-        foreach (Fighter e in caught)
-            e.Health.TakeHit(new HitInfo
-            {
-                attacker = owner,
-                attackId = FighterCombat.NewAttackId(),
-                damage = FighterCombat.CalcDamage(tickPower, e.Stats.specialDefense),
-                special = true
-            });
+        foreach (Fighter e in new List<Fighter>(caught)) Damage(e, tickPower);
+    }
+
+    /// <summary>Урон от Магии врагу e (без отбрасывания).</summary>
+    private void Damage(Fighter e, float power)
+    {
+        if (power <= 0f) return;
+        e.Health.TakeHit(new HitInfo
+        {
+            attacker = owner,
+            attackId = FighterCombat.NewAttackId(),
+            damage = FighterCombat.CalcDamage(power, e.Stats.specialDefense),
+            special = true
+        });
     }
 
     /// <summary>Торнадо кончилось — подхваченные падают сами (сила тяжести), приземлятся — лягут.</summary>

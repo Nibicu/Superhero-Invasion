@@ -13,6 +13,17 @@ public class CharovnicaKit : HeroKit
 {
     private const int Arrow = 0, Bat = 1, Mirage = 2; // номера скилов
 
+    /// <summary>Числа навыков — из файла героя (Skills → Values; по умолчанию — таблица KitParams).</summary>
+    protected override void LoadParams()
+    {
+        arrowDamage = Num(Arrow, "damage");
+        arrowStun = Num(Arrow, "stun");
+        batDamage = Num(Bat, "damage");
+        batStun = Num(Bat, "stun");
+        batRadius = Num(Bat, "radius");
+        mirageHp = Num(Mirage, "hp");
+    }
+
     [Header("Энерго стрела")]
     [SerializeField] private float arrowDamage = 0.6f;       // Урон (доля Магии)
     [SerializeField] private float arrowRange = 7f;          // Дальность (средняя)

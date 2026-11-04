@@ -458,6 +458,7 @@ public class FighterAI : MonoBehaviour
             if (b == null || !b.Available) continue;
             if (healOnly && !b.IsHeal) continue;
             if (b.IsHeal && self.Health.Fraction > 0.9f) continue; // здоровому аптечка не нужна
+            if (b.IsEnergy && (self.Kit == null || self.Combat.Energy > self.Combat.MaxEnergy * 0.8f)) continue; // энергия нужна только тем, у кого есть скилы
             float dist = Vector2.Distance(b.Position, self.Position);
             if (dist < bestDist && bm.IsReachable(self, b.Position)) { bestDist = dist; best = b; }
         }

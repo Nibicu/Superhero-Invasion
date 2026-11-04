@@ -15,6 +15,20 @@ public class SoykaKit : HeroKit
 {
     private const int Agility = 0, Smoke = 1, Blades = 2; // номера скилов
 
+    /// <summary>Числа навыков — из файла героя (Skills → Values; по умолчанию — таблица KitParams).</summary>
+    protected override void LoadParams()
+    {
+        dashEnergy = Num(Agility, "energy");
+        dashDamage = Num(Agility, "damage");
+        dashMaxJumps = Count(Agility, "jumps");
+        smokeTime = Num(Smoke, "time");
+        smokeMissChance = Num(Smoke, "miss");
+        smokeSpeedBonus = Num(Smoke, "speed");
+        bleedChance = Num(Blades, "chance");
+        bleedHpPart = Num(Blades, "bleed");
+        bleedTime = Num(Blades, "time");
+    }
+
     [Header("Ловкость")]
     [SerializeField] private float dashEnergy = 15f;        // Цена одного рывка (энергия)
     [SerializeField] private float dashDamage = 0.7f;       // Урон (доля Силы атаки)

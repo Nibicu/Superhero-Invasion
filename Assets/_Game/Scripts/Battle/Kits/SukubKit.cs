@@ -15,6 +15,15 @@ public class SukubKit : HeroKit
 {
     private const int Charm = 0, Sai = 1, Curse = 2; // номера скилов
 
+    /// <summary>Числа навыков — из файла героя (Skills → Values; по умолчанию — таблица KitParams).</summary>
+    protected override void LoadParams()
+    {
+        charmTime = Num(Charm, "time");
+        saiDamage = Num(Sai, "damage");
+        saiLifetime = Num(Sai, "life");
+        curseHp = Num(Curse, "hp");
+    }
+
     [Header("Шарм")]
     [SerializeField] private float charmRange = 8f;          // Дальность сердца
     [SerializeField] private float charmMinRange = 1.5f;     // Ближе — бьёт рукой

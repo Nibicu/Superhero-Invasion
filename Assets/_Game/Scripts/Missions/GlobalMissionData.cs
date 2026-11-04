@@ -24,14 +24,14 @@ public class GlobalMissionData : ScriptableObject
     [Tooltip("Буква/символ в круге на карте (временная графика)")]
     public string iconLetter = "!";
 
-    [Header("Задание фракции")]
-    [Tooltip("Как задание называется у героев (пусто — общее название)")]
+    [Header("Названия и место")]
+    [Tooltip("Как миссия называется у героев (пусто — общее название)")]
     public string heroesTitle = "";
 
-    [Tooltip("Как задание называется у злодеев (пусто — общее название)")]
+    [Tooltip("Как миссия называется у злодеев (пусто — общее название)")]
     public string villainsTitle = "";
 
-    [Tooltip("Где на карте появляется задание (координаты мира)")]
+    [Tooltip("Где на карте появляется миссия (координаты мира; 0,0 — на случайной улице)")]
     public Vector2 mapPosition;
 
     [Tooltip("Награда — случайный герой стороны победителя (даже сверх лимита — тогда в запас)")]
@@ -40,7 +40,7 @@ public class GlobalMissionData : ScriptableObject
     [Tooltip("Герой-награда — не больше скольких звёзд")]
     [Range(1, 3)] public int rewardHeroMaxStars = 2;
 
-    /// <summary>Название задания для стороны viewer (герои и злодеи видят его по-своему).</summary>
+    /// <summary>Название миссии для стороны viewer (герои и злодеи видят её по-своему).</summary>
     public string TitleFor(Team viewer)
     {
         bool heroes = HeroManager.Instance == null || HeroManager.Instance.GetSide(viewer) == Side.Heroes;

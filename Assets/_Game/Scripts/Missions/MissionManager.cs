@@ -57,9 +57,13 @@ public class MissionManager : MonoBehaviour
         if (Instance == this) Instance = null;
     }
 
-    /// <summary>Отсчитываем время до следующей миссии каждой стороны.</summary>
+    /// <summary>
+    /// Отсчитываем время до следующей миссии каждой стороны.
+    /// Когда отправлять команды нельзя (последние 20 с фазы, пауза, драфт) — отсчёт стоит: миссии появятся в новой фазе.
+    /// </summary>
     private void Update()
     {
+        if (PhaseManager.Instance != null && PhaseManager.Instance.DispatchLocked) return;
         foreach (Team t in new[] { Team.Player, Team.Enemy })
         {
             timers[t] -= WorldTime.DeltaTime;

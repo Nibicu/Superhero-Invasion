@@ -2,11 +2,11 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Задания фракции (бывшие общие миссии, "!" на карте). Задание выбирает сторона сама
-/// (игрок — в тактической паузе, ИИ — тоже в паузе), и оно появляется на своём месте карты.
-/// Видят его обе стороны, но каждая — под своим названием (GlobalMissionData.TitleFor);
-/// соперник может приехать помешать (битва за флаг).
-/// У каждой стороны одновременно — не больше одного своего задания; одно и то же задание дважды не идёт.
+/// Общие миссии ("!" на карте) — случайное событие фазы миссий: не больше одной за фазу.
+/// В начале фазы миссий с шансом spawnChance выбирается момент (spawnWindow секунд от начала фазы),
+/// и в этот момент появляется случайная общая миссия из pool (на своём месте карты или на случайной улице).
+/// Видят её обе стороны; выполнить может любая (если приедут обе — битва за флаг).
+/// Победитель получает награду, миссия исчезает. Не выполнили до конца фазы — миссия исчезает.
 /// Все настройки — в инспекторе (объект Managers).
 /// </summary>
 public class GlobalMissionManager : MonoBehaviour
@@ -14,50 +14,33 @@ public class GlobalMissionManager : MonoBehaviour
     /// <summary>Единственный экземпляр.</summary>
     public static GlobalMissionManager Instance { get; private set; }
 
-    [Header("Задания фракции")]
-    [Tooltip("Все задания фракции (файлы GlobalMissionData)")]
+    [Header("Общие миссии")]
+    [Tooltip("Все общие миссии (файлы GlobalMissionData)")]
     [SerializeField] private GlobalMissionData[] pool;
     [Tooltip("Префаб круга с '!' (Assets/_Game/Prefabs/GlobalMissionMarker)")]
     [SerializeField] private GlobalMission markerPrefab;
 
+    [Header("Появление (случайное событие фазы миссий)")]
+    [Tooltip("Шанс, что в фазе миссий появится общая миссия (не больше одной за фазу)")]
+    [SerializeField, Range(0f, 1f)] private float spawnChance = 0.75f;
+    [Tooltip("Когда может появиться: секунд от начала фазы миссий (от и до)")]
+    [SerializeField] private Vector2 spawnWindow = new Vector2(15f, 75f);
+
     [Header("Отладка")]
-    [Tooltip("Клавиша M — сразу начать задание фракции игрока (для проверки)")]
+    [Tooltip("Клавиша M — сразу создать общую миссию (для проверки)")]
     [SerializeField] private bool debugCheats = true;
 
-    private readonly List<GlobalMission> active = new List<GlobalMission>(); // Задания на карте
-    private readonly Dictionary<Team, int> cooldown = new Dictionary<Team, int>(); // Сколько пауз сторона не может брать задание
+    private readonly List<GlobalMission> active = new List<GlobalMission>(); // Общие миссии на карте
+    private float spawnAt = -1f;  // Через сколько секунд от начала фазы появится миссия (-1 — в этой фазе не будет)
+    private GamePhase lastPhase = GamePhase.Draft; // Фаза в прошлом кадре (чтобы поймать её смену)
 
-    /// <summary>Сторона провалила своё задание — в следующей паузе брать задание нельзя.</summary>
-    public bool OnCooldown(Team team) => cooldown.TryGetValue(team, out int n) && n > 0;
-
-    /// <summary>
-    /// Видно ли задание стороне viewer: своё — всегда, чужое — только когда у него идёт подготовка к бою (или бой).
-    /// </summary>
-    public static bool IsVisibleTo(GlobalMission m, Team viewer) => m.LaunchedBy == viewer || m.IsUnderAttack;
-
-    /// <summary>Задание провалено (своя команда проиграла бой за него или его выполнил враг): задание пропадает, следующая пауза — без задания.</summary>
-    public void OnMissionFailed(GlobalMission m)
-    {
-        cooldown[m.LaunchedBy] = 1;
-        if (m.LaunchedBy == Team.Player) ToastUI.Show($"Задание «{m.Title}» провалено — в следующей паузе новое задание взять нельзя");
-        Remove(m);
-    }
-
-    /// <summary>Пауза закончилась — "перезарядка" заданий уменьшается.</summary>
-    public void OnPauseEnded()
-    {
-        foreach (Team t in new[] { Team.Player, Team.Enemy })
-            if (cooldown.TryGetValue(t, out int n) && n > 0) cooldown[t] = n - 1;
-        Changed?.Invoke();
-    }
-
-    /// <summary>Задания фракции на карте сейчас.</summary>
+    /// <summary>Общие миссии на карте сейчас.</summary>
     public IReadOnlyList<GlobalMission> Active => active;
 
-    /// <summary>Все задания фракции, которые можно начать.</summary>
+    /// <summary>Все общие миссии, которые могут появиться.</summary>
     public IReadOnlyList<GlobalMissionData> Pool => pool ?? new GlobalMissionData[0];
 
-    /// <summary>Задание игрока или врага изменилось (началось / выполнено).</summary>
+    /// <summary>Общая миссия появилась или исчезла.</summary>
     public event System.Action Changed;
 
     private void Awake() => Instance = this;
@@ -67,69 +50,68 @@ public class GlobalMissionManager : MonoBehaviour
         if (Instance == this) Instance = null;
     }
 
-    /// <summary>Отладка: клавиша M — начать первое доступное задание игрока.</summary>
+    /// <summary>Следим за фазами: началась фаза миссий — выбрать момент; закончилась — убрать невыполненную миссию.</summary>
     private void Update()
     {
-        if (!debugCheats || !Input.GetKeyDown(KeyCode.M)) return;
+        if (debugCheats && Input.GetKeyDown(KeyCode.M)) Spawn();
+
+        PhaseManager pm = PhaseManager.Instance;
+        if (pm == null) return;
+        if (pm.Phase != lastPhase)
+        {
+            if (pm.Phase == GamePhase.Missions)
+                spawnAt = Random.value < spawnChance ? Random.Range(spawnWindow.x, spawnWindow.y) : -1f;
+            else if (lastPhase == GamePhase.Missions)
+            {
+                spawnAt = -1f;
+                ClearUnfinished(); // фаза миссий кончилась — невыполненная миссия исчезает
+            }
+            lastPhase = pm.Phase;
+        }
+
+        // Пора — появляется миссия (если ещё можно отправлять команды)
+        if (pm.Phase == GamePhase.Missions && spawnAt >= 0f && pm.Duration - pm.TimeLeft >= spawnAt)
+        {
+            spawnAt = -1f;
+            if (!pm.DispatchLocked) Spawn();
+        }
+    }
+
+    /// <summary>Создать случайную общую миссию (которой ещё нет на карте).</summary>
+    public GlobalMission Spawn()
+    {
+        if (markerPrefab == null) return null;
+        var options = new List<GlobalMissionData>();
         foreach (GlobalMissionData d in Pool)
-            if (CanLaunch(Team.Player, d, out _)) { Launch(Team.Player, d); return; }
-    }
+            if (d != null && !active.Exists(m => m.Data == d)) options.Add(d);
+        if (options.Count == 0) return null;
+        GlobalMissionData data = options[Random.Range(0, options.Count)];
 
-    /// <summary>Идёт ли уже задание, начатое этой стороной.</summary>
-    public bool HasLaunched(Team team)
-    {
-        foreach (GlobalMission m in active)
-            if (m.LaunchedBy == team && !m.IsCompleted) return true;
-        return false;
-    }
-
-    /// <summary>Задание этой стороны на карте (или null).</summary>
-    public GlobalMission LaunchedBy(Team team)
-    {
-        foreach (GlobalMission m in active)
-            if (m.LaunchedBy == team && !m.IsCompleted) return m;
-        return null;
-    }
-
-    /// <summary>Идёт ли это задание (кем бы оно ни было начато).</summary>
-    public bool IsActive(GlobalMissionData data)
-    {
-        foreach (GlobalMission m in active)
-            if (m.Data == data && !m.IsCompleted) return true;
-        return false;
-    }
-
-    /// <summary>Можно ли стороне начать задание. Если нельзя — reason объясняет почему.</summary>
-    public bool CanLaunch(Team team, GlobalMissionData data, out string reason)
-    {
-        reason = null;
-        if (markerPrefab == null || data == null) { reason = "Нет задания"; return false; }
-        if (HasLaunched(team)) { reason = "Уже идёт ваше задание"; return false; }
-        if (OnCooldown(team)) { reason = "Задание провалено — подождите паузу"; return false; }
-        if (IsActive(data)) { reason = "Уже идёт"; return false; }
-        return true;
-    }
-
-    /// <summary>Начать задание фракции стороны team: круг "!" появляется на месте задания.</summary>
-    public GlobalMission Launch(Team team, GlobalMissionData data)
-    {
-        if (!CanLaunch(team, data, out string reason)) { if (team == Team.Player) ToastUI.Show(reason); return null; }
+        // Своё место на карте, а если не задано — свободная точка на улице
         Vector3 pos = new Vector3(data.mapPosition.x, data.mapPosition.y, 0f);
+        if (data.mapPosition == Vector2.zero && (MissionManager.Instance == null || !MissionManager.Instance.TryFindFreePoint(out pos)))
+            return null;
+
         GlobalMission m = Instantiate(markerPrefab, pos, Quaternion.identity, transform);
-        m.name = "FactionMission_" + data.name;
-        m.LaunchedBy = team;
+        m.name = "GlobalMission_" + data.name;
         m.Init(data, this);
         active.Add(m);
-        if (team == Team.Player)
-            ToastUI.Show($"Задание фракции «{m.Title}» началось! Награда: {StripTags(data.GetRewardText())}");
-        Changed?.Invoke(); // задание врага игроку не показываем, пока враг не начнёт подготовку к бою
+        ToastUI.Show($"Общая миссия «{m.Title}»! Награда: {StripTags(data.GetRewardText())}");
+        Changed?.Invoke();
         return m;
     }
 
-    /// <summary>Задание выполнили — убираем его.</summary>
+    /// <summary>Миссию выполнили — убираем её.</summary>
     public void OnMissionCompleted(GlobalMission m) => Remove(m);
 
-    /// <summary>Убрать задание с карты.</summary>
+    /// <summary>Убрать невыполненные миссии (за которые сейчас не идёт бой).</summary>
+    private void ClearUnfinished()
+    {
+        foreach (GlobalMission m in new List<GlobalMission>(active))
+            if (!m.IsUnderAttack) Remove(m);
+    }
+
+    /// <summary>Убрать миссию с карты.</summary>
     private void Remove(GlobalMission m)
     {
         if (!active.Remove(m)) return;

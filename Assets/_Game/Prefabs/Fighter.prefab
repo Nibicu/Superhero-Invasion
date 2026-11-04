@@ -210,7 +210,7 @@ MonoBehaviour:
   meleeRange: 1.15
   depthTolerance: 0.45
   attackCooldown: 0.8
-  attackDuration: 0.35
+  attackDuration: 0.3
   knockbackForce: 4
   hurtDuration: 0.3
   knockdownDuration: 1.1

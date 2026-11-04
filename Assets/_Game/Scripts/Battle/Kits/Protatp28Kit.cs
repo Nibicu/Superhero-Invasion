@@ -11,6 +11,15 @@ public class Protatp28Kit : HeroKit
 {
     private const int RageLeap = 0, Underground = 1, Repair = 2; // номера скилов
 
+    /// <summary>Числа навыков — из файла героя (Skills → Values; по умолчанию — таблица KitParams).</summary>
+    protected override void LoadParams()
+    {
+        leapDamage = Num(RageLeap, "damage");
+        undergroundDamage = Num(Underground, "damage");
+        repairHp = Num(Repair, "hp");
+        repairBonus = Num(Repair, "bonus");
+    }
+
     [Header("Прыжок ярости")]
     [SerializeField] private float leapDamage = 1.2f;        // Урон (доля Силы атаки)
     [SerializeField] private float leapUp = 10f;             // Скорость прыжка вверх

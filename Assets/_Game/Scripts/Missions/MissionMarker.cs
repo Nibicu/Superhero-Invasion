@@ -87,7 +87,7 @@ public class MissionMarker : MonoBehaviour, ISquadTarget
 
         if (worker != null)
         {
-            progress += WorldTime.DeltaTime / Mathf.Max(0.1f, Data.duration);
+            progress += WorldTime.DeltaTime * PhaseManager.WrapUpSpeed / Mathf.Max(0.1f, Data.duration); // фаза кончилась — быстрее
             SetBar(progress, new Color(0.35f, 0.85f, 0.4f));
             if (progress >= 1f) Finish();
             return;

@@ -8,19 +8,19 @@ using UnityEngine;
 /// </summary>
 public class MotelekDust : HealSpot
 {
-    private const float LifeTime = 4f;      // Сколько держится пыль
     private const float Radius = 1.8f;      // Размер облака
-    private const float HealMax = 0.3f;     // Лечение — доля макс. HP
     private const float SparkleEvery = 0.06f; // Как часто появляется блёстка
 
     private Fighter owner;          // Мотылёк (ему засчитывается лечение)
+    private float lifeTime = 4f;    // Сколько держится пыль (из файла Мотылька)
+    private float healMax = 0.3f;   // Лечение — доля макс. HP (из файла Мотылька)
     private float age;              // Сколько уже держится
     private float sparkleTimer;     // До следующей блёстки
     private Sprite circle;          // Круглый спрайт
     private readonly HashSet<Fighter> healed = new HashSet<Fighter>(); // Кто уже вылечился этой пылью
 
-    /// <summary>Рассыпать пыль Мотылька owner вокруг точки pos.</summary>
-    public static MotelekDust Spread(Fighter owner, Vector3 pos, Sprite circle)
+    /// <summary>Рассыпать пыль Мотылька owner вокруг точки pos (heal — доля макс. HP, life — сколько держится).</summary>
+    public static MotelekDust Spread(Fighter owner, Vector3 pos, Sprite circle, float heal, float life)
     {
         var go = new GameObject("MotelekDust");
         go.transform.SetParent(BattleManager.Instance.RuntimeRoot, false);
@@ -29,8 +29,10 @@ public class MotelekDust : HealSpot
         d.owner = owner;
         d.Faction = owner.Faction;
         d.circle = circle;
+        d.healMax = heal;
+        d.lifeTime = life;
         SkillFx.Spawn(circle, pos + new Vector3(0f, 0.8f, 0f), new Color(1f, 0.95f, 0.6f, 0.25f),
-            new Vector2(Radius * 1.2f, Radius), new Vector2(Radius * 2.2f, Radius * 1.4f), LifeTime).Fade(0.25f, 0f);
+            new Vector2(Radius * 1.2f, Radius), new Vector2(Radius * 2.2f, Radius * 1.4f), life).Fade(0.25f, 0f);
         return d;
     }
 
@@ -43,7 +45,7 @@ public class MotelekDust : HealSpot
         if (bm == null || !bm.IsRunning) { Destroy(gameObject); return; }
         float dt = Time.deltaTime;
         age += dt;
-        if (age >= LifeTime) { Destroy(gameObject); return; }
+        if (age >= lifeTime) { Destroy(gameObject); return; }
 
         // Блёстки сыплются сверху вниз
         sparkleTimer -= dt;
@@ -60,7 +62,7 @@ public class MotelekDust : HealSpot
         {
             if (!a.IsAlive || healed.Contains(a) || a.Health.Fraction >= 0.999f || Vector2.Distance(a.Position, Position) > Radius) continue;
             healed.Add(a);
-            a.Health.Heal(a.Health.Max * HealMax, owner);
+            a.Health.Heal(a.Health.Max * healMax, owner);
             if (a.View != null) a.View.FlashHeal();
         }
     }

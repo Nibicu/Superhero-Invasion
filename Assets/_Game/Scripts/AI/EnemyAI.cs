@@ -299,7 +299,7 @@ public class EnemyAI : MonoBehaviour
         if (o != null && o.IsActive && !o.IsOwnedBy(team) && o.EventTimeLeft > 40f) list.Add(o);
         if (GlobalMissionManager.Instance != null)
             foreach (GlobalMission g in GlobalMissionManager.Instance.Active)
-                if (!g.IsCompleted && GlobalMissionManager.IsVisibleTo(g, team)) list.Add(g);
+                if (!g.IsCompleted) list.Add(g);
         return list;
     }
 
@@ -493,7 +493,7 @@ public class EnemyAI : MonoBehaviour
         if (GlobalMissionManager.Instance != null)
         foreach (GlobalMission gm in GlobalMissionManager.Instance.Active)
         {
-        if (gm.IsCompleted || IsOrdered(gm) || !gm.CanAccept(squad, out _) || !GlobalMissionManager.IsVisibleTo(gm, team)) continue;
+        if (gm.IsCompleted || IsOrdered(gm) || !gm.CanAccept(squad, out _)) continue;
         {
             bool join = gm.IsUnderAttack;
             bool ok = !join || (gm.CanJoin(team) && SM.EstimateTravelTime(squad, gm) <= gm.PrepLeft - 1f
@@ -604,7 +604,7 @@ public class EnemyAI : MonoBehaviour
 
     /// <summary>
     /// Тактическая пауза (вызывает PhaseManager): ИИ нанимает героев, прокачивает и усиливает их,
-    /// надевает вещи и начинает своё задание фракции (если его ещё нет).
+    /// надевает вещи, строит.
     /// </summary>
     public void OnTacticalPause()
     {
@@ -619,12 +619,6 @@ public class EnemyAI : MonoBehaviour
         foreach (HeroInstance h in heroes)
             if (HM.CanStarUp(h, out _) && RM.CanAfford(team, 0, HM.StarUpCost)) HM.TryStarUp(h, out _);
         UseArtifacts();
-        GlobalMissionManager gmm = GlobalMissionManager.Instance;
-        if (gmm == null || gmm.HasLaunched(team)) return;
-        var options = new List<GlobalMissionData>();
-        foreach (GlobalMissionData d in gmm.Pool)
-            if (gmm.CanLaunch(team, d, out _)) options.Add(d);
-        if (options.Count > 0) gmm.Launch(team, options[Random.Range(0, options.Count)]);
     }
 
     /// <summary>Драфт перед игрой: нанять одного героя (карта стоит, поэтому вызывает DraftUI). Вернёт false, если больше некого.</summary>

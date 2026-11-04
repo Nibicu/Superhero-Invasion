@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>Сторона конфликта: супергерои или суперзлодеи.</summary>
@@ -105,8 +106,34 @@ public class HeroSkill
     [Tooltip("Пассивный навык: работает сам, применять не нужно")]
     public bool passive;
 
+    [Tooltip("Числа навыка: урон (% Силы атаки или Магии), шансы, длительности. Список заполняется сам по таблице KitParams; меняйте только значения")]
+    public List<SkillParam> values = new List<SkillParam>();
+
     /// <summary>Навыка пока нет (не придуман).</summary>
     public bool IsEmpty => string.IsNullOrWhiteSpace(name);
+
+    /// <summary>Число навыка по ключу (null — нет такого).</summary>
+    public SkillParam Find(string key)
+    {
+        if (values == null) return null;
+        foreach (SkillParam p in values)
+            if (p != null && p.key == key) return p;
+        return null;
+    }
+}
+
+/// <summary>Одно число навыка (например, "Шанс промаха врага в дыму, %" = 40).</summary>
+[Serializable]
+public class SkillParam
+{
+    [Tooltip("Подпись (заполняется сама)")]
+    public string name = "";
+
+    [Tooltip("Значение")]
+    public float value;
+
+    [Tooltip("Ключ, по которому код находит число (заполняется сам, менять нельзя)")]
+    public string key = "";
 }
 
 /// <summary>
@@ -177,6 +204,12 @@ public class HeroData : ScriptableObject
     [Header("Характеристики (на 1 уровне)")]
     public HeroStats baseStats;
 
+    [Tooltip("Скорость авто атак, %: 100 — обычная, 120 — на 20% быстрее (удары серии, замах и выстрелы)")]
+    [Range(50, 200)] public int autoAttackSpeed = 100;
+
+    /// <summary>Скорость авто атак множителем (1 — обычная).</summary>
+    public float AutoAttackSpeedMultiplier => Mathf.Max(50, autoAttackSpeed) / 100f;
+
     /// <summary>Настройки класса (поведение, скил).</summary>
     public ClassProfile Profile => UnitClasses.Get(unitClass);
 
@@ -205,6 +238,20 @@ public class HeroData : ScriptableObject
 
     /// <summary>Есть ли у героя свои навыки в бою (иначе — только авто атаки).</summary>
     public bool HasOwnSkills => kit != HeroKitType.None;
+
+#if UNITY_EDITOR
+    /// <summary>В редакторе: списки чисел навыков сами подстраиваются под таблицу KitParams.</summary>
+    private void OnValidate()
+    {
+        if (skills == null || skills.Length < SkillUnlockLevels.Length)
+        {
+            var list = new List<HeroSkill>(skills ?? new HeroSkill[0]);
+            while (list.Count < SkillUnlockLevels.Length) list.Add(new HeroSkill());
+            skills = list.ToArray();
+        }
+        if (KitParams.Sync(this)) UnityEditor.EditorUtility.SetDirty(this);
+    }
+#endif
 
     [Header("Бонус командира")]
 

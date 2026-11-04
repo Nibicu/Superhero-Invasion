@@ -85,11 +85,13 @@ public class BattleManager : MonoBehaviour
     [SerializeField] private Vector2Int boxCount = new Vector2Int(1, 2);
     [Tooltip("Раз во сколько секунд с неба падает предмет: от и до")]
     [SerializeField] private Vector2 dropInterval = new Vector2(7f, 12f);
-    [Tooltip("Шанс, что упадёт зелье (иначе — ящик)")]
-    [SerializeField, Range(0f, 1f)] private float potionChance = 0.55f;
+    [Tooltip("Шанс, что упадёт зелье")]
+    [SerializeField, Range(0f, 1f)] private float potionChance = 0.4f;
+    [Tooltip("Шанс, что упадёт капсула с энергией (+20% энергии). Остальное — ящик")]
+    [SerializeField, Range(0f, 1f)] private float energyChance = 0.2f;
     [Tooltip("Больше этого числа ящиков на арене одновременно не бывает")]
     [SerializeField] private int maxBoxes = 6;
-    [Tooltip("Больше этого числа зелий на арене одновременно не бывает")]
+    [Tooltip("Больше этого числа зелий и капсул на арене одновременно не бывает")]
     [SerializeField] private int maxPotions = 6;
     [Tooltip("С какой высоты падают предметы")]
     [SerializeField] private float dropHeight = 7f;
@@ -547,7 +549,7 @@ public class BattleManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Падение предметов с неба: раз в dropInterval секунд — зелье или ящик
+    /// Падение предметов с неба: раз в dropInterval секунд — зелье, капсула с энергией или ящик
     /// рядом со случайным бойцом команд (там, куда он может дойти). Лимиты — maxBoxes и maxPotions.
     /// </summary>
     private void UpdateDrops()
@@ -564,9 +566,11 @@ public class BattleManager : MonoBehaviour
         Fighter near = candidates[UnityEngine.Random.Range(0, candidates.Count)];
 
         int potions = 0, liveBoxes = 0;
-        foreach (BattleBuffItem b in buffs) if (b != null && !b.Taken && b.IsPotion) potions++;
+        foreach (BattleBuffItem b in buffs) if (b != null && !b.Taken && (b.IsPotion || b.IsEnergy)) potions++;
         foreach (BattleBox b in boxes) if (b != null && !b.IsBroken) liveBoxes++;
-        bool potion = UnityEngine.Random.value < potionChance;
+        float roll = UnityEngine.Random.value;
+        bool potion = roll < potionChance + energyChance; // зелье или капсула (иначе — ящик)
+        bool energy = roll >= potionChance;               // из них — капсула
         if (potion && potions >= maxPotions) potion = false;
         if (!potion && liveBoxes >= maxBoxes) { if (potions >= maxPotions) return; potion = true; }
 
@@ -577,7 +581,7 @@ public class BattleManager : MonoBehaviour
         if (potion && buffPrefab != null)
         {
             BattleBuffItem item = Instantiate(buffPrefab, spot, Quaternion.identity, runtimeRoot);
-            item.SetupPotion();
+            if (energy) item.SetupEnergy(); else item.SetupPotion();
             item.DropIn(dropHeight);
             buffs.Add(item);
         }
