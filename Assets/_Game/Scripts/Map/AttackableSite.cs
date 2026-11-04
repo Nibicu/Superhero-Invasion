@@ -121,7 +121,10 @@ public abstract class AttackableSite : MonoBehaviour, ISquadTarget
     /// <summary>Цвет арены.</summary>
     public abstract Color SiteColor { get; }
 
-    /// <summary>Общая сила защитников (0 — защищать некому).</summary>
+    /// <summary>Сколько героев рекомендуется для нападения (вместо показателя силы). По умолчанию — 4.</summary>
+    public virtual int RecommendedHeroes => Recommendation.MaxHeroes;
+
+    /// <summary>Общая сила защитников (0 — защищать некому). Только для автобоя — игроку не показывается.</summary>
     public abstract int DefenderPower { get; }
 
     /// <summary>Защитники по волнам (одна волна = одна территория арены).</summary>
@@ -407,7 +410,7 @@ public abstract class AttackableSite : MonoBehaviour, ISquadTarget
                 stats = h.Stats,
                 hpFraction = s.HpFraction,
                 level = h.Level,
-                info = $"{UnitClasses.Name(h.Data.unitClass)}  •  Команда {s.Number}  •  Ур. {h.Level}  •  сила {BattleCalculator.HeroPower(h)}"
+                info = $"{UnitClasses.Name(h.Data.unitClass)}  •  Команда {s.Number}  •  Ур. {h.Level}"
             });
         return list;
     }

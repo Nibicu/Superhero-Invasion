@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Строка в окне выбора команды: портрет капитана, номер, состав, сила, статус
+/// Строка в окне выбора команды: портрет капитана, номер, состав, здоровье, статус
 /// и кнопка "ОТПРАВИТЬ".
 /// </summary>
 public class SquadPickRowUI : MonoBehaviour
@@ -20,7 +20,7 @@ public class SquadPickRowUI : MonoBehaviour
     {
         portrait.Show(squad.Captain.Data);
         nameText.text = $"Команда {squad.Number}  <size=80%><color=#9AA4B5>капитан</color> {squad.Captain.Data.displayName}</size>";
-        infoText.text = $"Героев: {squad.Size}   •   Сила: {squad.Power}   •   Здоровье: {squad.CurrentHp}   •   {squad.StatusText}";
+        infoText.text = $"Героев: {squad.Size}   •   Здоровье: {squad.CurrentHp}   •   {squad.StatusText}"; // силу больше не показываем
         sendButton.interactable = canSend;
         sendText.text = buttonText;
         sendButton.onClick.RemoveAllListeners();

@@ -21,6 +21,7 @@ MonoBehaviour:
   mapPosition: {x: -12.013158, y: -0.8815789}
   rewardHero: 1
   rewardHeroMaxStars: 2
+  recommendedHeroes: 3
   waves:
   - guards:
     - unit: {fileID: 11400000, guid: 69229f06c0946c84bb409c279b571cae, type: 2}
@@ -39,4 +40,5 @@ MonoBehaviour:
       level: 2
   rewardGold: 0
   rewardPlutonium: 0
+  rewardFactionPoints: 400
   rewardArtifacts: 0

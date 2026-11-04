@@ -23,6 +23,9 @@ public class PortalData : ScriptableObject
     public string iconLetter = "Ω";
 
     [Header("Охрана (в 2 раза больше, чем у объектов)")]
+    [Tooltip("Сколько героев рекомендуется (1 — «1 и более», ... 4 — «4 героя»)")]
+    [Range(1, 4)] public int recommendedHeroes = 4;
+
     [Tooltip("Волны охраны — по одной на каждую территорию (обычно 3). Пройденные территории портал запоминает для каждой стороны")]
     public GuardWave[] waves = new GuardWave[0];
 
@@ -32,6 +35,9 @@ public class PortalData : ScriptableObject
 
     [Tooltip("Сколько случайных артефактов получает закрывший портал")]
     [Min(0)] public int rewardArtifacts = 1;
+
+    [Tooltip("Очки фракции закрывшему портал")]
+    [Min(0)] public int rewardFactionPoints = 600;
 
     /// <summary>Сколько территорий у портала.</summary>
     public int TerritoryCount => waves != null ? waves.Length : 0;

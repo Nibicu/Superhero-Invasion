@@ -106,6 +106,7 @@ public class BattlePrepWindowUI : MonoBehaviour
     /// <summary>Заполнить окно.</summary>
     private void Show(AttackableSite site)
     {
+        WindowUI.CloseAll(); // инвентарь, карточки и т.п. закрываем — иначе они перекроют окно боя
         current = site;
         timer = decisionTime;
         foreach (GameObject g in rows) Destroy(g);
@@ -128,8 +129,12 @@ public class BattlePrepWindowUI : MonoBehaviour
         titleText.text = defending ? $"ЗАЩИТА: {site.SiteName.ToUpper()}" : $"БИТВА: {site.SiteName.ToUpper()}";
         if (ourLabelText != null) ourLabelText.text = defending ? "ВАШИ ЗАЩИТНИКИ" : "ВАША КОМАНДА";
         if (enemyLabelText != null) enemyLabelText.text = defending ? "НАПАДАЮЩИЕ" : "ЗАЩИТНИКИ";
-        ourPowerText.text = $"Сила: <color=#7FB8FF>{our}</color>";
-        enemyPowerText.text = $"Сила: <color=#FF7A7A>{their}</color>";
+        // Вместо силы — число бойцов с каждой стороны
+        int ourCount = OurUnits(site).Count;
+        int theirCount = 0;
+        foreach (List<BattleUnit> wave in TheirWaves(site)) theirCount += wave.Count;
+        ourPowerText.text = $"Бойцов: <color=#7FB8FF>{ourCount}</color>";
+        enemyPowerText.text = $"Бойцов: <color=#FF7A7A>{theirCount}</color>";
         verdictText.text = BattleCalculator.ForecastTitle(forecast);
         hintText.text = defending ? BattleCalculator.DefenseHint(forecast) : BattleCalculator.ForecastHint(forecast);
 
@@ -150,20 +155,18 @@ public class BattlePrepWindowUI : MonoBehaviour
     {
         Squad mine = site.PlayerContestant.Squad;
         Squad theirs = site.EnemyContestant.Squad;
-        int our = BattleCalculator.SquadPower(mine);
-        int their = BattleCalculator.SquadPower(theirs);
 
         titleText.text = $"БИТВА ЗА ФЛАГ: {site.SiteName.ToUpper()}";
         if (ourLabelText != null) ourLabelText.text = "ВАША КОМАНДА";
         if (enemyLabelText != null) enemyLabelText.text = "КОМАНДА ВРАГА";
-        ourPowerText.text = $"Сила: <color=#7FB8FF>{our}</color>";
-        enemyPowerText.text = $"Сила: <color=#FF7A7A>{their}</color>";
+        ourPowerText.text = $"Героев: <color=#7FB8FF>{mine.Size}</color>";
+        enemyPowerText.text = $"Героев: <color=#FF7A7A>{theirs.Size}</color>";
         verdictText.text = "<color=#FFD84A>ДВЕ КОМАНДЫ — БИТВА ЗА ФЛАГ!</color>";
 
         int guardsCount = 0;
         List<List<BattleUnit>> waves = site.GetDefenderWaves();
         foreach (List<BattleUnit> wave in waves) guardsCount += wave.Count;
-        hintText.text = $"Охрана: {waves.Count} территории, {guardsCount} бойцов, сила {site.DefenderPower} — у каждой команды своя копия " +
+        hintText.text = $"Охрана: {waves.Count} территории, {guardsCount} бойцов — у каждой команды своя копия " +
                         "(вы — слева, враг — справа). Пройдите свои территории быстрее врага и удержите флаг в центре 10 с.";
 
         foreach (BattleUnit u in AttackableSite.GetSquadUnits(site.PlayerContestant)) AddRow(ourList, u.data, u.info);

@@ -7,11 +7,11 @@ using UnityEngine.EventSystems;
 /// Объект на карте, который можно захватить (Банк, Завод и т.д.).
 /// - Клик по объекту открывает окно объекта (MapObjectWindowUI).
 /// - Команда приезжает → подготовка к бою 20 с → бой с охраной (окно перед боем)
-///   → при победе объект переходит к её стороне → бонусы получает новый владелец
-///   (и теряет старый) → команда едет домой. Порядок нападения — в AttackableSite.
+///   → при победе сторона победителя СРАЗУ получает всю награду объекта (золото, плутоний,
+///   очки фракции, артефакт), а объект исчезает (снова неактивен) → команда едет домой.
+///   Захватывать и удерживать объекты больше нельзя. Порядок нападения — в AttackableSite.
 /// Объект НЕАКТИВЕН, пока его не откроет событие (EventManager): неактивный объект ничей,
-/// серый, и захватить его нельзя. Во время события объект можно захватывать и отбивать;
-/// когда событие кончается, последний владелец получает артефакт, а объект снова ничей и неактивен.
+/// серый, и напасть на него нельзя. Позже событие может открыть его снова.
 /// Данные (название, бонусы, охрана) — в MapObjectData.
 /// На объекте должен быть Collider2D для клика.
 /// </summary>
@@ -42,6 +42,7 @@ public class MapObject : AttackableSite, IIncomeSource
     private SpriteRenderer[] sprites; // Все картинки объекта (для серого вида, когда неактивен)
     private Color[] spriteColors;     // Их исходные цвета
     private float labelTimer;         // Когда обновить подпись с таймером события
+    private string wonText = "";      // Что получил победитель (для окна итога)
 
     // ---------- Свойства ----------
 
@@ -83,6 +84,9 @@ public class MapObject : AttackableSite, IIncomeSource
     public override string TargetName => data.displayName;
     public override string SiteName => data.displayName;
     public override Color SiteColor => data.color;
+
+    /// <summary>Сколько героев рекомендуется (из файла объекта).</summary>
+    public override int RecommendedHeroes => data.recommendedHeroes;
 
     /// <summary>Защитники объекта — его охрана из MapObjectData + команда подкрепления (если пришла).</summary>
     public override int DefenderPower =>
@@ -148,8 +152,8 @@ public class MapObject : AttackableSite, IIncomeSource
                     level = g.level,
                     guard = true, // охрана объекта не отступает
                     info = owned
-                        ? $"{UnitClasses.Name(g.unit.unitClass)}  •  Охрана объекта  •  Ур. {g.level}  •  сила {BattleCalculator.UnitPower(g.unit, s)}"
-                        : $"{UnitClasses.Name(g.unit.unitClass)}  •  Территория {w + 1}  •  Ур. {g.level}  •  сила {BattleCalculator.UnitPower(g.unit, s)}"
+                        ? $"{UnitClasses.Name(g.unit.unitClass)}  •  Охрана объекта  •  Ур. {g.level}"
+                        : $"{UnitClasses.Name(g.unit.unitClass)}  •  Территория {w + 1}  •  Ур. {g.level}"
                 });
             }
             waves.Add(list);
@@ -181,13 +185,17 @@ public class MapObject : AttackableSite, IIncomeSource
     }
 
     /// <summary>Нападающие победили охрану — объект переходит к ним.</summary>
-    protected override void OnAttackerWon(Squad squad) => TakeOver(squad.Owner);
+    protected override void OnAttackerWon(Squad squad)
+    {
+        // Захватывать нельзя: победитель сразу получает награду, объект исчезает (EventManager)
+        wonText = EventManager.Instance != null ? EventManager.Instance.ObjectWon(this, squad.Owner) : "";
+    }
 
-    /// <summary>Текст для окна итога: кому теперь принадлежит объект и что он даёт.</summary>
+    /// <summary>Текст для окна итога: что получил победитель.</summary>
     protected override string AttackerWonText(Team winner) =>
         winner == Team.Player
-            ? $"Объект «{data.displayName}» теперь ваш!\n<size=85%><color=#FFD84A>{data.GetBonusText().Replace("\n", "  •  ")}</color></size>"
-            : $"Объект «{data.displayName}» теперь принадлежит врагу.";
+            ? $"Объект «{data.displayName}» взят!\n<size=85%>Получено: {wonText}\n<color=#9AA4B5>Объект исчез с карты</color></size>"
+            : $"Враг взял объект «{data.displayName}» и получил награду.\n<size=85%><color=#9AA4B5>Объект исчез с карты</color></size>";
 
     /// <summary>Автобой: подкрепление теряет HP (проиграло — −50%, отбилось — −20%).</summary>
     protected override void ApplyDefenderAutoLoss(float loss)
@@ -299,19 +307,6 @@ public class MapObject : AttackableSite, IIncomeSource
     }
 
     // ---------- Владелец ----------
-
-    /// <summary>Объект переходит к стороне newOwner + сообщение.</summary>
-    private void TakeOver(Team newOwner)
-    {
-        bool wasOurs = IsOwnedBy(Team.Player);
-        SetOwner(newOwner);
-        if (newOwner == Team.Player)
-            ToastUI.Show($"{data.displayName} захвачен! Удержите до конца события — награда: {data.GetEventRewardText()}");
-        else if (wasOurs)
-            ToastUI.Show($"Враг захватил наш объект: {data.displayName}!");
-        else
-            ToastUI.Show($"Враг захватил объект: {data.displayName}");
-    }
 
     /// <summary>Сменить владельца: снять бонусы со старого, выдать новому.</summary>
     public void SetOwner(Team newOwner)

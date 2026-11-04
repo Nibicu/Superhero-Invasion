@@ -43,7 +43,14 @@ public class BattleResultWindowUI : MonoBehaviour
         instance = this;
         continueButton.onClick.AddListener(Continue);
         root.SetActive(false);
+        // Слой выше всех обычных окон (у них 150): иначе при одинаковом слое Unity рисует одно окно,
+        // а клики отдаёт другому — и ни одно нельзя закрыть
+        Canvas c = GetComponent<Canvas>();
+        if (c != null) { c.overrideSorting = true; c.sortingOrder = WindowLayer; }
     }
+
+    /// <summary>Слой окна итога (выше инвентаря, карточек и окна "конец игры" — 150).</summary>
+    private const int WindowLayer = 300;
 
     private void OnDestroy()
     {
@@ -70,6 +77,7 @@ public class BattleResultWindowUI : MonoBehaviour
         header.color = e.win ? winColor : loseColor;
         titleText.text = e.win ? "ПОБЕДА!" : "ПОРАЖЕНИЕ";
         messageText.text = e.message;
+        WindowUI.CloseAll(); // инвентарь и другие окна закрываем, чтобы не мешали
         root.SetActive(true);
         transform.SetAsLastSibling();
     }

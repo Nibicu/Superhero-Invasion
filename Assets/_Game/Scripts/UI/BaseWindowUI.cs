@@ -6,6 +6,7 @@ using UnityEngine.UI;
 /// Окно главной базы: уровень, кнопка улучшения базы и 5 ячеек построек.
 /// Открывается кликом по базе на карте.
 /// Свою базу можно менять; вражескую — только смотреть, и только если построен Радар.
+/// Второй экземпляр (embedded = true) встроен во вкладку "База" окна тактической паузы: без крестика и затемнения.
 /// </summary>
 public class BaseWindowUI : MonoBehaviour
 {
@@ -13,6 +14,8 @@ public class BaseWindowUI : MonoBehaviour
     public static BaseWindowUI Instance { get; private set; }
 
     [Header("Окно")]
+    [Tooltip("Встроено во вкладку паузы (не отдельное окно): не закрывается само, не поднимается наверх")]
+    [SerializeField] private bool embedded;
     [SerializeField] private GameObject root;        // Всё окно (фон + панель)
     [SerializeField] private Image header;           // Полоска заголовка (красится в цвет стороны)
     [SerializeField] private TMP_Text titleText;     // "НАША БАЗА — уровень 1"
@@ -40,12 +43,12 @@ public class BaseWindowUI : MonoBehaviour
     /// <summary>Запоминаем себя, подписываем кнопки, прячем окно.</summary>
     private void Awake()
     {
-        Instance = this;
-        closeButton.onClick.AddListener(Close);
-        backdropButton.onClick.AddListener(Close);
+        if (!embedded) Instance = this;
+        if (closeButton != null) closeButton.onClick.AddListener(Close);
+        if (backdropButton != null) backdropButton.onClick.AddListener(Close);
         upgradeButton.onClick.AddListener(OnUpgradeClicked);
-        AttackableSite.AttackChanged += OnAttackChanged;
-        root.SetActive(false);
+        if (!embedded) AttackableSite.AttackChanged += OnAttackChanged;
+        if (!embedded) root.SetActive(false);
     }
 
     /// <summary>
@@ -80,7 +83,7 @@ public class BaseWindowUI : MonoBehaviour
     /// <summary>Esc закрывает сначала меню строительства, потом окно.</summary>
     private void Update()
     {
-        if (!root.activeSelf || !Input.GetKeyDown(KeyCode.Escape)) return;
+        if (embedded || !root.activeSelf || !Input.GetKeyDown(KeyCode.Escape)) return;
         if (buildMenu.IsOpen) buildMenu.Close();
         else Close();
     }
@@ -92,7 +95,7 @@ public class BaseWindowUI : MonoBehaviour
     /// </summary>
     public void Open(MainBase b)
     {
-        if (b.IsUnderAttack) { ToastUI.Show(b.AttackStatusText()); return; }
+        if (b.IsUnderAttack && !embedded) { ToastUI.Show(b.AttackStatusText()); return; }
         if (b.Owner != Team.Player)
         {
             MainBase mine = MainBase.Get(Team.Player);
@@ -111,7 +114,7 @@ public class BaseWindowUI : MonoBehaviour
 
         buildMenu.Close();
         root.SetActive(true);
-        transform.SetAsLastSibling(); // поверх окна тактической паузы
+        if (!embedded) transform.SetAsLastSibling(); // поверх окна тактической паузы
         Refresh();
     }
 
@@ -151,7 +154,7 @@ public class BaseWindowUI : MonoBehaviour
         string stars = b.MaxHeroStars == 1 ? "1 звезды" : $"{b.MaxHeroStars} звёзд";
         Squad garrison = b.FindDefender();
         string garrisonText = garrison != null
-            ? $"Защитники: {garrison.Size} (сила {BattleCalculator.SquadPower(garrison)})"
+            ? $"Защитники: {garrison.Size}"
             : "<color=#FF7A7A>Защитников нет</color>";
         subtitleText.text =
             $"HP: <color=#6EE07A>{b.Hp}/{b.MaxHp}</color>  •  {garrisonText}  •  " +
@@ -164,7 +167,7 @@ public class BaseWindowUI : MonoBehaviour
         if (readOnly)
         {
             upgradeButton.interactable = b.Hp > 0;
-            upgradeText.text = $"АТАКОВАТЬ БАЗУ\n<size=80%>урон {b.DamagePerAttack} • охрана: сила {(garrison != null ? BattleCalculator.SquadPower(garrison) : 0)}</size>";
+            upgradeText.text = $"АТАКОВАТЬ БАЗУ\n<size=80%>урон {b.DamagePerAttack} • рекомендуется {Recommendation.Text(b.RecommendedHeroes, Team.Player)}</size>";
         }
         else if (!CanBuildNow)
         {

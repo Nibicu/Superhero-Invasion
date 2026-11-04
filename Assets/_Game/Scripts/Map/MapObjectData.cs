@@ -26,6 +26,9 @@ public class MapObjectData : ScriptableObject
     public Color color = Color.gray;
 
     [Header("Охрана (гарнизон)")]
+    [Tooltip("Сколько героев рекомендуется (1 — «1 и более», ... 4 — «4 героя»)")]
+    [Range(1, 4)] public int recommendedHeroes = 3;
+
     [Tooltip("Волны охраны — по одной на каждую территорию арены (обычно 3)")]
     public GuardWave[] waves = new GuardWave[0];
 
@@ -45,12 +48,15 @@ public class MapObjectData : ScriptableObject
     [Tooltip("Разрешает усиливать героев за плутоний (Институт)")]
     public bool allowsHeroBoost = false;
 
-    [Header("Разовая награда (событие «Объект»)")]
-    [Tooltip("Золото последнему владельцу в конце события")]
+    [Header("Разовая награда (событие «Объект»): победитель охраны получает её сразу, объект исчезает")]
+    [Tooltip("Золото победителю")]
     public int eventGold = 300;
 
-    [Tooltip("Плутоний последнему владельцу в конце события")]
+    [Tooltip("Плутоний победителю")]
     public int eventPlutonium = 0;
+
+    [Tooltip("Очки фракции победителю")]
+    public int eventFactionPoints = 500;
 
     /// <summary>Текст разовой награды (с цветами или без).</summary>
     public string GetEventRewardText(bool withArtifact = true)
@@ -58,6 +64,7 @@ public class MapObjectData : ScriptableObject
         var parts = new System.Collections.Generic.List<string>();
         if (eventGold > 0) parts.Add($"<color=#FFD84A>+{eventGold} золота</color>");
         if (eventPlutonium > 0) parts.Add($"<color=#C58BFF>+{eventPlutonium} плутония</color>");
+        if (eventFactionPoints > 0) parts.Add(FactionManager.PointsText(eventFactionPoints));
         if (withArtifact) parts.Add("<color=#FF9EE6>артефакт</color>");
         return string.Join(", ", parts);
     }
@@ -79,9 +86,9 @@ public class MapObjectData : ScriptableObject
         }
     }
 
-    /// <summary>Краткое описание охраны: "3 территории, 5 бойцов, сила 480".</summary>
+    /// <summary>Краткое описание охраны: "3 территории, 5 бойцов" (без показателя силы).</summary>
     public string GetGuardText() =>
-        $"{(waves != null ? waves.Length : 0)} территории, {GuardCount} бойцов, сила {BattleCalculator.GarrisonPower(this)}";
+        $"{(waves != null ? waves.Length : 0)} территории, {GuardCount} бойцов";
 
     /// <summary>Собрать текст всех бонусов для окна объекта.</summary>
     public string GetBonusText()

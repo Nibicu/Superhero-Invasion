@@ -58,6 +58,9 @@ public class GlobalMission : AttackableSite
     public string Title => Data.TitleFor(Team.Player);
     public override Color SiteColor => Data.color;
 
+    /// <summary>Сколько героев рекомендуется (из файла общей миссии).</summary>
+    public override int RecommendedHeroes => Data.recommendedHeroes;
+
     /// <summary>Сила охраны миссии.</summary>
     public override int DefenderPower => completed ? 0 : BattleCalculator.GarrisonPower(Data.waves);
 
@@ -87,7 +90,7 @@ public class GlobalMission : AttackableSite
                     hpFraction = 1f,
                     level = g.level,
                     guard = true, // охрана не отступает
-                    info = $"{UnitClasses.Name(g.unit.unitClass)}  •  Территория {w + 1}  •  Ур. {g.level}  •  сила {BattleCalculator.UnitPower(g.unit, s)}"
+                    info = $"{UnitClasses.Name(g.unit.unitClass)}  •  Территория {w + 1}  •  Ур. {g.level}"
                 });
             }
             waves.Add(list);
@@ -127,6 +130,8 @@ public class GlobalMission : AttackableSite
         var got = new List<string>();
         if (Data.rewardGold > 0) got.Add($"<color=#FFD84A>+{Data.rewardGold} золота</color>");
         if (Data.rewardPlutonium > 0) got.Add($"<color=#C58BFF>+{Data.rewardPlutonium} плутония</color>");
+        FactionManager.AddPoints(team, Data.rewardFactionPoints); // очки фракции
+        if (Data.rewardFactionPoints > 0) got.Add(FactionManager.PointsText(Data.rewardFactionPoints));
         if (ArtifactManager.Instance != null)
             for (int i = 0; i < Data.rewardArtifacts; i++)
             {

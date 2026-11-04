@@ -187,5 +187,9 @@ public class ResourceManager : MonoBehaviour
         w.gold += gold;
         w.plutonium += plutonium;
         ResourcesChanged?.Invoke(team);
+        Added?.Invoke(team, gold, plutonium);
     }
+
+    /// <summary>Стороне что-то выдали (доход, награда): сторона, золото, плутоний. Для итогов фазы.</summary>
+    public event Action<Team, int, int> Added;
 }

@@ -59,6 +59,17 @@ public class WindowUI : MonoBehaviour
         openWindows.Remove(this);
     }
 
+    /// <summary>
+    /// Закрыть все открытые окна (инвентарь, карточку героя...). Вызывают окна боя (перед боем, итог боя),
+    /// чтобы обычное окно не осталось поверх них и не перекрыло их кнопки.
+    /// </summary>
+    public static void CloseAll()
+    {
+        foreach (WindowUI w in new List<WindowUI>(openWindows))
+            if (w != null && w.IsOpen) w.Close();
+        openWindows.Clear();
+    }
+
     /// <summary>Перерисовать содержимое. Каждое окно делает это по-своему.</summary>
     public virtual void Refresh() { }
 

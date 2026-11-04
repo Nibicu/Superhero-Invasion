@@ -17,6 +17,7 @@ MonoBehaviour:
   icon: {fileID: 0}
   iconLetter: $
   color: {r: 0.9098039, g: 0.69803923, b: 0.22745098, a: 1}
+  recommendedHeroes: 3
   waves:
   - guards:
     - unit: {fileID: 11400000, guid: 69229f06c0946c84bb409c279b571cae, type: 2}
@@ -36,4 +37,5 @@ MonoBehaviour:
   allowsHeroBoost: 0
   eventGold: 600
   eventPlutonium: 0
+  eventFactionPoints: 500
   extraBonusText: 

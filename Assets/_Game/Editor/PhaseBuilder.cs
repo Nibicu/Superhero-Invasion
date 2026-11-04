@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Шаг 4 (сцена Game): фазы игры (PhaseManager), окно тактической паузы, список общих миссий
+/// Шаг 4 (сцена Game): фазы игры (PhaseManager), окно тактической паузы (через PauseBuilder), список общих миссий
 /// (все файлы Data/GlobalMissions — случайное событие фазы миссий), разовые награды объектов,
 /// убирает кнопку РОСТЕР с экрана (героев покупают только в паузе). Меню: Tools → Superhero → Собрать фазы и паузу.
 /// Повторный запуск пересоздаёт окно паузы; данные миссий не перезаписываются.
@@ -64,103 +64,8 @@ public static class PhaseBuilder
             if (inv != null) ((RectTransform)inv).anchoredPosition = new Vector2(0, 0);
         }
 
-        // 5) Окно тактической паузы
-        Transform old = canvas.Find("TacticalPause");
-        if (old != null) Object.DestroyImmediate(old.gameObject);
-        var roster = Object.FindAnyObjectByType<RosterWindowUI>(FindObjectsInactive.Include);
-        var heroInfo = (HeroInfoWindowUI)new SerializedObject(roster).FindProperty("heroInfo").objectReferenceValue;
-        var baseWindow = Object.FindAnyObjectByType<BaseWindowUI>(FindObjectsInactive.Include);
-        var draft = Object.FindAnyObjectByType<DraftUI>(FindObjectsInactive.Include);
-        var srcRow = (DraftRowUI)new SerializedObject(draft).FindProperty("rowTemplate").objectReferenceValue;
-
-        var win = new GameObject("TacticalPause", typeof(RectTransform)).GetComponent<RectTransform>();
-        win.SetParent(canvas, false);
-        Stretch(win);
-        var root = Img("Root", win, null, new Color(0.04f, 0.06f, 0.10f, 0.97f));
-        Stretch(root.rectTransform);
-        RectTransform r = root.rectTransform;
-
-        Place(Text("Title", r, "ТАКТИЧЕСКАЯ ПАУЗА", 60, Color.white, TextAlignmentOptions.Center, true).rectTransform, new Vector2(0.5f, 1f), new Vector2(0, -52), new Vector2(900, 76));
-        var next = Text("Next", r, "Дальше: …", 28, new Color(1f, 0.85f, 0.4f), TextAlignmentOptions.Center, false);
-        Place(next.rectTransform, new Vector2(0.5f, 1f), new Vector2(0, -105), new Vector2(1200, 40));
-        var timer = Text("Timer", r, "2:00", 56, Color.white, TextAlignmentOptions.Center, true);
-        Place(timer.rectTransform, new Vector2(1f, 1f), new Vector2(-150, -60), new Vector2(220, 80));
-
-        // Слева — герои
-        var heroCol = Column(r, "Heroes", 0f, 225f, 420f, new Color(0.12f, 0.2f, 0.34f, 0.95f), out TMP_Text heroesHeader);
-        var heroList = List(heroCol, 105f);
-        var row = Object.Instantiate(srcRow, heroList);
-        row.name = "RowTemplate";
-        row.gameObject.SetActive(false);
-
-        // В центре — база
-        var baseCol = Column(r, "Base", 0.5f, 0f, 560f, new Color(0.12f, 0.14f, 0.19f, 0.95f), out TMP_Text baseHeader);
-        baseHeader.text = "БАЗА";
-        var baseText = Text("BaseText", baseCol, "", 26, Color.white, TextAlignmentOptions.Top, false);
-        Place(baseText.rectTransform, new Vector2(0.5f, 1f), new Vector2(0, -170), new Vector2(520, 130));
-        Button buy = Btn("BuyButton", baseCol, "КУПИТЬ ГЕРОЕВ", new Color(0.91f, 0.525f, 0.165f), new Vector2(0, -290), 40);
-        Button inventory = Btn("InventoryButton", baseCol, "ИНВЕНТАРЬ", new Color(0.55f, 0.33f, 0.82f), new Vector2(0, -385), 34);
-        Button baseBtn = Btn("BaseButton", baseCol, "БАЗА И ПОСТРОЙКИ", new Color(0.184f, 0.482f, 0.878f), new Vector2(0, -480), 34);
-
-        // Побеждённые герои (под кнопками базы)
-        var defeatedHeader = Text("DefeatedHeader", baseCol, "ПОБЕЖДЁННЫЕ ГЕРОИ", 24, new Color(1f, 0.55f, 0.5f), TextAlignmentOptions.Center, true);
-        Place(defeatedHeader.rectTransform, new Vector2(0.5f, 1f), new Vector2(0, -545), new Vector2(520, 34));
-        var defeatedList = new GameObject("DefeatedList", typeof(RectTransform), typeof(VerticalLayoutGroup)).GetComponent<RectTransform>();
-        defeatedList.SetParent(baseCol, false);
-        defeatedList.anchorMin = new Vector2(0, 0);
-        defeatedList.anchorMax = new Vector2(1, 1);
-        defeatedList.offsetMin = new Vector2(16, 10);
-        defeatedList.offsetMax = new Vector2(-16, -565);
-        var dvl = defeatedList.GetComponent<VerticalLayoutGroup>();
-        dvl.spacing = 6;
-        dvl.childControlHeight = false;
-        dvl.childControlWidth = true;
-        dvl.childForceExpandHeight = false;
-        var defeatedRow = Img("DefeatedTemplate", defeatedList, rounded, new Color(0.35f, 0.15f, 0.15f, 0.9f));
-        defeatedRow.type = Image.Type.Sliced;
-        defeatedRow.rectTransform.sizeDelta = new Vector2(520, 50);
-        defeatedRow.gameObject.AddComponent<LayoutElement>().preferredHeight = 50;
-        var dName = Text("Name", defeatedRow.rectTransform, "Герой", 22, Color.white, TextAlignmentOptions.Left, false);
-        Place(dName.rectTransform, new Vector2(0f, 0.5f), new Vector2(130, 0), new Vector2(240, 44));
-        var dBtnImg = Img("Button", defeatedRow.rectTransform, rounded, new Color(0.247f, 0.639f, 0.302f));
-        dBtnImg.type = Image.Type.Sliced;
-        Place(dBtnImg.rectTransform, new Vector2(1f, 0.5f), new Vector2(-125, 0), new Vector2(240, 42));
-        var dBtn = dBtnImg.gameObject.AddComponent<Button>();
-        var dColors = dBtn.colors;
-        dColors.disabledColor = new Color(0.45f, 0.45f, 0.5f, 0.8f);
-        dBtn.colors = dColors;
-        Stretch(Text("Text", dBtnImg.rectTransform, "ВОССТАНОВИТЬ", 18, Color.white, TextAlignmentOptions.Center, false).rectTransform);
-        defeatedRow.gameObject.SetActive(false);
-
-        // Внизу — "ГОТОВ"
-        var readyImg = Img("ReadyButton", r, rounded, new Color(0.247f, 0.639f, 0.302f));
-        readyImg.type = Image.Type.Sliced;
-        Place(readyImg.rectTransform, new Vector2(0.5f, 0f), new Vector2(0, 55), new Vector2(380, 84));
-        var ready = readyImg.gameObject.AddComponent<Button>();
-        Stretch(Text("Text", readyImg.rectTransform, "ГОТОВ", 42, Color.white, TextAlignmentOptions.Center, false).rectTransform);
-
-        var ui = win.gameObject.AddComponent<TacticalPauseUI>();
-        var so = new SerializedObject(ui);
-        so.FindProperty("root").objectReferenceValue = root.gameObject;
-        so.FindProperty("timerText").objectReferenceValue = timer;
-        so.FindProperty("nextText").objectReferenceValue = next;
-        so.FindProperty("readyButton").objectReferenceValue = ready;
-        so.FindProperty("heroesHeader").objectReferenceValue = heroesHeader;
-        so.FindProperty("heroList").objectReferenceValue = heroList;
-        so.FindProperty("rowTemplate").objectReferenceValue = row;
-        so.FindProperty("baseText").objectReferenceValue = baseText;
-        so.FindProperty("buyButton").objectReferenceValue = buy;
-        so.FindProperty("inventoryButton").objectReferenceValue = inventory;
-        so.FindProperty("baseButton").objectReferenceValue = baseBtn;
-        so.FindProperty("defeatedHeader").objectReferenceValue = defeatedHeader;
-        so.FindProperty("defeatedList").objectReferenceValue = defeatedList;
-        so.FindProperty("defeatedTemplate").objectReferenceValue = defeatedRow.gameObject;
-        so.FindProperty("roster").objectReferenceValue = roster;
-        so.FindProperty("heroInfo").objectReferenceValue = heroInfo;
-        so.FindProperty("baseWindow").objectReferenceValue = baseWindow;
-        so.ApplyModifiedPropertiesWithoutUndo();
-        // Окно паузы — под окнами драфта и выбора защитников, но над остальным интерфейсом
-        win.SetSiblingIndex(canvas.Find("DraftWindow") != null ? canvas.Find("DraftWindow").GetSiblingIndex() : canvas.childCount - 1);
+        // 5) Окно тактической паузы (вкладки Фракция / Герои / База) — собирает PauseBuilder
+        PauseBuilder.BuildPause(canvas);
 
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene);

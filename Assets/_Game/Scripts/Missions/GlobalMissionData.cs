@@ -49,6 +49,9 @@ public class GlobalMissionData : ScriptableObject
     }
 
     [Header("Охрана")]
+    [Tooltip("Сколько героев рекомендуется (1 — «1 и более», ... 4 — «4 героя»)")]
+    [Range(1, 4)] public int recommendedHeroes = 3;
+
     [Tooltip("Волны охраны — по одной на каждую территорию арены (обычно 3)")]
     public GuardWave[] waves = new GuardWave[0];
 
@@ -58,6 +61,9 @@ public class GlobalMissionData : ScriptableObject
 
     [Tooltip("Плутоний")]
     public int rewardPlutonium = 0;
+
+    [Tooltip("Очки фракции победителю")]
+    public int rewardFactionPoints = 400;
 
     [Tooltip("Сколько случайных артефактов получает победитель")]
     [Min(0)] public int rewardArtifacts = 1;
@@ -76,9 +82,9 @@ public class GlobalMissionData : ScriptableObject
         }
     }
 
-    /// <summary>Краткое описание охраны: "3 территории, 6 бойцов, сила 900".</summary>
+    /// <summary>Краткое описание охраны: "3 территории, 6 бойцов" (без показателя силы).</summary>
     public string GetGuardText() =>
-        $"{(waves != null ? waves.Length : 0)} территории, {GuardCount} бойцов, сила {BattleCalculator.GarrisonPower(waves)}";
+        $"{(waves != null ? waves.Length : 0)} территории, {GuardCount} бойцов";
 
     /// <summary>Текст награды (с цветами).</summary>
     public string GetRewardText()
@@ -86,6 +92,7 @@ public class GlobalMissionData : ScriptableObject
         var sb = new StringBuilder();
         if (rewardGold > 0) sb.Append($"<color=#FFD84A>+{rewardGold} золота</color>   ");
         if (rewardPlutonium > 0) sb.Append($"<color=#C58BFF>+{rewardPlutonium} плутония</color>   ");
+        if (rewardFactionPoints > 0) sb.Append(FactionManager.PointsText(rewardFactionPoints) + "   ");
         if (rewardArtifacts > 0) sb.Append($"<color=#FF9EE6>+{rewardArtifacts} {(rewardArtifacts == 1 ? "артефакт" : "артефакта")}</color>   ");
         if (rewardHero) sb.Append($"<color=#7FE0FF>случайный герой 1–{rewardHeroMaxStars} зв.</color>");
         return sb.ToString().Trim();

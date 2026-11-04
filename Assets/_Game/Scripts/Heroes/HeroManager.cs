@@ -35,8 +35,10 @@ public class HeroManager : MonoBehaviour
     [SerializeField] private int maxHeroLevel = 5;
     [Tooltip("Сколько плутония стоит повышение звезды (на 5 уровне, один раз)")]
     [SerializeField] private int starUpPlutoniumCost = 150;
-    [Tooltip("Сколько фаз побеждённый герой ждёт, прежде чем его можно восстановить")]
+    [Tooltip("Сколько фаз побеждённый герой ждёт, прежде чем его можно восстановить (Лазарет сокращает)")]
     [SerializeField] private int defeatCooldownPhases = 2;
+    [Tooltip("Сколько плутония стоит одна жизнь в Лазарете")]
+    [SerializeField] private int lifePlutoniumCost = 100;
 
     private readonly List<HeroInstance> playerHeroes = new List<HeroInstance>(); // Нанятые герои игрока
     private readonly List<HeroInstance> enemyHeroes = new List<HeroInstance>();  // Нанятые злодеи врага
@@ -84,9 +86,19 @@ public class HeroManager : MonoBehaviour
         var list = new List<HeroData>();
         if (heroPool != null)
             foreach (HeroData h in heroPool)
-                if (h != null && h.side == side && h.hireable) list.Add(h);
+                if (h != null && h.side == side && h.hireable && (h.stars < 3 || IsFactionHero(team, h))) list.Add(h); // 3★ — только своей фракции
         list.Sort((a, b) => a.stars != b.stars ? a.stars.CompareTo(b.stars) : a.hireCost.CompareTo(b.hireCost));
         return list;
+    }
+
+    /// <summary>
+    /// 3-звёздочный герой фракции стороны (FactionData → Faction Hero). Если фракции нет (Полигон, старые сцены) —
+    /// любой 3★ считается своим.
+    /// </summary>
+    public bool IsFactionHero(Team team, HeroData data)
+    {
+        FactionData f = FactionManager.GetFaction(team);
+        return f == null || f.factionHero == null || f.factionHero == data;
     }
 
     /// <summary>Нанят ли уже этот герой.</summary>
@@ -147,7 +159,13 @@ public class HeroManager : MonoBehaviour
         foreach (DefeatedHero d in GetDefeated(team))
             if (d.hero.Data == data) { reason = "Побеждён"; return false; }
         if (IsHired(team, data)) { reason = "Нанят"; return false; }
-        if (data.stars > GetMaxStars(team))
+        if (data.stars >= 3)
+        {
+            // 3★ — только герой своей фракции и только когда открыты все иконки фракции
+            if (!IsFactionHero(team, data)) { reason = "Чужая фракция"; return false; }
+            if (!FactionManager.IsComplete(team)) { reason = "Фракция не прокачана"; return false; }
+        }
+        else if (data.stars > GetMaxStars(team))
         {
             reason = GetMaxStars(team) <= 1 ? "Нужны Бараки" : "Нужны Бараки ур. 2";
             return false;
@@ -162,6 +180,8 @@ public class HeroManager : MonoBehaviour
         if (!CanHire(team, data, out error))
         {
             if (error == "Нет мест") error = "Достигнут лимит героев — постройте Резервные комнаты";
+            else if (error == "Фракция не прокачана") error = $"3-звёздочного героя можно нанять, только когда открыты все {(FactionManager.Instance != null ? FactionManager.Instance.IconCount : 5)} иконок фракции";
+            else if (error == "Чужая фракция") error = "Этот 3-звёздочный герой — из другой фракции";
             else if (error == "Только в паузе") error = "Нанимать героев можно только на драфте и в тактической паузе";
             return false;
         }
@@ -274,7 +294,18 @@ public class HeroManager : MonoBehaviour
     public class DefeatedHero
     {
         public HeroInstance hero;  // Сам герой (уровень, опыт, звезда сохраняются)
-        public int phasesLeft;     // Сколько фаз ещё ждать
+        public int phasesWaited;   // Сколько фаз уже прошло после поражения
+
+        /// <summary>Сколько фаз ещё ждать (Лазарет на базе сокращает ожидание — считается каждый раз заново).</summary>
+        public int phasesLeft => HeroManager.Instance != null
+            ? Mathf.Max(0, HeroManager.Instance.RecoveryPhases(hero.Owner) - phasesWaited) : 0;
+    }
+
+    /// <summary>Сколько фаз побеждённый герой стороны ждёт восстановления (2 без Лазарета, меньше с Лазаретом).</summary>
+    public int RecoveryPhases(Team team)
+    {
+        MainBase b = MainBase.Get(team);
+        return Mathf.Max(0, defeatCooldownPhases - (b != null ? b.RecoveryPhasesCut : 0));
     }
 
     private readonly List<DefeatedHero> playerDefeated = new List<DefeatedHero>(); // Побеждённые герои игрока
@@ -300,8 +331,11 @@ public class HeroManager : MonoBehaviour
         var list = hero.Owner == Team.Player ? playerHeroes : enemyHeroes;
         list.Remove(hero);
         if (ArtifactManager.Instance != null) ArtifactManager.Instance.ReturnAll(hero);
-        (hero.Owner == Team.Player ? playerDefeated : enemyDefeated).Add(new DefeatedHero { hero = hero, phasesLeft = defeatCooldownPhases });
-        if (hero.Owner == Team.Player) ToastUI.Show($"{hero.Data.displayName} побеждён! Восстановить можно через {defeatCooldownPhases} фазы");
+        (hero.Owner == Team.Player ? playerDefeated : enemyDefeated).Add(new DefeatedHero { hero = hero, phasesWaited = 0 });
+        int wait = RecoveryPhases(hero.Owner);
+        if (hero.Owner == Team.Player) ToastUI.Show(wait > 0
+            ? $"{hero.Data.displayName} побеждён! Восстановить можно через {wait} ф."
+            : $"{hero.Data.displayName} побеждён! Восстановить можно в следующей паузе (Лазарет)");
         HeroesChanged?.Invoke(hero.Owner);
     }
 
@@ -310,7 +344,7 @@ public class HeroManager : MonoBehaviour
     {
         foreach (List<DefeatedHero> list in new[] { playerDefeated, enemyDefeated })
             foreach (DefeatedHero d in list)
-                if (d.phasesLeft > 0) d.phasesLeft--;
+                d.phasesWaited++;
         HeroesChanged?.Invoke(Team.Player);
     }
 
@@ -339,6 +373,35 @@ public class HeroManager : MonoBehaviour
         d.hero.Status = HeroStatus.Free;
         (team == Team.Player ? playerHeroes : enemyHeroes).Add(d.hero);
         HeroesChanged?.Invoke(team);
+        return true;
+    }
+
+    // ---------- Лазарет: покупка жизней ----------
+
+    /// <summary>Сколько плутония стоит одна жизнь.</summary>
+    public int LifeCost => lifePlutoniumCost;
+
+    /// <summary>
+    /// Можно ли купить герою жизнь: нужен Лазарет, жизней меньше 3, герой не на задании
+    /// (без учёта плутония). Если нельзя — reason объясняет почему.
+    /// </summary>
+    public bool CanBuyLife(HeroInstance hero, out string reason)
+    {
+        reason = null;
+        MainBase b = MainBase.Get(hero.Owner);
+        if (b == null || !b.HasInfirmary) { reason = "Нужен Лазарет"; return false; }
+        if (hero.Lives >= HeroInstance.MaxLives) { reason = "Жизней максимум"; return false; }
+        if (hero.Status == HeroStatus.OnMission) { reason = "Герой на задании"; return false; }
+        return true;
+    }
+
+    /// <summary>Купить герою одну жизнь за плутоний (максимум 3 жизни).</summary>
+    public bool TryBuyLife(HeroInstance hero, out string error)
+    {
+        if (!CanBuyLife(hero, out error)) return false;
+        if (!ResourceManager.Instance.TrySpend(hero.Owner, 0, lifePlutoniumCost)) { error = "Не хватает плутония"; return false; }
+        hero.Lives++;
+        HeroesChanged?.Invoke(hero.Owner);
         return true;
     }
 

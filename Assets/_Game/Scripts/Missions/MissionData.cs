@@ -40,12 +40,14 @@ public class MissionData : ScriptableObject
     public float lifetime = 60f;
 
     [Header("Сложность")]
-    [Tooltip("Рекомендуемая сила команды. Если сила меньше — есть шанс провала")]
-    public int requiredPower = 300;
+    [Tooltip("Сколько героев рекомендуется (1 — \"1 и более\", ... 4 — \"4 героя\"). Героев меньше — есть шанс провала")]
+    [Range(1, 4)] public int recommendedHeroes = 1;
 
     [Header("Награда")]
     public int rewardGold = 300;
     public int rewardPlutonium = 0;
+    [Tooltip("Очки фракции за выполнение")]
+    public int rewardFactionPoints = 150;
 
     [Tooltip("Все герои команды получают +1 уровень")]
     public bool levelUpTeam = false;
@@ -68,11 +70,14 @@ public class MissionData : ScriptableObject
         }
     }
 
-    /// <summary>Шанс успеха для команды с силой power (0..1). Сила не ниже рекомендуемой — 100%.</summary>
-    public float GetSuccessChance(int power)
+    /// <summary>
+    /// Шанс успеха для команды из heroes героев (0..1). Героев не меньше рекомендуемого — 100%,
+    /// меньше — пропорционально (1 герой на "3 и более" — 33%).
+    /// </summary>
+    public float GetSuccessChance(int heroes)
     {
-        if (requiredPower <= 0) return 1f;
-        return Mathf.Clamp((float)power / requiredPower, 0.2f, 1f);
+        if (recommendedHeroes <= 1) return 1f;
+        return Mathf.Clamp((float)heroes / recommendedHeroes, 0.2f, 1f);
     }
 
     /// <summary>Текст награды для окна миссии.</summary>
@@ -81,6 +86,7 @@ public class MissionData : ScriptableObject
         var sb = new StringBuilder();
         if (rewardGold > 0) sb.Append($"<color=#FFD84A>+{rewardGold} золота</color>   ");
         if (rewardPlutonium > 0) sb.Append($"<color=#C58BFF>+{rewardPlutonium} плутония</color>   ");
+        if (rewardFactionPoints > 0) sb.Append(FactionManager.PointsText(rewardFactionPoints) + "   ");
         if (unlockBuilding != null) sb.Append($"<color=#7FD8FF>Новая постройка: {unlockBuilding.displayName}</color>");
         return sb.ToString().Trim();
     }

@@ -84,20 +84,21 @@ public class MapObjectWindowUI : WindowUI
         iconLetter.text = d.iconLetter;
         titleText.text = d.displayName;
         descText.text = d.description;
-        bonusText.text = d.GetBonusText();
+        bonusText.text = $"Награда победителю (сразу, объект исчезнет):\n{d.GetEventRewardText()}";
 
         MainBase myBase = MainBase.Get(Team.Player);
         string guard = myBase != null && myBase.HasRadar
             ? $"<color=#FFFFFF>{d.GetGuardText()}</color>"
             : "<color=#8792A6>??? (нужен Радар)</color>";
-        infoText.text = $"Подготовка к бою: <color=#FFFFFF>{current.PrepTime:0} с</color>\nОхрана: {guard}";
+        infoText.text = $"{Recommendation.Line(current.RecommendedHeroes, Team.Player)}\n" +
+                        $"Подготовка к бою: <color=#FFFFFF>{current.PrepTime:0} с</color>\nОхрана: {guard}";
 
         ownerText.text = $"Владелец: {current.OwnerText}";
         statusText.text = "";
         if (!current.IsActive)
         {
             // Объект закрыт до события
-            statusText.text = "<color=#FFD84A>Объект неактивен. Его откроет событие — тогда за него можно бороться</color>";
+            statusText.text = "<color=#FFD84A>Объект неактивен. Его откроет событие — кто первым победит охрану, получит награду</color>";
             captureButton.interactable = false;
             captureText.text = "НЕАКТИВЕН";
         }
@@ -109,7 +110,7 @@ public class MapObjectWindowUI : WindowUI
         else
         {
             captureButton.interactable = true;
-            captureText.text = "ЗАХВАТИТЬ";
+            captureText.text = "НАПАСТЬ";
         }
     }
 

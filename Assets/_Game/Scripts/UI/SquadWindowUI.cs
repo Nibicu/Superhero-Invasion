@@ -110,6 +110,14 @@ public class SquadWindowUI : WindowUI
 
     // ---------- Отрисовка ----------
 
+    /// <summary>Сколько героев рекомендует цель (миссия — из файла, место боя — своё; 0 — цели нет).</summary>
+    private static int RecommendedFor(ISquadTarget t)
+    {
+        if (t is MissionMarker m) return m.Data.recommendedHeroes;
+        if (t is AttackableSite s) return s.RecommendedHeroes;
+        return 0;
+    }
+
     /// <summary>Перерисовать окно.</summary>
     public override void Refresh()
     {
@@ -130,10 +138,14 @@ public class SquadWindowUI : WindowUI
         // Итоги
         int count = captain != null ? 1 : 0;
         int hp = captain != null ? captain.Stats.hp : 0;
-        int power = captain != null ? BattleCalculator.HeroPower(captain) : 0;
         foreach (HeroInstance m in members)
-            if (m != null) { count++; hp += m.Stats.hp; power += BattleCalculator.HeroPower(m); }
-        summaryText.text = $"Героев: {count} / {MemberLimit + 1}   •   Здоровье: {hp}   •   Сила: {power}";
+            if (m != null) { count++; hp += m.Stats.hp; }
+        // Вместо силы — рекомендация цели по числу героев (зелёная, если героев хватает)
+        int rec = RecommendedFor(target);
+        string recText = rec > 0
+            ? $"   •   <color={(Recommendation.Enough(count, rec) ? "#6EE07A" : "#FFB84A")}>{Recommendation.Line(rec, Team.Player)}</color>"
+            : "";
+        summaryText.text = $"Героев: {count} / {MemberLimit + 1}   •   Здоровье: {hp}{recText}";
         captainBonusText.text = captain != null && !string.IsNullOrEmpty(captain.Data.captainBonus)
             ? $"Бонус капитана: <color=#FFD84A>{captain.Data.captainBonus}</color>"
             : "Бонус капитана: —";

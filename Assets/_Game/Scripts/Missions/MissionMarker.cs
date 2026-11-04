@@ -151,13 +151,14 @@ public class MissionMarker : MonoBehaviour, ISquadTarget
         Squad squad = unit.Squad;
         Team team = squad.Owner;
 
-        bool success = Random.value <= Data.GetSuccessChance(squad.Power);
+        bool success = Random.value <= Data.GetSuccessChance(squad.Size);
         // Опыт: 20 за выполненную миссию, 8 — за проваленную
         foreach (HeroInstance h in new System.Collections.Generic.List<HeroInstance>(squad.AllHeroes))
             HeroManager.Instance.GiveXp(h, success ? 20 : 8);
         if (success)
         {
             ResourceManager.Instance.Add(team, Data.rewardGold, Data.rewardPlutonium);
+            FactionManager.AddPoints(team, Data.rewardFactionPoints); // очки фракции
             // Награда "+1 уровень героям" убрана — слишком ускоряла игру (герои растут за счёт опыта)
             if (Data.unlockBuilding != null)
             {

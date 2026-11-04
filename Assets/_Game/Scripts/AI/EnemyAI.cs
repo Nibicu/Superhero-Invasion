@@ -2,21 +2,21 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Искусственный интеллект врага. Раз в thinkInterval секунд "думает":
-///  1) собирает команды из свободных злодеев;
-///  2) отправляет свободные здоровые команды к самой выгодной цели. Важность целей:
-///     портал и объект события → общая миссия → миссии злодеев → нападение на базу.
-///     Объект события тем ценнее, чем ближе конец события (артефакт получит последний владелец).
-///     На портал ходит и тогда, когда закрыть его сразу не получится — набирать прогресс по территориям.
-///     Базу противника атакует, если она пустая, если у неё мало HP или если наша команда
-///     точно сильнее гарнизона и дома остаётся ещё команда. Во время события и первые 2 минуты игры
-///     (мирное время) на базу не нападает;
-///  3) за полминуты до события не отправляет команды на долгие дела — готовится к событию;
-///     обычно держит команды по 2–4 героя (больше команд — больше миссий и денег), а если
-///     для портала, объекта события или общей миссии ни одной команде не хватает сил —
-///     собирает "ударную" команду до 5 героев из других команд; когда важных целей нет — делит обратно;
-///  4) отступает, если охрана цели оказалась сильнее (на верное поражение не идёт);
-///  5) тратит золото на одно действие: найм, постройку по плану, улучшение построек или базы.
+/// Искусственный интеллект врага. Раз в thinkInterval секунд "думает".
+/// Показатель силы ИИ больше не сравнивает (сила и реальный исход боя — разные вещи) — смотрит на ЧИСЛО героев:
+///  1) собирает команды из свободных злодеев (по 4);
+///  2) ВАЖНЫЕ ЦЕЛИ — общие миссии, объект события, портал и нападение на базу противника — большой приоритет,
+///     туда идёт только ПОЛНАЯ команда (все 4 слота). Если полной команды дома нет — собирает "ударную"
+///     из сильнейших (прокачанных) героев других команд на базе; пока важная цель ждёт, дома героев
+///     на обычные миссии не отпускает;
+///  3) обычные миссии — команда не меньше рекомендованного числа героев (или с хорошим шансом);
+///  4) отступает, если в битве за флаг у противника героев больше (3 против 4) — потом придёт полной командой;
+///  5) гарнизон дома не держит. Если на базу напали — отзывает команды с ОБЫЧНЫХ миссий (чтобы дома было 3–4 героя),
+///     команды с важных целей не трогает. Только если у базы осталось HP на одну атаку — отзывает и самую сильную;
+///  6) в Лазарете покупает жизни героям, у которых осталась 1 жизнь (прокачанным — первым);
+///  7) тратит золото на одно действие: найм, постройку по плану, улучшение построек или базы.
+/// Объект события тем ценнее, чем ближе конец события. Во время события и первые 2 минуты игры
+/// (мирное время) на базу не нападает; за полминуты до события не уходит на долгие дела.
 /// ИИ пользуется теми же правилами, что и игрок (ResourceManager, MainBase,
 /// HeroManager, SquadManager) — никаких читов.
 /// </summary>
@@ -43,10 +43,8 @@ public class EnemyAI : MonoBehaviour
     [SerializeField] private int fullSquadSize = 4;
     [Tooltip("Команда с здоровьем ниже этой доли сначала лечится на базе")]
     [SerializeField, Range(0f, 1f)] private float minHpToSend = 0.7f;
-    [Tooltip("ИИ берёт миссию, только если шанс успеха не ниже этого")]
+    [Tooltip("ИИ берёт миссию, только если шанс успеха (по числу героев) не ниже этого")]
     [SerializeField, Range(0f, 1f)] private float minMissionChance = 0.6f;
-    [Tooltip("Оставлять одну команду дома гарнизоном (если команд 2 и больше). Сильные команды уходят захватывать объекты")]
-    [SerializeField] private bool keepGarrison = true;
     [Tooltip("Насколько ИИ хочет атаковать базу противника (ценность атаки)")]
     [SerializeField] private float baseAttackValue = 600f;
     [Tooltip("Во сколько раз объекты, портал и общая миссия ценнее остальных целей")]
@@ -63,7 +61,7 @@ public class EnemyAI : MonoBehaviour
     [Header("Перестройка команд")]
     [Tooltip("Новую команду ИИ создаёт, только если для неё есть хотя бы столько свободных героев")]
     [SerializeField] private int minSquadSize = 2;
-    [Tooltip("Собирать ударную команду (до 5 героев) из других команд, если для события, портала или общей миссии не хватает сил")]
+    [Tooltip("Собирать полную ударную команду (4 героя) из других команд для события, портала или общей миссии")]
     [SerializeField] private bool allowRegroup = true;
 
     [Header("События")]
@@ -107,12 +105,14 @@ public class EnemyAI : MonoBehaviour
     private void Think()
     {
         CleanupOrders();
+        DefendHome();       // на базу напали — отозвать команды с обычных миссий
         RetreatFromLostFights();
-        Regroup();          // не хватает сил на важную цель — собрать ударную команду
+        Regroup();          // для важной цели нет полной команды — собрать ударную
         SplitBigSquads();   // важных целей нет — снова команды по 2–4 героя
         FormSquads();
         SendDefenders();
         DispatchSquads();
+        BuyLives();         // Лазарет: жизни героям с 1 жизнью
 
         // Плутоний тратится отдельно: прокачка в Лаборатории, потом усиление (если есть Институт)
         // Прокачка уровня за плутоний и усиление убраны — герои растут за счёт опыта
@@ -182,9 +182,9 @@ public class EnemyAI : MonoBehaviour
     }
 
     /// <summary>
-    /// Отступление: если команда едет к цели или готовится к бою, а охрана цели
-    /// оказалась сильнее ("вы точно проиграете") — отзываем команду домой.
-    /// К базе с гарнизоном без большинства объектов тоже не идём.
+    /// Отступление (по числу героев, не по силе): в битве за флаг у противника героев больше, чем у нас
+    /// (например, 3 против 4), — отзываем команду домой; Regroup потом соберёт полную команду из 4.
+    /// Нападение на базу в неподходящий момент (событие, мирное время) тоже отменяем.
     /// </summary>
     private void RetreatFromLostFights()
     {
@@ -195,23 +195,74 @@ public class EnemyAI : MonoBehaviour
             if (site.TryGetDefendingTeam(out Team owner) && owner == team) continue; // это защита своего объекта
             if (!SM.CanRetreat(squad, out _)) continue; // бой уже начался — поздно
 
-            int power = BattleCalculator.SquadPower(squad);
-            bool lose = BattleCalculator.Forecast(power, site.DefenderPower) == BattleForecast.Lose;
-            // Портал: смотрим на НАШИ непройденные территории; если следующую потянем — идём набирать прогресс
-            // Если едем перебивать противника (битва за флаг) — охрану не считаем, важна только его команда
-            if (site is Portal pt)
-                lose = !(pt.IsContested || (pt.IsUnderAttack && pt.AttackingTeam != team))
-                       && BattleCalculator.Forecast(power, pt.RemainingPower(team)) == BattleForecast.Lose && !CanFarmPortal(pt, power);
-            // Битва за флаг: команда противника намного сильнее — тоже уходим
-            SquadUnit foe = site.IsContested ? site.PlayerContestant : null;
-            if (foe != null && foe.Squad.Owner != team &&
-                BattleCalculator.Forecast(BattleCalculator.SquadPower(squad), BattleCalculator.SquadPower(foe.Squad)) == BattleForecast.Lose)
-                lose = true;
+            // Команда противника у той же цели: она в битве за флаг или напала первой (мы едем перебивать)
+            Squad rival = null;
+            if (site.IsContested)
+            {
+                SquadUnit foe = site.PlayerContestant != null && site.PlayerContestant.Squad.Owner != team ? site.PlayerContestant : site.EnemyContestant;
+                if (foe != null && foe.Squad.Owner != team) rival = foe.Squad;
+            }
+            else if (site.IsUnderAttack && site.AttackingTeam != team) rival = site.Attacker.Squad;
+
+            bool outnumbered = rival != null && rival.Size > squad.Size;
             bool badBaseAttack = site is MainBase mb && !MayAttackBase(mb);
-            if (!lose && !badBaseAttack) continue;
+            if (!outnumbered && !badBaseAttack) continue;
             if (SM.TryRetreat(squad, out _))
+            {
+                orders.Remove(squad);
                 Log(badBaseAttack ? $"команда {squad.Number} отменяет нападение на «{site.SiteName}»"
-                                  : $"команда {squad.Number} отступает от «{site.SiteName}»: охрана слишком сильная");
+                                  : $"команда {squad.Number} ({squad.Size} гер.) отступает от «{site.SiteName}»: у противника {rival.Size} — придём полной командой");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Защита своей базы без гарнизона: на базу напали (идёт подготовка) — отзываем команды с ОБЫЧНЫХ миссий,
+    /// пока дома (и на пути домой) не наберётся 4 героя. Команды с важных целей (портал, объект, общая миссия)
+    /// не трогаем. Исключение: у базы HP только на одну атаку — домой отзывается и самая сильная команда.
+    /// </summary>
+    private void DefendHome()
+    {
+        MainBase home = Base;
+        if (home == null || !home.IsUnderAttack || home.Phase != AttackPhase.Preparing || home.AttackingTeam == team) return;
+
+        // Сколько героев будет дома: уже дома + команды, которые возвращаются
+        int coming = SM.GetHeroesAtHome(team).Count;
+        foreach (Squad s in SM.GetSquads(team))
+            if (s.Status == SquadStatus.Returning) coming += s.Size;
+        bool lastStand = home.Hp <= home.DamagePerAttack; // ещё одна атака — и поражение
+
+        // Последний рубеж: самая сильная команда (откуда угодно) — домой
+        if (lastStand)
+        {
+            Squad strongest = null;
+            foreach (Squad s in SM.GetSquads(team))
+            {
+                if (s.Status == SquadStatus.AtBase || s.Status == SquadStatus.Returning || !SM.CanRetreat(s, out _)) continue;
+                if (strongest == null || TeamPower(s) > TeamPower(strongest)) strongest = s;
+            }
+            if (strongest != null && SM.TryRetreat(strongest, out _))
+            {
+                orders.Remove(strongest);
+                coming += strongest.Size;
+                Log($"база почти разрушена — самая сильная команда {strongest.Number} возвращается защищать");
+            }
+        }
+        if (coming >= FullSize) return;
+
+        // Команды с обычных миссий — ближние первыми (успеют вернуться)
+        var candidates = new List<Squad>();
+        foreach (var pair in orders)
+            if (pair.Value is MissionMarker && pair.Key.Status != SquadStatus.Returning && SM.CanRetreat(pair.Key, out _))
+                candidates.Add(pair.Key);
+        candidates.Sort((a, b) => SM.EstimateTravelTime(a, orders[a]).CompareTo(SM.EstimateTravelTime(b, orders[b]))); // путь до миссии ≈ путь обратно
+        foreach (Squad s in candidates)
+        {
+            if (coming >= FullSize) break;
+            if (!SM.TryRetreat(s, out _)) continue;
+            orders.Remove(s);
+            coming += s.Size;
+            Log($"на базу напали — команда {s.Number} бросает миссию и едет защищать базу (дома будет героев: {coming})");
         }
     }
 
@@ -251,44 +302,58 @@ public class EnemyAI : MonoBehaviour
     }
 
     /// <summary>
-    /// Можно ли вообще думать о нападении на базу противника:
-    /// не во время события и не перед ним (есть цели важнее), и
-    /// база пустая, или у неё мало HP, или у нас есть вторая команда (одна остаётся дома).
-    /// Хватит ли сил конкретной команде — решает BaseAttackForecastOk.
+    /// Можно ли вообще думать о нападении на базу противника: не в мирное время в начале игры,
+    /// не во время события и не перед ним (там цели важнее). Гарнизон дома ИИ больше не держит.
     /// </summary>
     private bool MayAttackBase(MainBase enemyBase)
     {
         if (playTime < baseAttackGrace) return false; // мирное время в начале игры
         if (EventRunning || EventSoon) return false;
-        if (enemyBase.DefenderPower <= 0) return true;
-        if (enemyBase.Hp <= finishBaseHp) return true;
-        return SM.GetSquads(team).Count >= 2;
+        return enemyBase.Hp > 0;
+    }
+
+    /// <summary>Сколько героев защищает базу противника прямо сейчас (дома, до 4).</summary>
+    private static int DefendersCount(MainBase b)
+    {
+        Squad d = b.FindDefender();
+        return d != null ? d.Size : 0;
+    }
+
+    // ---------- Число героев ----------
+
+    /// <summary>Полная команда: капитан + все слоты (4 героя).</summary>
+    private int FullSize => SM.MaxMembers + 1;
+
+    /// <summary>Сколько всего героев у ИИ может ходить на задания (без запасных).</summary>
+    private int TotalHeroes
+    {
+        get
+        {
+            int n = 0;
+            foreach (HeroInstance h in HM.GetHeroes(team)) if (!HM.IsReserve(h)) n++;
+            return n;
+        }
     }
 
     /// <summary>
-    /// Хватит ли команде сил на нападение: на пустую базу — всегда; добить базу с малым HP —
-    /// при равных силах; иначе — только если команда точно сильнее гарнизона.
+    /// Сколько героев нужно для важной цели: полная команда (4). Если у ИИ всего меньше 4 героев —
+    /// все, что есть, но не меньше рекомендации цели.
     /// </summary>
-    private bool BaseAttackForecastOk(MainBase enemyBase, int squadPower, out BattleForecast f)
-    {
-        f = BattleCalculator.Forecast(squadPower, enemyBase.DefenderPower);
-        if (enemyBase.DefenderPower <= 0) return true;
-        if (enemyBase.Hp <= finishBaseHp) return f != BattleForecast.Lose;
-        return f == BattleForecast.Win;
-    }
+    private int NeedSize(AttackableSite site) => Mathf.Min(FullSize, Mathf.Max(site.RecommendedHeroes, TotalHeroes));
 
-    /// <summary>Хватит ли команде сил пройти хотя бы следующую территорию портала (прогресс сохранится).</summary>
-    private bool CanFarmPortal(Portal p, int squadPower)
+    /// <summary>Сила команды — только чтобы выбрать, какие герои "прокачаннее" (решения о бое по ней не принимаются).</summary>
+    private static int TeamPower(Squad s)
     {
-        int next = p.NextWavePower(team);
-        return next > 0 && p.GetProgress(team) + 1 < p.TerritoryCount && squadPower * 0.7f >= next;
+        int p = 0;
+        foreach (HeroInstance h in s.AllHeroes) p += HeroPower(h);
+        return p;
     }
 
     // ---------- Перестройка команд ----------
 
     /// <summary>
     /// Важные цели сейчас: портал, объект события (не наш), общая миссия.
-    /// Для каждой — какая сила нужна (оставшаяся охрана).
+    /// На каждую идёт только полная команда (NeedSize).
     /// </summary>
     private List<AttackableSite> ImportantTargets()
     {
@@ -303,9 +368,6 @@ public class EnemyAI : MonoBehaviour
         return list;
     }
 
-    /// <summary>Какая сила нужна, чтобы взять цель (для портала — только наши непройденные территории).</summary>
-    private int NeededPower(AttackableSite site) => site is Portal p ? p.RemainingPower(team) : site.DefenderPower;
-
     /// <summary>Цель ещё актуальна (событие идёт, портал не закрыт, миссия не выполнена, объект не наш).</summary>
     private bool IsStillImportant(AttackableSite site)
     {
@@ -317,63 +379,58 @@ public class EnemyAI : MonoBehaviour
     }
 
     /// <summary>
-    /// Ударная команда: если на важную цель не хватает сил ни одной команде на базе,
-    /// берём самую сильную и добавляем к ней сильнейших героев из других команд на базе
-    /// (и свободных) — до 5 героев. Перестраиваем, только если такой команде сил хватит.
+    /// Ударная команда: для важной цели (портал, объект события, общая миссия) нужна ПОЛНАЯ команда (4 героя).
+    /// Если на базе такой нет — берём самую сильную команду на базе (или первого свободного героя) и добавляем
+    /// к ней сильнейших (прокачанных) героев из других команд на базе и свободных — до 4.
+    /// Не хватает героев дома — ждём (DispatchSquads пока не отпускает их на обычные миссии).
     /// </summary>
     private void Regroup()
     {
-        // Ударная команда уже есть и её цель актуальна — ничего не трогаем
-        if (strikeSquad != null && (!Contains(SM.GetSquads(team), strikeSquad) || !IsStillImportant(strikeTarget)))
+        // Ударная команда уже собрана и ещё дома, а её цель актуальна — ничего не трогаем
+        if (strikeSquad != null && (!Contains(SM.GetSquads(team), strikeSquad) || strikeSquad.Status != SquadStatus.AtBase || !IsStillImportant(strikeTarget)))
         {
             strikeSquad = null;
             strikeTarget = null;
         }
         if (!allowRegroup || strikeSquad != null) return;
+        if (Base.IsUnderAttack) return; // пока базу атакуют, менять команды нельзя
 
         float minHp = EventRunning ? Mathf.Min(minHpToSend, 0.5f) : minHpToSend;
         var home = new List<Squad>();
         foreach (Squad s in SM.GetSquads(team))
             if (s.Status == SquadStatus.AtBase && !orders.ContainsKey(s)) home.Add(s);
-        if (home.Count == 0) return;
 
         foreach (AttackableSite target in ImportantTargets())
         {
             if (IsOrdered(target)) continue;
-            int need = NeededPower(target);
-            if (need <= 0) continue;
+            int need = NeedSize(target);
 
-            // Кто-то справится и так — перестраивать не нужно
-            bool someoneCan = false;
+            // Полная здоровая команда уже есть — перестраивать не нужно
+            bool ready = false;
+            foreach (Squad s in home)
+                if (s.Size >= need && s.HpFraction >= minHp) ready = true;
+            if (ready) continue;
+
+            // Все, кого можно взять: свободные герои и герои команд на базе — сильные (прокачанные) первыми
+            var pool = new List<HeroInstance>(SM.GetFreeHeroes(team));
+            foreach (Squad s in home) pool.AddRange(s.AllHeroes);
+            pool.Sort((a, b) => HeroPower(b).CompareTo(HeroPower(a)));
+            if (pool.Count < need) continue; // героев дома не хватает — ждём, пока вернутся
+
+            // Ядро — самая сильная команда на базе (её капитан останется капитаном); нет команд — новая из свободных
             Squad core = null;
             foreach (Squad s in home)
-            {
-                if (s.HpFraction < minHp) continue;
-                int p = BattleCalculator.SquadPower(s);
-                if (BattleCalculator.Forecast(p, need) != BattleForecast.Lose) someoneCan = true;
-                if (core == null || p > BattleCalculator.SquadPower(core)) core = s;
-            }
-            if (someoneCan || core == null) continue;
+                if (core == null || TeamPower(s) > TeamPower(core)) core = s;
 
-            // Кого можно добавить: свободные герои и герои других команд на базе — сильные первыми
-            var donors = new List<HeroInstance>(SM.GetFreeHeroes(team));
-            foreach (Squad s in home)
-                if (s != core) donors.AddRange(s.AllHeroes);
-            donors.Sort((a, b) => HeroPower(b).CompareTo(HeroPower(a)));
-
-            float hpFactor = 0.4f + 0.6f * core.HpFraction;
-            float projected = BattleCalculator.SquadPower(core);
-            int slots = SM.MaxMembers + 1 - core.Size;
-            var picked = new List<HeroInstance>();
-            foreach (HeroInstance h in donors)
+            var picked = new List<HeroInstance>(); // кого добавить к ядру
+            int slots = need - (core != null ? core.Size : 0);
+            foreach (HeroInstance h in pool)
             {
-                if (slots <= 0 || BattleCalculator.Forecast(Mathf.RoundToInt(projected), need) != BattleForecast.Lose) break;
+                if (slots <= 0) break;
+                if (core != null && ContainsHero(core, h)) continue;
                 picked.Add(h);
-                projected += HeroPower(h) * hpFactor;
                 slots--;
             }
-            if (picked.Count == 0 || BattleCalculator.Forecast(Mathf.RoundToInt(projected), need) == BattleForecast.Lose)
-                continue; // даже большой команде не хватит сил — не ломаем команды зря
 
             // Забираем героев из их команд: капитан ушёл — команду распускаем (остальные станут свободными)
             foreach (Squad s in home)
@@ -385,18 +442,43 @@ public class EnemyAI : MonoBehaviour
                 if (takesCaptain) SM.TryDisband(s, out _);
                 else if (rest.Count != s.Members.Count) SM.TryEditSquad(s, s.Captain, rest, out _);
             }
-            var members = new List<HeroInstance>(core.Members);
-            members.AddRange(picked);
-            if (!SM.TryEditSquad(core, core.Captain, members, out string err))
+
+            string err;
+            if (core != null)
             {
-                Log($"не смог собрать ударную команду: {err}");
-                return;
+                var members = new List<HeroInstance>(core.Members);
+                members.AddRange(picked);
+                if (!SM.TryEditSquad(core, core.Captain, members, out err)) { Log($"не смог собрать ударную команду: {err}"); return; }
+            }
+            else
+            {
+                if (picked.Count == 0 || !SM.TryCreateSquad(team, picked[0], picked.GetRange(1, picked.Count - 1), out core, out err))
+                    return;
             }
             strikeSquad = core;
             strikeTarget = target;
-            Log($"собрал ударную команду {core.Number} (героев: {core.Size}, сила {BattleCalculator.SquadPower(core)}) для «{target.SiteName}» (нужно ~{need})");
+            Log($"собрал полную ударную команду {core.Number} (героев: {core.Size}) для «{target.SiteName}»");
             return;
         }
+    }
+
+    /// <summary>Есть ли герой в команде (капитан или участник).</summary>
+    private static bool ContainsHero(Squad s, HeroInstance h)
+    {
+        foreach (HeroInstance x in s.AllHeroes) if (x == h) return true;
+        return false;
+    }
+
+    /// <summary>
+    /// Есть ли важная цель, которую никто не взял, а полной команды для неё дома нет —
+    /// тогда героев на базе на обычные миссии не отпускаем (копим полную команду).
+    /// </summary>
+    private bool WaitingForStrike()
+    {
+        if (strikeSquad != null) return false;
+        foreach (AttackableSite t in ImportantTargets())
+            if (!IsOrdered(t) && TotalHeroes >= NeedSize(t)) return true; // героев в принципе хватает — копим
+        return false;
     }
 
     /// <summary>
@@ -405,7 +487,7 @@ public class EnemyAI : MonoBehaviour
     /// </summary>
     private void SplitBigSquads()
     {
-        if (strikeSquad != null || EventRunning || EventSoon || ImportantTargets().Count > 0) return;
+        if (strikeSquad != null || EventRunning || EventSoon || Base.IsUnderAttack || ImportantTargets().Count > 0) return;
         if (!SM.CanCreateSquad(team)) return; // новую команду всё равно не создать — пусть остаются большими
         foreach (Squad s in SM.GetSquads(team))
         {
@@ -422,117 +504,103 @@ public class EnemyAI : MonoBehaviour
     }
 
     /// <summary>
-    /// Отправить свободные здоровые команды к лучшим целям — сильные первыми
-    /// (им по силам охрана объектов). Если команд хотя бы две — последняя
-    /// команда на базе остаётся дома гарнизоном.
+    /// Отправить свободные здоровые команды к лучшим целям — большие (и прокачанные) первыми.
+    /// Гарнизон дома не оставляем. Ударная команда сразу едет к своей важной цели.
+    /// Если важная цель ждёт полную команду, а собрать её пока не из кого — остальных героев
+    /// на обычные миссии не отпускаем (копим), на важные цели — отпускаем.
     /// </summary>
     private void DispatchSquads()
     {
         var ready = new List<Squad>();
-        int atBase = 0;
         // Во время события медлить нельзя — отправляем и немного раненые команды
         float minHp = EventRunning ? Mathf.Min(minHpToSend, 0.5f) : minHpToSend;
         foreach (Squad s in SM.GetSquads(team))
-        {
-            if (s.Status != SquadStatus.AtBase) continue;
-            atBase++;
-            if (s.HpFraction >= minHp && !orders.ContainsKey(s)) ready.Add(s);
-        }
-        ready.Sort((a, b) => BattleCalculator.SquadPower(b).CompareTo(BattleCalculator.SquadPower(a)));
-        bool needGarrison = keepGarrison && SM.GetSquads(team).Count >= 2;
+            if (s.Status == SquadStatus.AtBase && s.HpFraction >= minHp && !orders.ContainsKey(s)) ready.Add(s);
+        // Полные команды первыми, среди равных — прокачанные
+        ready.Sort((a, b) => a.Size != b.Size ? b.Size.CompareTo(a.Size) : TeamPower(b).CompareTo(TeamPower(a)));
 
-        // Ударная команда — сразу к своей цели (во время события — даже если дома никого не останется)
+        // Ударная команда — сразу к своей цели
         if (strikeSquad != null && ready.Contains(strikeSquad) && strikeTarget.CanAccept(strikeSquad, out _)
-            && (!needGarrison || atBase > 1 || EventRunning)
             && SM.SendSquad(strikeSquad, strikeTarget, out _))
         {
             orders[strikeSquad] = strikeTarget;
             ready.Remove(strikeSquad);
-            atBase--;
             Log($"отправил ударную команду {strikeSquad.Number} (героев: {strikeSquad.Size}) → {strikeTarget.SiteName}");
+            strikeSquad = null; // следующую важную цель можно готовить сразу
+            strikeTarget = null;
         }
 
+        bool hold = WaitingForStrike(); // копим полную команду для важной цели
         foreach (Squad s in ready)
         {
-            if (needGarrison && atBase <= 1) return; // последняя команда — гарнизон
-            ISquadTarget target = ChooseTarget(s);
+            if (s == strikeSquad) continue; // ждёт, пока её цель освободится
+            ISquadTarget target = ChooseTarget(s, hold);
             if (target == null) continue; // этой команде целей не нашлось — может, найдётся другой
             if (SM.SendSquad(s, target, out _))
             {
                 orders[s] = target;
-                atBase--;
-                Log($"отправил команду {s.Number} → {target.TargetName}");
+                Log($"отправил команду {s.Number} ({s.Size} гер.) → {target.TargetName}");
             }
         }
     }
 
-    /// <summary>Выбрать самую выгодную цель для команды (ценность / расстояние).</summary>
-    private ISquadTarget ChooseTarget(Squad squad)
+    /// <summary>
+    /// Выбрать самую выгодную цель для команды (ценность / расстояние). Решения — по числу героев, не по силе:
+    /// важные цели (общая миссия, портал, объект события, база противника) — только полной командой (NeedSize)
+    /// и с большим приоритетом; обычные миссии — если героев хватает по рекомендации (или шанс хороший).
+    /// onlyImportant — обычные миссии не брать (копим полную команду для важной цели).
+    /// </summary>
+    private ISquadTarget ChooseTarget(Squad squad, bool onlyImportant)
     {
         Vector3 home = Base.transform.position;
         ISquadTarget best = null;
         float bestScore = 0f;
 
-        // Миссии: только свободные и с хорошим шансом
-        if (MissionManager.Instance != null)
+        // Миссии: только свободные и с хорошим шансом (шанс считается по числу героев)
+        if (MissionManager.Instance != null && !onlyImportant)
             foreach (MissionMarker m in MissionManager.Instance.Active)
             {
                 if (m == null || m.Side != team || m.AssignedSquad != null || IsOrdered(m)) continue;
-                if (m.Data.GetSuccessChance(squad.Power) < minMissionChance) continue;
+                if (m.Data.GetSuccessChance(squad.Size) < minMissionChance) continue;
                 if (!m.CanAccept(squad, out _)) continue;
                 // Перед событием — только миссии, после которых команда успеет вернуться
                 if (EventSoon && SM.EstimateTravelTime(squad, m) * 2f + m.Data.duration > EM.TimeLeft + 15f) continue;
                 float value = m.Data.rewardGold + m.Data.rewardPlutonium * 15f
                               + (m.Data.levelUpTeam ? 300f : 0f) + (m.Data.unlockBuilding != null ? 500f : 0f);
+                // Большую команду на лёгкую миссию — неохотно (она нужнее на важных целях)
+                if (squad.Size > m.Data.recommendedHeroes + 1) value *= 0.6f;
                 float score = value / (Vector3.Distance(home, m.ApproachPoint) + 5f);
                 if (score > bestScore) { bestScore = score; best = m; }
             }
 
-        // Общая миссия: награда как у объекта (золото, плутоний, артефакты), охрана по территориям.
-        // Если её уже выполняет противник — вступаем в битву за флаг, только если успеем и не слабее его
+        // Общая миссия: только полной командой. Если её уже выполняет противник — вступаем в битву за флаг,
+        // только если успеем и у нас героев не меньше, чем у него
         if (GlobalMissionManager.Instance != null)
-        foreach (GlobalMission gm in GlobalMissionManager.Instance.Active)
-        {
-        if (gm.IsCompleted || IsOrdered(gm) || !gm.CanAccept(squad, out _)) continue;
-        {
-            bool join = gm.IsUnderAttack;
-            bool ok = !join || (gm.CanJoin(team) && SM.EstimateTravelTime(squad, gm) <= gm.PrepLeft - 1f
-                      && BattleCalculator.Forecast(BattleCalculator.SquadPower(squad), BattleCalculator.SquadPower(gm.Attacker.Squad)) != BattleForecast.Lose);
-            var forecast = BattleCalculator.Forecast(BattleCalculator.SquadPower(squad), gm.DefenderPower);
-            if (ok && forecast != BattleForecast.Lose)
+            foreach (GlobalMission gm in GlobalMissionManager.Instance.Active)
             {
+                if (gm.IsCompleted || IsOrdered(gm) || squad.Size < NeedSize(gm) || !gm.CanAccept(squad, out _)) continue;
+                bool join = gm.IsUnderAttack;
+                if (join && !CanContest(squad, gm)) continue;
                 GlobalMissionData d = gm.Data;
-                float value = d.rewardGold + d.rewardPlutonium * 15f + d.rewardArtifacts * 400f;
-                if (forecast == BattleForecast.Equal) value *= 0.7f;
-                value *= objectPriority; // общая миссия ценна, как объект
+                float value = d.rewardGold + d.rewardPlutonium * 15f + d.rewardArtifacts * 400f + d.rewardFactionPoints;
+                value *= objectPriority; // общая миссия — большой приоритет
                 if (join) value *= 1.6f; // перебить противника — заодно не дать ему награду
                 if (d.rewardHero) value += 900f; // герой в награду — очень ценно
                 float score = value / (Vector3.Distance(home, gm.ApproachPoint) + 5f);
                 if (score > bestScore) { bestScore = score; best = gm; }
             }
-        }
-        }
 
-        // Портал (событие): закрыть его — артефакт и урон базе противника, не закрыть — урон нам.
-        // Сила охраны — только ещё не пройденные нами территории
+        // Портал (событие): закрыть его — артефакт и урон базе противника, не закрыть — урон нам. Только полной командой
         Portal portal = Portal.Instance;
-        if (portal != null && portal.IsOpen && !portal.IsClosed && !IsOrdered(portal) && portal.CanAccept(squad, out _))
+        if (portal != null && portal.IsOpen && !portal.IsClosed && !IsOrdered(portal)
+            && squad.Size >= NeedSize(portal) && portal.CanAccept(squad, out _))
         {
             bool join = portal.IsUnderAttack;
-            bool ok = !join || (portal.CanJoin(team) && SM.EstimateTravelTime(squad, portal) <= portal.PrepLeft - 1f
-                      && BattleCalculator.Forecast(BattleCalculator.SquadPower(squad), BattleCalculator.SquadPower(portal.Attacker.Squad)) != BattleForecast.Lose);
-            ok &= SM.EstimateTravelTime(squad, portal) + portal.PrepTime < portal.TimeLeft; // успеть до конца события
-            int power = BattleCalculator.SquadPower(squad);
-            var forecast = BattleCalculator.Forecast(power, portal.RemainingPower(team));
-            // Закрыть сразу не выйдет — но следующую территорию потянем: идём набирать прогресс
-            bool farm = forecast == BattleForecast.Lose && !join && CanFarmPortal(portal, power);
-            // Противник уже готовится закрыть портал — вступаем в битву за флаг, даже если охрана нам
-            // не по силам: главное, чтобы наша команда была не слабее его (это проверено выше в ok)
-            if (ok && (join || forecast != BattleForecast.Lose || farm))
+            bool ok = (!join || CanContest(squad, portal))
+                      && SM.EstimateTravelTime(squad, portal) + portal.PrepTime < portal.TimeLeft; // успеть до конца события
+            if (ok)
             {
-                float value = 1200f + portal.Data.rewardArtifacts * 400f;
-                if (forecast == BattleForecast.Equal) value *= 0.8f;
-                if (farm) value *= 0.5f;
+                float value = 1200f + portal.Data.rewardArtifacts * 400f + portal.Data.rewardFactionPoints;
                 if (join) value *= 1.5f; // не дать противнику закрыть портал без боя
                 value *= objectPriority;
                 float score = value / (Vector3.Distance(home, portal.ApproachPoint) + 5f);
@@ -540,57 +608,52 @@ public class EnemyAI : MonoBehaviour
             }
         }
 
-        // Объекты: не наши, никто из наших туда не едет
+        // Объекты (событие «Объект»): только полной командой, никто из наших туда не едет
         foreach (MapObject o in MapObject.All)
         {
-            if (o.IsOwnedBy(team) || IsOrdered(o) || !o.CanAccept(squad, out _)) continue;
-
-            // Объект уже захватывает противник: вступаем в битву за флаг, только если успеем
-            // до конца подготовки и наша команда не слабее его команды
+            if (o.IsOwnedBy(team) || IsOrdered(o) || squad.Size < NeedSize(o) || !o.CanAccept(squad, out _)) continue;
             bool join = o.IsUnderAttack;
-            if (join)
-            {
-                if (!o.CanJoin(team) || SM.EstimateTravelTime(squad, o) > o.PrepLeft - 1f) continue;
-                Squad rival = o.Attacker.Squad;
-                if (BattleCalculator.Forecast(BattleCalculator.SquadPower(squad), BattleCalculator.SquadPower(rival)) == BattleForecast.Lose) continue;
-            }
+            if (join && !CanContest(squad, o)) continue;
             MapObjectData d = o.Data;
-            float value = d.goldIncome * 3f + d.plutoniumIncome * 40f + d.heroLimitBonus * 150f
-                          + (d.unlocksFactoryUpgrades ? 400f : 0f) + (d.allowsHeroBoost ? 300f : 0f);
-            if (o.HasOwner) value += 200f; // отобрать у противника — вдвойне полезно
+            float value = d.eventGold + d.eventPlutonium * 15f + d.eventFactionPoints + 400f; // + артефакт
 
-            // Объект события: успеть до конца; чем ближе конец, тем ценнее (артефакт — последнему владельцу)
+            // Объект события: успеть до конца события
             if (EM != null && o == EM.EventObject)
             {
                 if (SM.EstimateTravelTime(squad, o) + o.PrepTime + 3f > o.EventTimeLeft) continue;
-                value += eventObjectValue * (1f + 1.5f * EM.Progress);
+                value += eventObjectValue;
             }
-
-            // Охрана объекта: на верное поражение не идём, на равный бой — неохотно
-            var forecast = BattleCalculator.Forecast(BattleCalculator.SquadPower(squad), o.DefenderPower);
-            if (forecast == BattleForecast.Lose) continue;
-            if (forecast == BattleForecast.Equal) value *= 0.7f;
-            value *= objectPriority; // объекты — главный приоритет
+            value *= objectPriority; // объекты — большой приоритет
             if (join) value *= 1.3f; // заодно не дать объект противнику
             float score = value / (Vector3.Distance(home, o.ApproachPoint) + 5f);
             if (score > bestScore) { bestScore = score; best = o; }
         }
 
-        // База противника: пустая, с малым HP или наша команда точно сильнее гарнизона
-        // (и дома остаётся ещё команда). Чем меньше у неё HP, тем заманчивее.
+        // База противника — тоже важная цель: только полной командой. Чем меньше у неё HP и защитников — тем заманчивее
         MainBase enemyBase = MainBase.Get(team == Team.Player ? Team.Enemy : Team.Player);
-        if (enemyBase != null && !IsOrdered(enemyBase) && MayAttackBase(enemyBase) && enemyBase.CanAccept(squad, out _))
+        if (enemyBase != null && !IsOrdered(enemyBase) && squad.Size >= NeedSize(enemyBase)
+            && MayAttackBase(enemyBase) && enemyBase.CanAccept(squad, out _))
         {
-            if (BaseAttackForecastOk(enemyBase, BattleCalculator.SquadPower(squad), out BattleForecast f))
+            int defenders = DefendersCount(enemyBase);
+            if (defenders <= squad.Size || enemyBase.Hp <= finishBaseHp)
             {
-                float value = baseAttackValue * (2f - (float)enemyBase.Hp / enemyBase.MaxHp);
-                if (f == BattleForecast.Equal) value *= 0.5f;
+                float value = baseAttackValue * (2f - (float)enemyBase.Hp / enemyBase.MaxHp) * objectPriority;
+                if (defenders == 0) value *= 1.5f;        // пустая база — лёгкий урон
+                else if (defenders >= squad.Size) value *= 0.5f; // равные числа — неохотно
                 float score = value / (Vector3.Distance(home, enemyBase.ApproachPoint) + 5f);
                 if (score > bestScore) { bestScore = score; best = enemyBase; }
             }
         }
         return best;
     }
+
+    /// <summary>
+    /// Можно ли вступить в битву за флаг: противник ещё готовится, мы успеем доехать до конца подготовки
+    /// и у нас героев не меньше, чем у него.
+    /// </summary>
+    private bool CanContest(Squad squad, AttackableSite site) =>
+        site.CanJoin(team) && SM.EstimateTravelTime(squad, site) <= site.PrepLeft - 1f
+        && squad.Size >= site.Attacker.Squad.Size;
 
     /// <summary>Едет ли уже к этой цели одна из наших команд.</summary>
     private bool IsOrdered(ISquadTarget target)
@@ -608,17 +671,41 @@ public class EnemyAI : MonoBehaviour
     /// </summary>
     public void OnTacticalPause()
     {
+        // Открыть иконки фракции, на которые хватает очков (после всех 5 можно нанять своего 3★)
+        if (FactionManager.Instance != null)
+            for (int i = 0; i < 10 && FactionManager.Instance.TryUnlockNext(team); i++)
+                Log($"открыл иконку фракции {FactionManager.Instance.GetUnlocked(team)}/{FactionManager.Instance.IconCount}");
         for (int i = 0; i < 10 && TryHire(); i++) { }
         // Побеждённых героев — восстановить, если хватает денег
         foreach (HeroManager.DefeatedHero d in new List<HeroManager.DefeatedHero>(HM.GetDefeated(team)))
             if (HM.CanRestore(d, out _) && RM.CanAfford(team, HM.RestoreCost(d))) HM.TryRestore(d, out _);
         for (int i = 0; i < 10 && (TryBuild() || TryUpgradeBuildings() || TryUpgradeBase()); i++) { } // строить можно только в паузе
+        BuyLives(); // Лазарет (мог только что построиться): жизни героям с 1 жизнью — до повышения звёзд
         // Повысить звезду героям 5 уровня (сильнейшим первыми), пока хватает плутония
         var heroes = new List<HeroInstance>(HM.GetHeroes(team));
         heroes.Sort((a, b) => BattleCalculator.HeroPower(b).CompareTo(BattleCalculator.HeroPower(a)));
         foreach (HeroInstance h in heroes)
             if (HM.CanStarUp(h, out _) && RM.CanAfford(team, 0, HM.StarUpCost)) HM.TryStarUp(h, out _);
         UseArtifacts();
+    }
+
+    /// <summary>
+    /// Лазарет: купить жизнь за плутоний героям, у которых осталась 1 жизнь (и они не на задании).
+    /// Прокачанные (высокий уровень, сильные) — первыми, пока хватает плутония.
+    /// </summary>
+    private void BuyLives()
+    {
+        MainBase b = Base;
+        if (b == null || !b.HasInfirmary) return;
+        var list = new List<HeroInstance>();
+        foreach (HeroInstance h in HM.GetHeroes(team))
+            if (h.Lives == 1 && HM.CanBuyLife(h, out _)) list.Add(h);
+        list.Sort((a, c) => a.Level != c.Level ? c.Level.CompareTo(a.Level) : HeroPower(c).CompareTo(HeroPower(a)));
+        foreach (HeroInstance h in list)
+        {
+            if (!RM.CanAfford(team, 0, HM.LifeCost)) return;
+            if (HM.TryBuyLife(h, out _)) Log($"Лазарет: купил жизнь {h.Data.displayName} (ур. {h.Level}, жизней {h.Lives})");
+        }
     }
 
     /// <summary>Драфт перед игрой: нанять одного героя (карта стоит, поэтому вызывает DraftUI). Вернёт false, если больше некого.</summary>

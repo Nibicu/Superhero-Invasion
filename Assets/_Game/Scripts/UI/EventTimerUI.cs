@@ -110,7 +110,7 @@ public class EventTimerUI : MonoBehaviour
                 ? "Следующее событие — портал в центре карты: закройте его, иначе база получит урон"
                 : "Следующее событие — на карте откроется объект: последний владелец получит артефакт");
         else if (em.Kind == GameEventKind.Object && em.EventObject != null)
-            ToastUI.Show($"«{em.EventObject.Data.displayName}» открыт! Владелец к концу события получит артефакт");
+            ToastUI.Show($"«{em.EventObject.Data.displayName}» открыт! Победите охрану первыми — награда сразу");
         else
             ToastUI.Show("Портал открыт! Закройте его раньше врага");
     }

@@ -46,6 +46,8 @@ public class MainBase : AttackableSite, IIncomeSource
     [SerializeField] private int maxHp = 1000;
     [Tooltip("Сколько урона наносит одна успешная атака")]
     [SerializeField] private int damagePerAttack = 200;
+    [Tooltip("Сколько героев рекомендуется для нападения на базу (4 — «4 героя»)")]
+    [SerializeField, Range(1, 4)] private int recommendedHeroes = 4;
     [Tooltip("Цвет базы (арена боя за базу красится в него)")]
     [SerializeField] private Color baseColor = new Color(0.18f, 0.48f, 0.88f);
 
@@ -247,7 +249,10 @@ public class MainBase : AttackableSite, IIncomeSource
             ? RoadNetwork.Instance.NearestRoad(transform.position + new Vector3(transform.position.x > 0 ? -2.6f : 2.6f, 0f, 0f)) // карта-картинка: на дороге
             : transform.position + new Vector3(transform.position.x > 0 ? -2.6f : 2.6f, 0f, 0f);
 
-    /// <summary>Сила гарнизона (0 — база пустая).</summary>
+    /// <summary>Сколько героев рекомендуется для нападения на базу.</summary>
+    public override int RecommendedHeroes => recommendedHeroes;
+
+    /// <summary>Сила гарнизона (0 — база пустая). Только для автобоя.</summary>
     public override int DefenderPower
     {
         get
@@ -278,7 +283,7 @@ public class MainBase : AttackableSite, IIncomeSource
                 stats = h.Stats,
                 hpFraction = h.HpFraction,
                 level = h.Level,
-                info = $"{UnitClasses.Name(h.Data.unitClass)}  •  Защитник базы  •  Ур. {h.Level}  •  сила {BattleCalculator.HeroPower(h)}"
+                info = $"{UnitClasses.Name(h.Data.unitClass)}  •  Защитник базы  •  Ур. {h.Level}"
             });
         waves.Add(wave);
         return waves;
@@ -459,6 +464,21 @@ public class MainBase : AttackableSite, IIncomeSource
             return max;
         }
     }
+
+    /// <summary>На сколько фаз быстрее восстанавливаются побеждённые герои (Лазарет; 0 — Лазарета нет).</summary>
+    public int RecoveryPhasesCut
+    {
+        get
+        {
+            int max = 0;
+            foreach (BuildingInstance b in slots)
+                if (b != null) max = Mathf.Max(max, b.Current.recoveryPhasesCut);
+            return max;
+        }
+    }
+
+    /// <summary>Есть ли Лазарет (можно покупать жизни героям).</summary>
+    public bool HasInfirmary => HasBuildingOfType(BuildingType.Infirmary);
 
     /// <summary>Есть ли Радар.</summary>
     public bool HasRadar => HasBuildingOfType(BuildingType.Radar);

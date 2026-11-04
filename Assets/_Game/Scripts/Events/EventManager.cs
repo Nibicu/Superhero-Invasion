@@ -13,8 +13,8 @@ public enum GameEventKind
 /// События (объект Managers). Когда событие начинается, решают фазы игры (PhaseManager):
 ///  событие идёт в фазе события (eventDuration, 2 мин). Без PhaseManager — старое расписание (затишье → событие).
 /// События идут по порядку из списка order: "объект, объект, портал" и снова сначала.
-/// Событие "Объект": открывается случайный неактивный объект; по окончании последний
-///  владелец получает разовую награду (золото, плутоний, артефакт), а объект снова ничей и неактивен.
+/// Событие "Объект": открывается случайный неактивный объект; кто первым победит охрану,
+///  сразу получает награду (золото, плутоний, очки фракции, артефакт), и объект исчезает (снова неактивен).
 /// Событие "Портал": открывается портал; закрыл один — урон базе другого (это делает сам Portal);
 ///  никто не закрыл — урон обеим базам.
 /// Если время вышло, а за объект/портал ещё идёт бой — событие ждёт итога боя.
@@ -134,7 +134,7 @@ public class EventManager : MonoBehaviour
             timer = eventDuration;
             eventObject.EventTimeLeft = eventDuration;
             eventObject.Activate();
-            ToastUI.Show($"СОБЫТИЕ: открыт объект «{eventObject.Data.displayName}»! {Mathf.RoundToInt(eventDuration / 60f)} мин на захват — последний владелец получит награду");
+            ToastUI.Show($"СОБЫТИЕ: открыт объект «{eventObject.Data.displayName}»! {Mathf.RoundToInt(eventDuration / 60f)} мин — кто первым победит охрану, сразу получит награду");
         }
         else
         {
@@ -175,26 +175,38 @@ public class EventManager : MonoBehaviour
         }
     }
 
-    /// <summary>Конец события "Объект": артефакт последнему владельцу, объект снова неактивен.</summary>
+    /// <summary>Время события вышло, а объект никто не взял: объект снова неактивен, награды нет.</summary>
     private void EndObjectEvent()
     {
         MapObject o = eventObject;
         eventObject = null;
-        string name = o.Data.displayName;
-        if (o.Deactivate(out Team owner))
-        {
-            // Разовая награда последнему владельцу: золото, плутоний и артефакт
-            ResourceManager.Instance.Add(owner, o.Data.eventGold, o.Data.eventPlutonium);
-            ArtifactData a = ArtifactManager.Instance != null ? ArtifactManager.Instance.GiveRandom(owner) : null;
-            string art = a != null ? $"<color=#FF9EE6>артефакт «{a.displayName}»</color>" : "артефакт";
-            string res = o.Data.GetEventRewardText(false);
-            if (owner == Team.Player)
-                BattleResultWindowUI.Show(true, $"Событие окончено!\n«{name}» был нашим до конца — получено: {res}, {art}.\n<size=80%>Объект снова неактивен.</size>");
-            else
-                BattleResultWindowUI.Show(false, $"Событие окончено.\n«{name}» остался за врагом — враг получил награду.\n<size=80%>Объект снова неактивен.</size>");
-        }
-        else ToastUI.Show($"Событие окончено: «{name}» никто не захватил. Объект снова неактивен");
+        o.Deactivate(out _);
+        ToastUI.Show($"Событие окончено: «{o.Data.displayName}» никто не взял. Объект исчез");
         BeginQuiet();
+    }
+
+    /// <summary>
+    /// Охрану объекта победили (вызывает MapObject): победитель сразу получает всю награду
+    /// (золото, плутоний, очки фракции, артефакт), объект исчезает (неактивен), событие окончено.
+    /// Вернёт текст полученной награды.
+    /// </summary>
+    public string ObjectWon(MapObject o, Team winner)
+    {
+        MapObjectData d = o.Data;
+        ResourceManager.Instance.Add(winner, d.eventGold, d.eventPlutonium);
+        FactionManager.AddPoints(winner, d.eventFactionPoints);
+        ArtifactData a = ArtifactManager.Instance != null ? ArtifactManager.Instance.GiveRandom(winner) : null;
+        string res = d.GetEventRewardText(false);
+        if (a != null) res += $", <color=#FF9EE6>артефакт «{a.displayName}»</color>";
+
+        o.Deactivate(out _);
+        if (running && eventObject == o)
+        {
+            eventObject = null;
+            BeginQuiet();
+        }
+        ToastUI.Show(winner == Team.Player ? $"«{d.displayName}» взят! Награда получена" : $"Враг взял «{d.displayName}» и получил награду");
+        return res;
     }
 
     /// <summary>Конец события "Портал": если никто не закрыл — урон обеим базам.</summary>

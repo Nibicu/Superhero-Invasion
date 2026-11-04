@@ -19,9 +19,10 @@ MonoBehaviour:
   color: {r: 0.85, g: 0.3, b: 0.45, a: 1}
   duration: 35
   lifetime: 60
-  requiredPower: 800
+  recommendedHeroes: 4
   rewardGold: 600
   rewardPlutonium: 0
+  rewardFactionPoints: 150
   levelUpTeam: 0
   unlockBuilding: {fileID: 0}
   oneTime: 0

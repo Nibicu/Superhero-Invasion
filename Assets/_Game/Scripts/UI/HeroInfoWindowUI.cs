@@ -6,7 +6,8 @@ using UnityEngine.UI;
 /// <summary>
 /// Подробная карточка героя: портрет, имя, звёзды, уровень, жизни, описание,
 /// опыт и 10 характеристик со значками и полосками, навыки (открытые и закрытые), бонус командира.
-/// Кнопка внизу: "НАНЯТЬ" (если герой ещё не нанят). У героя 5 уровня в паузе — "ПОВЫСИТЬ ЗВЕЗДУ" (за плутоний).
+/// Кнопка внизу: "НАНЯТЬ" (если герой ещё не нанят) или "КУПИТЬ ЖИЗНЬ" (нанятый герой, Лазарет, за плутоний, максимум 3 жизни).
+/// У героя 5 уровня в паузе — "ПОВЫСИТЬ ЗВЕЗДУ" (за плутоний).
 /// </summary>
 public class HeroInfoWindowUI : WindowUI
 {
@@ -121,9 +122,8 @@ public class HeroInfoWindowUI : WindowUI
             ? $"Уровень {hero.Level} / {hm.MaxHeroLevel}  •  {hero.StarsText}  •  {hero.StatusText}" +
               $"\n<size=85%>Жизни: <color=#FF6B7A>{hero.Lives} / {HeroInstance.MaxLives}</color>{(hm.IsReserve(hero) ? "  •  <color=#FF9A6B>в запасе</color>" : "")}</size>"
             : "<color=#9AA4B5>Не нанят</color>";
-        // Класс, тип урона скилов и сила
-        HeroStats shown = hero != null ? hero.Stats : current.baseStats;
-        levelText.text += $"\n<size=85%><color=#FFD84A>{UnitClasses.Name(current.unitClass)}</color>  •  сила {BattleCalculator.UnitPower(current, shown)}" +
+        // Класс и тип урона скилов (показатель силы убран — исход решает сам бой)
+        levelText.text += $"\n<size=85%><color=#FFD84A>{UnitClasses.Name(current.unitClass)}</color>" +
                           $"\nскилы от: {UnitClasses.DamageName(current.skillDamage)}</size>";
 
         // Повышение звезды — у героя 5 уровня, в тактической паузе, за плутоний
@@ -195,7 +195,17 @@ public class HeroInfoWindowUI : WindowUI
                 ? $"НАНЯТЬ\n<size=75%><color={(afford ? "#FFD84A" : "#FF6B6B")}>{current.hireCost} золота</color></size>"
                 : reason.ToUpper();
         }
-        actionButton.gameObject.SetActive(hero == null); // нанятого героя качает опыт — кнопки прокачки нет
+        else
+        {
+            // Нанятый герой: купить жизнь в Лазарете (максимум 3)
+            bool can = hm.CanBuyLife(hero, out string reason);
+            bool afford = ResourceManager.Instance.CanAfford(Team.Player, 0, hm.LifeCost);
+            actionButton.interactable = can;
+            actionText.text = can
+                ? $"КУПИТЬ ЖИЗНЬ ({hero.Lives}/{HeroInstance.MaxLives})\n<size=75%><color={(afford ? "#E2C6FF" : "#FF6B6B")}>{hm.LifeCost} плутония</color></size>"
+                : $"ЖИЗНИ {hero.Lives}/{HeroInstance.MaxLives}\n<size=75%>{reason}</size>";
+        }
+        actionButton.gameObject.SetActive(true);
     }
 
     /// <summary>Нажата кнопка "ПОВЫСИТЬ ЗВЕЗДУ" (5 уровень, в паузе, за плутоний).</summary>
@@ -215,7 +225,13 @@ public class HeroInfoWindowUI : WindowUI
         HeroManager hm = HeroManager.Instance;
         HeroInstance hero = hm.FindHero(Team.Player, current);
         string error;
-        if (hero != null) return;
+        if (hero != null)
+        {
+            // Нанятый герой — купить жизнь
+            if (hm.TryBuyLife(hero, out error)) ToastUI.Show($"{current.displayName}: +1 жизнь ({hero.Lives}/{HeroInstance.MaxLives})");
+            else ToastUI.Show(error);
+            return;
+        }
         if (hm.TryHire(Team.Player, current, out error)) ToastUI.Show($"{current.displayName} теперь в бюро!");
         else ToastUI.Show(error);
     }

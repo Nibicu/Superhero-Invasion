@@ -142,7 +142,7 @@ public class Portal : AttackableSite
                 hpFraction = 1f,
                 level = g.level,
                 guard = true, // охрана портала не отступает
-                info = $"{UnitClasses.Name(g.unit.unitClass)}  •  Территория {w + 1}  •  Ур. {g.level}  •  сила {BattleCalculator.UnitPower(g.unit, s)}"
+                info = $"{UnitClasses.Name(g.unit.unitClass)}  •  Территория {w + 1}  •  Ур. {g.level}"
             });
         }
         return list;
@@ -174,6 +174,9 @@ public class Portal : AttackableSite
     public override string TargetName => data.title;
     public override string SiteName => data.title;
     public override Color SiteColor => data.color;
+
+    /// <summary>Сколько героев рекомендуется (из файла портала).</summary>
+    public override int RecommendedHeroes => Data.recommendedHeroes;
 
     /// <summary>Охрана, которую нападающей стороне ещё осталось пройти.</summary>
     public override int DefenderPower => closed ? 0 : RemainingPower(CurrentSide);
@@ -267,6 +270,8 @@ public class Portal : AttackableSite
         progress[closedBy] = TerritoryCount;
 
         var got = new List<string>();
+        FactionManager.AddPoints(closedBy, data.rewardFactionPoints); // очки фракции
+        if (data.rewardFactionPoints > 0) got.Add(FactionManager.PointsText(data.rewardFactionPoints));
         if (ArtifactManager.Instance != null)
             for (int i = 0; i < data.rewardArtifacts; i++)
             {
