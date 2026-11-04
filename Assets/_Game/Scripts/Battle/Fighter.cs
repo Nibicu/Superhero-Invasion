@@ -80,8 +80,25 @@ public class Fighter : MonoBehaviour
     /// <summary>Описание героя/злодея (имя, цвет, портрет).</summary>
     public HeroData Data { get; private set; }
 
-    /// <summary>Скорость авто атак (из файла героя: 1 — обычная, 1.2 — на 20% быстрее).</summary>
-    public float AttackSpeed => Data != null ? Data.AutoAttackSpeedMultiplier : 1f;
+    /// <summary>
+    /// Скорость авто атак: из файла героя (1 — обычная, 1.2 — на 20% быстрее) × навык (бубны Тени) × темп (Энерго темп Зед Рока).
+    /// </summary>
+    public float AttackSpeed => (Data != null ? Data.AutoAttackSpeedMultiplier : 1f)
+                                * (Kit != null ? Kit.AttackSpeedMultiplier : 1f) * TempoMultiplier;
+
+    private float tempoMultiplier = 1f; // Ускорение от чужого навыка (Энерго темп)
+    private float tempoTimer;           // Сколько ещё секунд длится ускорение
+
+    /// <summary>Темп: множитель скорости бега и авто атак от навыка союзника (1 — нет).</summary>
+    public float TempoMultiplier => tempoTimer > 0f ? tempoMultiplier : 1f;
+
+    /// <summary>Ускорить бойца (бег и авто атаки) в mult раз на seconds секунд (Энерго темп Зед Рока).</summary>
+    public void ApplyTempo(float mult, float seconds)
+    {
+        tempoMultiplier = Mathf.Max(mult, 1f);
+        tempoTimer = Mathf.Max(tempoTimer, seconds);
+        StatusChanged?.Invoke(this);
+    }
 
     /// <summary>Сколько длится авто атака с учётом скорости авто атак.</summary>
     public float AttackDuration => attackDuration / AttackSpeed;
@@ -146,6 +163,9 @@ public class Fighter : MonoBehaviour
 
     /// <summary>Клон (Фантом): без скилов, его HP не считается в итоге боя, исчезает вместе с хозяином.</summary>
     public bool IsClone { get; set; }
+
+    /// <summary>Зомби (Паразит Мозга): воскрешённый враг на стороне Мозга (тоже считается клоном — не идёт в итог боя).</summary>
+    public bool IsZombie { get; set; }
 
     /// <summary>Кто вызвал этого бойца (клоны Фантома): урон клона засчитывается ему. null — никто.</summary>
     public Fighter Summoner { get; set; }
@@ -419,6 +439,7 @@ public class Fighter : MonoBehaviour
         TickStatus(ref silenceTimer);
         TickStatus(ref charmTimer);
         TickStatus(ref shieldTimer);
+        TickStatus(ref tempoTimer);
         if (bleedTimer > 0f && IsAlive)
         {
             float dt = Mathf.Min(Time.deltaTime, bleedTimer);

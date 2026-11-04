@@ -253,6 +253,22 @@ public class FighterView : MonoBehaviour
         RefreshTag();
     }
 
+    /// <summary>Зомби (Паразит Мозга): тело зеленее, в подписи — "(зомби)".</summary>
+    public void MarkZombie()
+    {
+        if (baseColors != null)
+            for (int i = 0; i < baseColors.Length; i++)
+                baseColors[i] = new Color(baseColors[i].r * 0.55f, Mathf.Min(1f, baseColors[i].g * 1.05f + 0.15f), baseColors[i].b * 0.55f, baseColors[i].a);
+        RefreshTag();
+    }
+
+    /// <summary>Спрятать тело (выбывший боец, в которого вселился паразит, — теперь он ходит зомби).</summary>
+    public void HideBody()
+    {
+        if (visualRoot != null) visualRoot.gameObject.SetActive(false);
+        if (nameTag != null) nameTag.gameObject.SetActive(false);
+    }
+
     /// <summary>Шкала бега под полоской HP (копия полоски, жёлтая и тоньше).</summary>
     private void SetupStaminaBar()
     {
@@ -374,7 +390,7 @@ public class FighterView : MonoBehaviour
     private void RefreshTag()
     {
         if (nameTag == null || fighter == null) return;
-        string t = fighter.Data.displayName + (fighter.IsClone ? " (клон)" : "");
+        string t = fighter.Data.displayName + (fighter.IsZombie ? " <color=#8CFF7A>(зомби)</color>" : fighter.IsClone ? " (клон)" : "");
         if (fighter.HasBuff) t += $"\n<size=75%><color=#FFD84A>+{BoostNames.Get(fighter.BuffStat)}</color></size>";
         string status = "";
         if (fighter.State == FighterState.Dizzy) status += "<color=#FFE066>ШАТАЕТСЯ</color> ";

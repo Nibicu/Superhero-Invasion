@@ -69,6 +69,9 @@ public class SkillFx : MonoBehaviour
         return this;
     }
 
+    /// <summary>Следует ли эффект за target (чтобы убрать картинки вместе со снарядом).</summary>
+    public bool IsFollowing(Transform target) => follow != null && follow == target;
+
     /// <summary>Убрать эффект сразу.</summary>
     public void Kill() => Destroy(gameObject);
 

@@ -465,21 +465,6 @@ public class MainBase : AttackableSite, IIncomeSource
         }
     }
 
-    /// <summary>На сколько фаз быстрее восстанавливаются побеждённые герои (Лазарет; 0 — Лазарета нет).</summary>
-    public int RecoveryPhasesCut
-    {
-        get
-        {
-            int max = 0;
-            foreach (BuildingInstance b in slots)
-                if (b != null) max = Mathf.Max(max, b.Current.recoveryPhasesCut);
-            return max;
-        }
-    }
-
-    /// <summary>Есть ли Лазарет (можно покупать жизни героям).</summary>
-    public bool HasInfirmary => HasBuildingOfType(BuildingType.Infirmary);
-
     /// <summary>Есть ли Радар.</summary>
     public bool HasRadar => HasBuildingOfType(BuildingType.Radar);
 

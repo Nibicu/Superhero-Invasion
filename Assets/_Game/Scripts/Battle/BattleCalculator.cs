@@ -27,8 +27,8 @@ public static class BattleCalculator
     /// <summary>Потеря HP при поражении.</summary>
     public const float LossHpLoss = 0.8f;
 
-    /// <summary>Минимальное HP команды после боя (команда не "умирает", а лечится на базе).</summary>
-    public const float MinHpAfterBattle = 0.05f;
+    /// <summary>Минимальное HP команды после боя: проигравшие остаются с 20% и лечатся на базе (жизней нет).</summary>
+    public const float MinHpAfterBattle = 0.2f;
 
     /// <summary>
     /// Сила бойца по характеристикам:

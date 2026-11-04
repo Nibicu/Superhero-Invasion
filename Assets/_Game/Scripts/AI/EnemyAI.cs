@@ -5,15 +5,15 @@ using UnityEngine;
 /// Искусственный интеллект врага. Раз в thinkInterval секунд "думает".
 /// Показатель силы ИИ больше не сравнивает (сила и реальный исход боя — разные вещи) — смотрит на ЧИСЛО героев:
 ///  1) собирает команды из свободных злодеев (по 4);
-///  2) ВАЖНЫЕ ЦЕЛИ — общие миссии, объект события, портал и нападение на базу противника — большой приоритет,
-///     туда идёт только ПОЛНАЯ команда (все 4 слота). Если полной команды дома нет — собирает "ударную"
-///     из сильнейших (прокачанных) героев других команд на базе; пока важная цель ждёт, дома героев
-///     на обычные миссии не отпускает;
-///  3) обычные миссии — команда не меньше рекомендованного числа героев (или с хорошим шансом);
-///  4) отступает, если в битве за флаг у противника героев больше (3 против 4) — потом придёт полной командой;
-///  5) гарнизон дома не держит. Если на базу напали — отзывает команды с ОБЫЧНЫХ миссий (чтобы дома было 3–4 героя),
+///  2) ПОРЯДОК ЦЕЛЕЙ: сначала ВАЖНЫЕ — объект события, общие миссии, портал (большой приоритет, только ПОЛНАЯ
+///     команда — все 4 слота). Если полной команды дома нет — собирает "ударную" из сильнейших (прокачанных)
+///     героев других команд на базе; пока важная цель ждёт, дома героев на обычные миссии не отпускает;
+///  3) потом обычные миссии — команда не меньше рекомендованного числа героев (или с хорошим шансом);
+///  4) нападение на базу — в последнюю очередь: только если этой команде больше некуда идти,
+///     команда полная (4) и все её герои не ниже 2 уровня;
+///  5) отступает, если в битве за флаг у противника героев больше (3 против 4) — потом придёт полной командой;
+///  6) гарнизон дома не держит. Если на базу напали — отзывает команды с ОБЫЧНЫХ миссий (чтобы дома было 3–4 героя),
 ///     команды с важных целей не трогает. Только если у базы осталось HP на одну атаку — отзывает и самую сильную;
-///  6) в Лазарете покупает жизни героям, у которых осталась 1 жизнь (прокачанным — первым);
 ///  7) тратит золото на одно действие: найм, постройку по плану, улучшение построек или базы.
 /// Объект события тем ценнее, чем ближе конец события. Во время события и первые 2 минуты игры
 /// (мирное время) на базу не нападает; за полминуты до события не уходит на долгие дела.
@@ -45,8 +45,8 @@ public class EnemyAI : MonoBehaviour
     [SerializeField, Range(0f, 1f)] private float minHpToSend = 0.7f;
     [Tooltip("ИИ берёт миссию, только если шанс успеха (по числу героев) не ниже этого")]
     [SerializeField, Range(0f, 1f)] private float minMissionChance = 0.6f;
-    [Tooltip("Насколько ИИ хочет атаковать базу противника (ценность атаки)")]
-    [SerializeField] private float baseAttackValue = 600f;
+    [Tooltip("На базу противника ИИ нападает, только если все герои команды не ниже этого уровня (и больше идти некуда)")]
+    [SerializeField] private int minBaseAttackLevel = 2;
     [Tooltip("Во сколько раз объекты, портал и общая миссия ценнее остальных целей")]
     [SerializeField] private float objectPriority = 3f;
     [Tooltip("Если у базы противника HP не больше этого — ИИ старается её добить (даже при равных силах)")]
@@ -112,7 +112,6 @@ public class EnemyAI : MonoBehaviour
         FormSquads();
         SendDefenders();
         DispatchSquads();
-        BuyLives();         // Лазарет: жизни героям с 1 жизнью
 
         // Плутоний тратится отдельно: прокачка в Лаборатории, потом усиление (если есть Институт)
         // Прокачка уровня за плутоний и усиление убраны — герои растут за счёт опыта
@@ -546,9 +545,10 @@ public class EnemyAI : MonoBehaviour
 
     /// <summary>
     /// Выбрать самую выгодную цель для команды (ценность / расстояние). Решения — по числу героев, не по силе:
-    /// важные цели (общая миссия, портал, объект события, база противника) — только полной командой (NeedSize)
-    /// и с большим приоритетом; обычные миссии — если героев хватает по рекомендации (или шанс хороший).
-    /// onlyImportant — обычные миссии не брать (копим полную команду для важной цели).
+    /// важные цели (общая миссия, портал, объект события) — только полной командой (NeedSize)
+    /// и с большим приоритетом; обычные миссии — если героев хватает по рекомендации (или шанс хороший);
+    /// база противника — только если больше идти некуда (см. CanAttackBaseWith).
+    /// onlyImportant — обычные миссии и базу не брать (копим полную команду для важной цели).
     /// </summary>
     private ISquadTarget ChooseTarget(Squad squad, bool onlyImportant)
     {
@@ -629,22 +629,27 @@ public class EnemyAI : MonoBehaviour
             if (score > bestScore) { bestScore = score; best = o; }
         }
 
-        // База противника — тоже важная цель: только полной командой. Чем меньше у неё HP и защитников — тем заманчивее
+        // База противника — в последнюю очередь: только если ни важной цели, ни обычной миссии для команды нет
+        if (best != null || onlyImportant) return best;
         MainBase enemyBase = MainBase.Get(team == Team.Player ? Team.Enemy : Team.Player);
-        if (enemyBase != null && !IsOrdered(enemyBase) && squad.Size >= NeedSize(enemyBase)
+        if (enemyBase != null && !IsOrdered(enemyBase) && CanAttackBaseWith(squad, enemyBase)
             && MayAttackBase(enemyBase) && enemyBase.CanAccept(squad, out _))
         {
             int defenders = DefendersCount(enemyBase);
-            if (defenders <= squad.Size || enemyBase.Hp <= finishBaseHp)
-            {
-                float value = baseAttackValue * (2f - (float)enemyBase.Hp / enemyBase.MaxHp) * objectPriority;
-                if (defenders == 0) value *= 1.5f;        // пустая база — лёгкий урон
-                else if (defenders >= squad.Size) value *= 0.5f; // равные числа — неохотно
-                float score = value / (Vector3.Distance(home, enemyBase.ApproachPoint) + 5f);
-                if (score > bestScore) { bestScore = score; best = enemyBase; }
-            }
+            if (defenders <= squad.Size || enemyBase.Hp <= finishBaseHp) return enemyBase;
         }
-        return best;
+        return null;
+    }
+
+    /// <summary>
+    /// Готова ли команда напасть на базу: полная (4 героя) и все её герои не ниже minBaseAttackLevel (2) уровня.
+    /// </summary>
+    private bool CanAttackBaseWith(Squad squad, MainBase enemyBase)
+    {
+        if (squad.Size < NeedSize(enemyBase)) return false;
+        foreach (HeroInstance h in squad.AllHeroes)
+            if (h.Level < minBaseAttackLevel) return false;
+        return true;
     }
 
     /// <summary>
@@ -676,36 +681,13 @@ public class EnemyAI : MonoBehaviour
             for (int i = 0; i < 10 && FactionManager.Instance.TryUnlockNext(team); i++)
                 Log($"открыл иконку фракции {FactionManager.Instance.GetUnlocked(team)}/{FactionManager.Instance.IconCount}");
         for (int i = 0; i < 10 && TryHire(); i++) { }
-        // Побеждённых героев — восстановить, если хватает денег
-        foreach (HeroManager.DefeatedHero d in new List<HeroManager.DefeatedHero>(HM.GetDefeated(team)))
-            if (HM.CanRestore(d, out _) && RM.CanAfford(team, HM.RestoreCost(d))) HM.TryRestore(d, out _);
         for (int i = 0; i < 10 && (TryBuild() || TryUpgradeBuildings() || TryUpgradeBase()); i++) { } // строить можно только в паузе
-        BuyLives(); // Лазарет (мог только что построиться): жизни героям с 1 жизнью — до повышения звёзд
         // Повысить звезду героям 5 уровня (сильнейшим первыми), пока хватает плутония
         var heroes = new List<HeroInstance>(HM.GetHeroes(team));
         heroes.Sort((a, b) => BattleCalculator.HeroPower(b).CompareTo(BattleCalculator.HeroPower(a)));
         foreach (HeroInstance h in heroes)
             if (HM.CanStarUp(h, out _) && RM.CanAfford(team, 0, HM.StarUpCost)) HM.TryStarUp(h, out _);
         UseArtifacts();
-    }
-
-    /// <summary>
-    /// Лазарет: купить жизнь за плутоний героям, у которых осталась 1 жизнь (и они не на задании).
-    /// Прокачанные (высокий уровень, сильные) — первыми, пока хватает плутония.
-    /// </summary>
-    private void BuyLives()
-    {
-        MainBase b = Base;
-        if (b == null || !b.HasInfirmary) return;
-        var list = new List<HeroInstance>();
-        foreach (HeroInstance h in HM.GetHeroes(team))
-            if (h.Lives == 1 && HM.CanBuyLife(h, out _)) list.Add(h);
-        list.Sort((a, c) => a.Level != c.Level ? c.Level.CompareTo(a.Level) : HeroPower(c).CompareTo(HeroPower(a)));
-        foreach (HeroInstance h in list)
-        {
-            if (!RM.CanAfford(team, 0, HM.LifeCost)) return;
-            if (HM.TryBuyLife(h, out _)) Log($"Лазарет: купил жизнь {h.Data.displayName} (ур. {h.Level}, жизней {h.Lives})");
-        }
     }
 
     /// <summary>Драфт перед игрой: нанять одного героя (карта стоит, поэтому вызывает DraftUI). Вернёт false, если больше некого.</summary>

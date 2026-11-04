@@ -1,0 +1,54 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fb02b52e743cf1e4a86b3c91a63383a7, type: 3}
+  m_Name: Sprites_Frizen
+  m_EditorClassIdentifier: Assembly-CSharp::CharacterSprites
+  idle:
+  - {fileID: 935828014362150624, guid: 0767bf6cbd3c9654b85c0d8a22c2bd51, type: 3}
+  - {fileID: -580984517595238415, guid: 0767bf6cbd3c9654b85c0d8a22c2bd51, type: 3}
+  - {fileID: -273659955025536266, guid: 0767bf6cbd3c9654b85c0d8a22c2bd51, type: 3}
+  - {fileID: -952582714162831203, guid: 0767bf6cbd3c9654b85c0d8a22c2bd51, type: 3}
+  walk:
+  - {fileID: -2175344441571253873, guid: 0767bf6cbd3c9654b85c0d8a22c2bd51, type: 3}
+  - {fileID: 5019535243559821683, guid: 0767bf6cbd3c9654b85c0d8a22c2bd51, type: 3}
+  - {fileID: 5665486051261250254, guid: 0767bf6cbd3c9654b85c0d8a22c2bd51, type: 3}
+  - {fileID: 5924670916974634702, guid: 0767bf6cbd3c9654b85c0d8a22c2bd51, type: 3}
+  - {fileID: -1134737538267617766, guid: 0767bf6cbd3c9654b85c0d8a22c2bd51, type: 3}
+  - {fileID: -7887363275655189749, guid: 0767bf6cbd3c9654b85c0d8a22c2bd51, type: 3}
+  - {fileID: -2230605112114882458, guid: 0767bf6cbd3c9654b85c0d8a22c2bd51, type: 3}
+  run:
+  - {fileID: -8701155420822573301, guid: 0767bf6cbd3c9654b85c0d8a22c2bd51, type: 3}
+  - {fileID: 8527930819827302421, guid: 0767bf6cbd3c9654b85c0d8a22c2bd51, type: 3}
+  - {fileID: 7085840302611613642, guid: 0767bf6cbd3c9654b85c0d8a22c2bd51, type: 3}
+  - {fileID: 4347340196747490080, guid: 0767bf6cbd3c9654b85c0d8a22c2bd51, type: 3}
+  - {fileID: 3814318432353258648, guid: 0767bf6cbd3c9654b85c0d8a22c2bd51, type: 3}
+  - {fileID: 5968469433373508010, guid: 0767bf6cbd3c9654b85c0d8a22c2bd51, type: 3}
+  - {fileID: -1684120506801922189, guid: 0767bf6cbd3c9654b85c0d8a22c2bd51, type: 3}
+  attack:
+  - {fileID: -2894023676793330167, guid: 0767bf6cbd3c9654b85c0d8a22c2bd51, type: 3}
+  attack2: []
+  attackFinisher: []
+  dashAttack: []
+  jump: []
+  jumpAttack: []
+  launched: []
+  dizzy: []
+  grab: []
+  knee: []
+  held: []
+  skills: []
+  idleFps: 5
+  walkFps: 10
+  runFps: 14
+  scale: 1.7
+  feetBelowCenterPx: 32
+  offsetXPx: 0

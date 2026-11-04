@@ -1,0 +1,67 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1eb09ca89b6c4e942acb943b440a973c, type: 3}
+  m_Name: Villain_Mozg
+  m_EditorClassIdentifier: Assembly-CSharp::HeroData
+  displayName: "\u041C\u043E\u0437\u0433"
+  portrait: {fileID: 21300000, guid: b9f0063ef515f7c4dbd2f0db2e97bb6a, type: 3}
+  color: {r: 0.49803922, g: 0.84705883, b: 1, a: 1}
+  sprites: {fileID: 11400000, guid: bdac546393302dc4fa0c58b9e7bc1a11, type: 2}
+  description: "\u0425\u043E\u043B\u043E\u0434\u043D\u0430\u044F \u0438 \u0440\u0430\u0441\u0447\u0451\u0442\u043B\u0438\u0432\u0430\u044F \u043F\u0440\u0430\u0432\u0438\u0442\u0435\u043B\u044C\u043D\u0438\u0446\u0430 \u0432\u0435\u0447\u043D\u043E\u0439 \u0437\u0438\u043C\u044B."
+  side: 1
+  stars: 1
+  hireCost: 365
+  hireable: 1
+  unitClass: 2
+  skillDamage: 1
+  baseStats:
+    hp: 1540
+    hpRegen: 31
+    autoAttack: 40
+    attack: 264
+    specialAttack: 220
+    defense: 79
+    specialDefense: 99
+    energy: 160
+    energyRegen: 19
+    speed: 88
+  autoAttackSpeed: 100
+  kit: 17
+  skills:
+  - name: "\u0429\u0443\u043F\u0430\u043B\u044C\u0446\u0430"
+    description: "\u0411\u044C\u0451\u0442 \u0434\u043B\u0438\u043D\u043D\u044B\u043C\u0438 \u0449\u0443\u043F\u0430\u043B\u044C\u0446\u0430\u043C\u0438 \u0432\u043F\u0435\u0440\u0451\u0434 \u043D\u0430 \u0441\u0440\u0435\u0434\u043D\u0435\u0435 \u0440\u0430\u0441\u0441\u0442\u043E\u044F\u043D\u0438\u0435: \u043E\u0442\u0431\u0440\u0430\u0441\u044B\u0432\u0430\u0435\u0442 \u0432\u0441\u0435\u0445 \u0437\u0430\u0434\u0435\u0442\u044B\u0445, \u0443\u0440\u043E\u043D 100% \u0421\u0438\u043B\u044B \u0430\u0442\u0430\u043A\u0438."
+    cooldown: 6
+    passive: 0
+    values:
+    - name: "\u0423\u0440\u043E\u043D \u0449\u0443\u043F\u0430\u043B\u0435\u0446, % \u0421\u0438\u043B\u044B \u0430\u0442\u0430\u043A\u0438"
+      value: 100
+      key: damage
+    - name: "\u0414\u043B\u0438\u043D\u0430 \u0449\u0443\u043F\u0430\u043B\u0435\u0446"
+      value: 3.5
+      key: range
+  - name: "\u041F\u0430\u0440\u0430\u0437\u0438\u0442"
+    description: "\u041A\u043E\u0433\u0434\u0430 \u0432\u0440\u0430\u0433 \u0432\u044B\u0431\u044B\u0432\u0430\u0435\u0442, \u043A \u043D\u0435\u043C\u0443 \u043B\u0435\u0442\u0438\u0442 \u043F\u0430\u0440\u0430\u0437\u0438\u0442 \u0438 \u043F\u043E\u0434\u043D\u0438\u043C\u0430\u0435\u0442 \u0435\u0433\u043E \u0437\u043E\u043C\u0431\u0438 \u043D\u0430 \u0441\u0442\u043E\u0440\u043E\u043D\u0435 \u041C\u043E\u0437\u0433\u0430 \u0434\u043E \u043A\u043E\u043D\u0446\u0430 \u0431\u043E\u044F (50% \u0445\u0430\u0440\u0430\u043A\u0442\u0435\u0440\u0438\u0441\u0442\u0438\u043A, \u0441\u043A\u043E\u0440\u043E\u0441\u0442\u044C \u2014 \u043A\u0430\u043A \u0431\u044B\u043B\u0430)."
+    cooldown: 0
+    passive: 1
+    values:
+    - name: "\u0417\u043E\u043C\u0431\u0438: \u0445\u0430\u0440\u0430\u043A\u0442\u0435\u0440\u0438\u0441\u0442\u0438\u043A\u0438, % \u043E\u0442 \u043F\u043E\u0433\u0438\u0431\u0448\u0435\u0433\u043E"
+      value: 50
+      key: stats
+  - name: "\u0418\u043D\u0442\u0435\u043B\u043B\u0435\u043A\u0442"
+    description: "\u0417\u0430 \u043A\u0430\u0436\u0434\u043E\u0433\u043E \u043F\u0430\u0440\u0430\u0437\u0438\u0442\u0430 +40 \u043A \u041C\u0430\u0433\u0438\u0438 \u0434\u043E \u043A\u043E\u043D\u0446\u0430 \u0431\u043E\u044F."
+    cooldown: 0
+    passive: 1
+    values:
+    - name: "+\u041C\u0430\u0433\u0438\u044F \u0437\u0430 \u043A\u0430\u0436\u0434\u043E\u0433\u043E \u043F\u0430\u0440\u0430\u0437\u0438\u0442\u0430"
+      value: 40
+      key: bonus
+  captainBonus: "\u0412\u0440\u0430\u0433\u0438 \u043A\u043E\u043C\u0430\u043D\u0434\u044B \u0437\u0430\u043C\u0435\u0434\u043B\u044F\u044E\u0442\u0441\u044F"

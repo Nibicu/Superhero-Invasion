@@ -13,8 +13,7 @@ public enum BuildingType
     Radar,        // Радар — позволяет смотреть базу, объекты и команды врага
     ReserveRooms, // Резервные комнаты — увеличивают лимит героев
     Barracks,     // Бараки — разрешают нанимать героев 2 и 3 звёзд
-    Laboratory,   // Лаборатория — прокачка уровня героев за плутоний (сейчас скрыта)
-    Infirmary     // Лазарет — побеждённые герои восстанавливаются быстрее, можно купить жизнь за плутоний
+    Laboratory    // Лаборатория — прокачка уровня героев за плутоний (сейчас скрыта)
 }
 
 /// <summary>
@@ -41,9 +40,6 @@ public class BuildingLevel
 
     [Tooltip("Героев скольких звёзд можно нанимать (Бараки). 0 — не влияет")]
     public int maxHeroStars = 0;
-
-    [Tooltip("На сколько фаз меньше ждёт побеждённый герой до восстановления (Лазарет)")]
-    public int recoveryPhasesCut = 0;
 
     [Tooltip("Для этого уровня нужен захваченный Завод")]
     public bool requiresFactory = false;
@@ -107,8 +103,6 @@ public class BuildingData : ScriptableObject
         if (l.plutoniumIncome > 0) sb.AppendLine($"<color=#C58BFF>+{l.plutoniumIncome} плутония</color> раз в 40 с");
         if (l.heroCapacityBonus > 0) sb.AppendLine($"Лимит героев +{l.heroCapacityBonus}");
         if (l.maxHeroStars > 0) sb.AppendLine($"Найм героев до {l.maxHeroStars} звёзд");
-        if (l.recoveryPhasesCut > 0) sb.AppendLine($"Восстановление героев быстрее на {l.recoveryPhasesCut} ф.");
-        if (type == BuildingType.Infirmary) sb.AppendLine("Можно купить жизнь герою за плутоний");
         if (!string.IsNullOrEmpty(l.effectText)) sb.AppendLine(l.effectText);
         return sb.ToString().TrimEnd();
     }

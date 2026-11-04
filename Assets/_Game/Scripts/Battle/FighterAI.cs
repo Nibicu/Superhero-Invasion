@@ -49,6 +49,8 @@ public class FighterAI : MonoBehaviour
     [SerializeField] private float underAttackDistance = 1.3f;
     [Tooltip("На каком расстоянии от ближайшего врага держится отступающий (недалеко, чтобы не потерять бой)")]
     [SerializeField] private float kiteDistance = 5f;
+    [Tooltip("Единственный враг лежит — на сколько от него отойти и ждать, пока встанет (чтобы не зажимать в углу)")]
+    [SerializeField] private float backOffDistance = 2.2f;
 
     [Header("Бег")]
     [Tooltip("Бежать можно, только если ближайший враг дальше этого (рядом с врагом — шагом). Отступающий бежит всегда")]
@@ -249,6 +251,13 @@ public class FighterAI : MonoBehaviour
                 Fighter far = NearestReachableOpponent(bm);
                 if (far != null)
                 {
+                    // Единственный враг лежит (сбит с ног) — не стоим над ним (иначе зажимаем в угол и он не может
+                    // встать и применить скилы): отходим на шаг и ждём, пока он поднимется
+                    if (!far.IsTargetable)
+                    {
+                        BackOffFrom(bm, far);
+                        return;
+                    }
                     destination = far.Position;
                     hasDestination = true;
                     return;
@@ -373,6 +382,32 @@ public class FighterAI : MonoBehaviour
         if (Mathf.Abs(p.x - want.x) > 1f) // упёрлись в край или барьер — уходим по глубине
             p = bm.ClampToArena(self, new Vector3(self.Position.x, self.Position.y + (wave > 0f ? 1.5f : -1.5f), 0f));
         return p;
+    }
+
+    /// <summary>
+    /// Враг лежит (или временно неуязвим после подъёма), а других целей нет: отходим от него на backOffDistance
+    /// (в сторону центра арены — от края, к которому его прижали) и ждём, повернувшись к нему.
+    /// Уже стоим на этом расстоянии — просто ждём.
+    /// </summary>
+    private void BackOffFrom(BattleManager bm, Fighter down)
+    {
+        aimPoint = down.Position;
+        Vector2 d = self.Position - down.Position;
+        if (d.magnitude >= backOffDistance)
+        {
+            hasDestination = false;
+            self.Movement.FaceTowards(down.Position.x);
+            return;
+        }
+        float away = Mathf.Abs(d.x) > 0.05f ? Mathf.Sign(d.x) : (bm.IsInsideArenaX(self.Position.x + 1f) ? 1f : -1f);
+        Vector3 want = new Vector3(down.Position.x + away * backOffDistance, self.Position.y, 0f);
+        Vector3 p = bm.ClampToArena(self, want);
+        // Упёрлись в край — отходим в другую сторону (лучше обойти лежачего, чем стоять над ним)
+        if (Mathf.Abs(p.x - want.x) > 0.5f)
+            p = bm.ClampToArena(self, new Vector3(down.Position.x - away * backOffDistance, self.Position.y, 0f));
+        destination = p;
+        hasDestination = (destination - self.Position).magnitude > 0.15f;
+        wantRun = false;
     }
 
     /// <summary>Ближайший живой противник в радиусе (даже недоступный — от него и отходим).</summary>

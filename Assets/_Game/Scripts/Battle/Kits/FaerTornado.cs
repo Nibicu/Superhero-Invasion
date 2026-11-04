@@ -20,9 +20,18 @@ public class FaerTornado : MonoBehaviour
     private float tickPower;        // Урон за раз (Магия × доля)
     private float tickTimer;        // До следующего урона
     private readonly List<Fighter> caught = new List<Fighter>(); // Кто крутится в торнадо
+    private float releaseStun;      // Стан подхваченных, когда торнадо кончилось (ледяной смерч Фризен; 0 — нет)
 
     /// <summary>Запустить торнадо Фаер Герл owner из точки pos в сторону dir (hitPower — разовый урон при попадании, tickPower — урон раз в 0.5 с).</summary>
     public static FaerTornado Launch(Fighter owner, Vector3 pos, int dir, float life, float speed, float hitPower, float tickPower, Sprite circle)
+        => Launch(owner, pos, dir, life, speed, hitPower, tickPower, circle, new Color(1f, 0.35f, 0.05f), new Color(1f, 0.85f, 0.3f), 0f);
+
+    /// <summary>
+    /// Запустить торнадо своего цвета (low — низ воронки, high — верх). releaseStun — стан подхваченных, когда торнадо
+    /// кончилось (ледяной смерч Фризен: враги замёрзли, падают на землю и не двигаются).
+    /// </summary>
+    public static FaerTornado Launch(Fighter owner, Vector3 pos, int dir, float life, float speed, float hitPower, float tickPower, Sprite circle,
+                                     Color low, Color high, float releaseStun)
     {
         var go = new GameObject("FaerTornado");
         go.transform.SetParent(BattleManager.Instance.RuntimeRoot, false);
@@ -34,11 +43,12 @@ public class FaerTornado : MonoBehaviour
         t.hitPower = hitPower;
         t.tickPower = tickPower;
         t.tickTimer = TickEvery;
+        t.releaseStun = releaseStun;
         if (circle != null)
             for (int i = 0; i < 5; i++) // воронка: снизу узко, сверху широко
             {
                 float w = 0.5f + i * 0.3f;
-                SkillFx.Spawn(circle, pos, Color.Lerp(new Color(1f, 0.35f, 0.05f), new Color(1f, 0.85f, 0.3f), i / 4f),
+                SkillFx.Spawn(circle, pos, Color.Lerp(low, high, i / 4f),
                     new Vector2(w, w * 0.45f), new Vector2(w * 1.1f, w * 0.5f), life, 70 + i).Fade(0.75f, 0.2f)
                     .Follow(go.transform, new Vector3(0f, 0.3f + i * 0.45f, 0f));
             }
@@ -103,5 +113,11 @@ public class FaerTornado : MonoBehaviour
     }
 
     /// <summary>Торнадо кончилось — подхваченные падают сами (сила тяжести), приземлятся — лягут.</summary>
-    private void ReleaseAll() => caught.Clear();
+    private void ReleaseAll()
+    {
+        if (releaseStun > 0f)
+            foreach (Fighter e in caught)
+                if (e != null && e.IsAlive) e.ApplyStun(releaseStun + 0.6f); // + время падения
+        caught.Clear();
+    }
 }

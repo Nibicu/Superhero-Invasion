@@ -493,6 +493,27 @@ public class BattleManager : MonoBehaviour
         return f;
     }
 
+    /// <summary>
+    /// Зомби (Паразит Мозга): выбывший враг corpse встаёт на стороне owner до конца боя.
+    /// Характеристики — statsShare (0.5) от характеристик выбывшего, кроме скорости (она остаётся); скилы у него есть,
+    /// но раз Сила атаки и Магия вдвое меньше — и урон скилов вдвое меньше. Тело выбывшего прячется.
+    /// Считается клоном: его HP не идёт в итог боя, урон засчитывается Мозгу.
+    /// </summary>
+    public Fighter SpawnZombie(Fighter owner, Fighter corpse, float statsShare)
+    {
+        HeroStats s = corpse.Stats.Scaled(statsShare);
+        s.speed = corpse.Stats.speed;
+        var u = new BattleUnit { data = corpse.Data, stats = s, hpFraction = 1f, level = corpse.Level, guard = owner.IsGuard };
+        Vector3 pos = ClampToArena(owner, corpse.transform.position);
+        Fighter f = Spawn(u, owner.Faction, owner.NeutralLook, pos - arenaRoot.position, owner.Territory, true);
+        f.IsClone = true;
+        f.IsZombie = true;
+        f.Summoner = owner.StatsOwner;
+        if (f.View != null) f.View.MarkZombie();
+        if (corpse.View != null) corpse.View.HideBody();
+        return f;
+    }
+
     /// <summary>Случайная точка на полу арены рядом с бойцом (не дальше radius по X), куда он может встать.</summary>
     public Vector3 RandomPointNear(Fighter f, float radius)
     {

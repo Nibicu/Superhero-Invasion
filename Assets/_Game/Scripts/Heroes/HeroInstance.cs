@@ -10,7 +10,7 @@ public enum HeroStatus
 
 /// <summary>
 /// Нанятый герой. HeroData — это "карточка" героя (одинаковая для всех),
-/// а HeroInstance — конкретный нанятый герой со своим уровнем, опытом, звездой, жизнями и статусом.
+/// а HeroInstance — конкретный нанятый герой со своим уровнем, опытом, звездой и статусом.
 /// Рост: опыт за задания и бои → уровень (каждые 100 опыта, до 5) → на 5 уровне можно один раз
 /// повысить звезду за плутоний (характеристики как у героя с этим числом звёзд; 3★ → 3.5★, +10%).
 /// </summary>
@@ -21,9 +21,6 @@ public class HeroInstance
 
     /// <summary>Сколько опыта нужно на каждый следующий уровень.</summary>
     public const int XpPerLevel = 100;
-
-    /// <summary>Сколько жизней у героя (сколько раз может выбыть в бою, прежде чем будет побеждён).</summary>
-    public const int MaxLives = 3;
 
     /// <summary>Прибавка 3★ героя за повышение звезды (до 3.5★): +10% ко всем характеристикам.</summary>
     public const float HalfStarBonus = 0.1f;
@@ -42,9 +39,6 @@ public class HeroInstance
 
     /// <summary>Звезда героя уже повышена (повысить можно только один раз).</summary>
     public bool StarUpgraded { get; private set; }
-
-    /// <summary>Сколько жизней осталось (0 — побеждён).</summary>
-    public int Lives { get; set; } = MaxLives;
 
     /// <summary>Чем занят герой.</summary>
     public HeroStatus Status { get; set; } = HeroStatus.Free;

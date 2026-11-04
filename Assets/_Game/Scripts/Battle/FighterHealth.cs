@@ -105,8 +105,13 @@ public class FighterHealth : MonoBehaviour
 
         if (Current <= 0f)
         {
-            Die(hit.attacker);
-            fighter.Movement.ApplyKnockback(hit.knockback * 1.3f);
+            if (Die(hit.attacker)) fighter.Movement.ApplyKnockback(hit.knockback * 1.3f);
+            else
+            {
+                // Навык спас от выбывания (монетка Тени) — боец падает, но остаётся в бою
+                fighter.SetState(FighterState.KnockedDown);
+                fighter.Movement.ApplyKnockback(FallKnockback(hit));
+            }
             return true;
         }
 
@@ -191,13 +196,23 @@ public class FighterHealth : MonoBehaviour
         if (Current <= 0f) Die(source);
     }
 
-    /// <summary>Боец выбыл: добивание засчитывается killer, время выбывания — для статистики.</summary>
-    private void Die(Fighter killer)
+    /// <summary>
+    /// Боец выбыл: добивание засчитывается killer, время выбывания — для статистики.
+    /// Навык может спасти (монетка Тени) — тогда HP восстанавливается и вернётся false.
+    /// </summary>
+    private bool Die(Fighter killer)
     {
+        if (fighter.Kit != null && fighter.Kit.TryCheatDeath(out float hp))
+        {
+            Current = Mathf.Max(1f, Max * hp);
+            Changed?.Invoke(this);
+            return false;
+        }
         if (killer != null && !fighter.IsClone) killer.StatsOwner.Kills++;
         if (BattleManager.Instance != null) fighter.DeathTime = BattleManager.Instance.Elapsed;
         fighter.SetState(FighterState.Dead);
         Died?.Invoke(fighter);
+        return true;
     }
 
     /// <summary>Запомнить номер удара (храним только последние).</summary>

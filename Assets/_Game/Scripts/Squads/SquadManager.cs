@@ -20,8 +20,8 @@ public class SquadManager : MonoBehaviour
     [SerializeField] private int maxMembers = 3;
 
     [Header("Лечение")]
-    [Tooltip("Какую долю здоровья герой восстанавливает за секунду, пока он дома (0.02 = 2%)")]
-    [SerializeField] private float healPerSecond = 0.02f;
+    [Tooltip("Какую долю здоровья герой восстанавливает за секунду, пока он дома (0.01 = 1%; было 0.02 — теперь на 50% медленнее)")]
+    [SerializeField] private float healPerSecond = 0.01f;
 
     [Header("Фишки команд на карте")]
     [Tooltip("Префаб фишки команды (Assets/_Game/Prefabs/SquadToken)")]

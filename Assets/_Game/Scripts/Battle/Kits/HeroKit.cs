@@ -62,6 +62,19 @@ public abstract class HeroKit : MonoBehaviour
     /// <summary>Множитель скорости ходьбы (дым Сойки — ×1.3).</summary>
     public virtual float SpeedMultiplier => 1f;
 
+    /// <summary>Множитель скорости авто атак (бубны Тени — следующие 3 удара быстрее).</summary>
+    public virtual float AttackSpeedMultiplier => 1f;
+
+    /// <summary>
+    /// Смертельный удар: навык может спасти бойца (монетка Тени). Вернёт true и долю HP, с которой он остаётся;
+    /// false — боец выбывает как обычно.
+    /// </summary>
+    public virtual bool TryCheatDeath(out float hpFraction)
+    {
+        hpFraction = 0f;
+        return false;
+    }
+
     /// <summary>Создать навыки нужного героя (null — своих навыков нет).</summary>
     public static HeroKit Create(Fighter f, HeroKitType type)
     {
@@ -79,6 +92,12 @@ public abstract class HeroKit : MonoBehaviour
             case HeroKitType.Reyndger: return f.gameObject.AddComponent<ReyndgerKit>();
             case HeroKitType.FaerGerl: return f.gameObject.AddComponent<FaerGerlKit>();
             case HeroKitType.Protatp28: return f.gameObject.AddComponent<Protatp28Kit>();
+            case HeroKitType.America: return f.gameObject.AddComponent<AmericaKit>();
+            case HeroKitType.ZedRock: return f.gameObject.AddComponent<ZedRockKit>();
+            case HeroKitType.Ten: return f.gameObject.AddComponent<TenKit>();
+            case HeroKitType.Shtorm: return f.gameObject.AddComponent<ShtormKit>();
+            case HeroKitType.Mozg: return f.gameObject.AddComponent<MozgKit>();
+            case HeroKitType.Frizen: return f.gameObject.AddComponent<FrizenKit>();
             default: return null;
         }
     }
@@ -211,6 +230,28 @@ public abstract class HeroKit : MonoBehaviour
 
     /// <summary>Перенестись в безопасное место неподалёку (до radius по арене).</summary>
     protected void TeleportAway(float radius) => self.transform.position = SafePoint(radius);
+
+    /// <summary>Ударить врага скилом с подбрасыванием (launch — скорость вверх). Вернёт true, если удар прошёл.</summary>
+    protected bool LaunchEnemy(Fighter e, float power, bool vsSpecial, float launch, Vector2 knockback)
+    {
+        return e.Health.TakeHit(new HitInfo
+        {
+            attacker = self,
+            attackId = FighterCombat.NewAttackId(),
+            damage = FighterCombat.CalcDamage(power, vsSpecial ? e.Stats.specialDefense : e.Stats.defense),
+            knockback = knockback,
+            launch = launch,
+            special = vsSpecial
+        });
+    }
+
+    /// <summary>Гроги: враг шатается (если сейчас может — не лежит, не в воздухе, не выбыл).</summary>
+    protected static void MakeDizzy(Fighter e)
+    {
+        if (e == null || !e.IsAlive || !e.CanBecomeDizzy) return;
+        if (e.State == FighterState.KnockedDown || e.State == FighterState.Airborne || e.State == FighterState.Jumping) return;
+        e.BecomeDizzy();
+    }
 
     /// <summary>Ударить врага скилом (урон power × сила; vsSpecial — против Спец. защиты).</summary>
     protected bool HitEnemy(Fighter e, float power, bool vsSpecial, Vector2 knockback, int stagger)

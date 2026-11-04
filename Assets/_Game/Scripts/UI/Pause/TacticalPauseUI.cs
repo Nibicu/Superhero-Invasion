@@ -10,7 +10,7 @@ using UnityEngine.UI;
 ///  справа внизу — "КОНЕЦ ХОДА" (закончить паузу раньше).
 /// Вкладка "Фракция": 5 иконок, открываются по порядку за очки фракции (FactionManager).
 /// Вкладка "Герои": 3★ герой фракции (нанять — после всех 5 иконок), лидер и остальные герои
-///  (перетаскиванием меняется порядок; перетащите героя на лидера — он станет лидером), побеждённые герои.
+///  (перетаскиванием меняется порядок; перетащите героя на лидера — он станет лидером).
 /// Вкладка "База": 5 ячеек построек (встроенное окно базы).
 /// </summary>
 public class TacticalPauseUI : MonoBehaviour
@@ -61,7 +61,6 @@ public class TacticalPauseUI : MonoBehaviour
     [SerializeField] private Button inventoryButton;     // "ИНВЕНТАРЬ"
 
     [Header("Побеждённые герои")]
-    [SerializeField] private GameObject defeatedTemplate; // Шаблон строки: текст + кнопка (выключен)
 
     [Header("Окна")]
     [SerializeField] private RosterWindowUI roster;     // Покупка героев
@@ -79,7 +78,6 @@ public class TacticalPauseUI : MonoBehaviour
     {
         Instance = this;
         rowTemplate.gameObject.SetActive(false);
-        if (defeatedTemplate != null) defeatedTemplate.SetActive(false);
         readyButton.onClick.AddListener(() => { if (PhaseManager.Instance != null) PhaseManager.Instance.Ready(); });
         buyButton.onClick.AddListener(() => roster.Open());
         inventoryButton.onClick.AddListener(() => { if (ArtifactWindowUI.Instance != null) ArtifactWindowUI.Instance.OpenInventory(); });
@@ -243,7 +241,7 @@ public class TacticalPauseUI : MonoBehaviour
         else if (fm.CanUnlockNext(Team.Player, out string reason) == false) ToastUI.Show(reason);
     }
 
-    /// <summary>Вкладка "Герои": 3★ герой фракции, лидер, остальные и побеждённые.</summary>
+    /// <summary>Вкладка "Герои": 3★ герой фракции, лидер и остальные герои.</summary>
     private void RefreshHeroes()
     {
         foreach (GameObject go in spawned) Destroy(go);
@@ -289,27 +287,6 @@ public class TacticalPauseUI : MonoBehaviour
             if (hm.IsReserve(heroes[i])) row.MarkReserve();
             if (hm.StarReady(heroes[i])) row.MarkStarReady(); // 5 уровень — можно повысить звезду
         }
-
-        // Побеждённые герои (в конце списка): ждут 2 фазы, потом их можно восстановить за двойную цену
-        if (defeatedTemplate != null)
-            foreach (HeroManager.DefeatedHero d in hm.GetDefeated(Team.Player))
-            {
-                GameObject go = Instantiate(defeatedTemplate, heroList);
-                go.SetActive(true);
-                spawned.Add(go);
-                bool can = hm.CanRestore(d, out string reason);
-                int cost = hm.RestoreCost(d);
-                go.GetComponentInChildren<TMP_Text>().text = $"<color=#FF8C80>Побеждён:</color> {d.hero.Data.displayName}  <size=80%><color=#9AA4B5>ур. {d.hero.Level}</color></size>";
-                Button restore = go.GetComponentInChildren<Button>();
-                restore.interactable = can;
-                restore.GetComponentInChildren<TMP_Text>().text = can ? $"ВОССТАНОВИТЬ {cost}" : reason.ToUpper();
-                HeroManager.DefeatedHero captured = d;
-                restore.onClick.AddListener(() =>
-                {
-                    if (HeroManager.Instance.TryRestore(captured, out string err)) ToastUI.Show($"{captured.hero.Data.displayName} снова в строю!");
-                    else ToastUI.Show(err);
-                });
-            }
     }
 
     /// <summary>

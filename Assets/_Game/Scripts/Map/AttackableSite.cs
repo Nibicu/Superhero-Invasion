@@ -298,17 +298,6 @@ public abstract class AttackableSite : MonoBehaviour, ISquadTarget
         foreach (HeroInstance h in new List<HeroInstance>(heroes)) HeroManager.Instance.GiveXp(h, amount);
     }
 
-    /// <summary>Ручной бой: герои, выбывшие на арене, теряют по жизни.</summary>
-    private static void ApplyDeaths(BattleResult result)
-    {
-        HeroManager hm = HeroManager.Instance;
-        if (hm == null) return;
-        if (result.ourDead != null)
-            foreach (HeroData d in result.ourDead) hm.LoseLife(hm.FindHero(Team.Player, d));
-        if (result.theirDead != null)
-            foreach (HeroData d in result.theirDead) hm.LoseLife(hm.FindHero(Team.Enemy, d));
-    }
-
     /// <summary>Нападающие проиграли бой (наследник может что-то сделать).</summary>
     protected virtual void OnAttackerLost(Squad squad) { }
 
@@ -426,11 +415,9 @@ public abstract class AttackableSite : MonoBehaviour, ISquadTarget
         BattleForecast f = BattleCalculator.Forecast(BattleCalculator.SquadPower(squad), DefenderPower);
         bool won = BattleCalculator.RollAutoBattle(f);
         OnAutoResolved(squad, won);
-        // Автобой: проигравшая сторона теряет по жизни у каждого героя
-        if (!won) foreach (HeroInstance h in new List<HeroInstance>(squad.AllHeroes)) HeroManager.Instance.LoseLife(h);
-        else foreach (HeroInstance h in new List<HeroInstance>(DefenderHeroes())) HeroManager.Instance.LoseLife(h);
         ApplyDefenderAutoLoss(won ? 0.5f : 0.2f);
-        float hp = Mathf.Max(BattleCalculator.MinHpAfterBattle, squad.HpFraction - BattleCalculator.AutoBattleHpLoss(f, won));
+        // Проиграли — команда остаётся с 20% здоровья (жизней у героев больше нет)
+        float hp = won ? Mathf.Max(BattleCalculator.MinHpAfterBattle, squad.HpFraction - BattleCalculator.AutoBattleHpLoss(f, won)) : BattleCalculator.MinHpAfterBattle;
         Finish(won, hp);
     }
 
@@ -487,7 +474,6 @@ public abstract class AttackableSite : MonoBehaviour, ISquadTarget
     {
         if (attacker == null) return;
         OnBattleResult(result);
-        ApplyDeaths(result);
         bool defended = PlayerDefends;
         bool attackerWon = defended ? !result.win : result.win;
         SetDefenderHp(defended ? result.ourHp : result.theirHp, result);
@@ -499,7 +485,6 @@ public abstract class AttackableSite : MonoBehaviour, ISquadTarget
     {
         if (!IsContested) return;
         OnBattleResult(result);
-        ApplyDeaths(result);
         bool playerFirst = attacker.Squad.Owner == Team.Player;
         bool attackerWon = playerFirst ? result.win : !result.win;
         FinishContested(attackerWon,

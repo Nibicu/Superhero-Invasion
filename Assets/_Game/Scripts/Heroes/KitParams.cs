@@ -152,6 +152,64 @@ public static class KitParams
             new SkillParamDef(2, "hp", "Работает, пока HP ниже, %", 50, P),
             new SkillParamDef(2, "bonus", "Реген HP больше на, %", 50, P),
         },
+        [HeroKitType.America] = new[]
+        {
+            new SkillParamDef(0, "damage", "Урон бумеранга (туда и обратно), % Силы атаки", 60, P),
+            new SkillParamDef(0, "range", "Как далеко летит бумеранг", 5),
+            new SkillParamDef(1, "damage", "Урон апперкота, % Силы атаки", 90, P),
+            new SkillParamDef(1, "radius", "Досягаемость апперкота", 1.6f),
+            new SkillParamDef(2, "damage", "Урон контратаки, % Силы атаки", 100, P),
+        },
+        [HeroKitType.ZedRock] = new[]
+        {
+            new SkillParamDef(0, "shots", "Снарядов", 2),
+            new SkillParamDef(0, "interval", "Интервал между снарядами, сек", 0.5f),
+            new SkillParamDef(0, "damage", "Урон снаряда, % Магии", 80, P),
+            new SkillParamDef(1, "damage", "Урон звукового кольца, % Магии", 70, P),
+            new SkillParamDef(1, "radius", "Радиус кольца", 2.2f),
+            new SkillParamDef(2, "bonus", "Скорость бега и атак союзников, +%", 20, B),
+            new SkillParamDef(2, "time", "Сколько длится, сек", 3),
+            new SkillParamDef(2, "radius", "Радиус", 4),
+        },
+        [HeroKitType.Ten] = new[]
+        {
+            new SkillParamDef(0, "cards", "Карт", 3),
+            new SkillParamDef(0, "damage", "Урон карты, % Силы атаки", 45, P),
+            new SkillParamDef(0, "boosted", "Урон карты после пик, % Силы атаки", 60, P),
+            new SkillParamDef(1, "spin", "Карта крутится, сек", 2),
+            new SkillParamDef(1, "heal", "Черви: лечение, % макс. HP", 20, P),
+            new SkillParamDef(1, "hits", "Бубны: сколько авто атак быстрее", 3),
+            new SkillParamDef(1, "speed", "Бубны: скорость этих атак, +%", 50, B),
+            new SkillParamDef(1, "energy", "Крести: энергия, % от максимума", 50, P),
+            new SkillParamDef(2, "chance", "Шанс решки (ожить), %", 50, P),
+            new SkillParamDef(2, "hp", "Оживает с HP, %", 20, P),
+        },
+        [HeroKitType.Shtorm] = new[]
+        {
+            new SkillParamDef(0, "min", "Разрядов минимум", 2),
+            new SkillParamDef(0, "max", "Разрядов максимум", 5),
+            new SkillParamDef(0, "damage", "Урон разряда, % Магии", 50, P),
+            new SkillParamDef(1, "damage", "Урон шаровой молнии, % Магии", 120, P),
+            new SkillParamDef(2, "damage", "Урон разряда вокруг, % Магии", 80, P),
+            new SkillParamDef(2, "radius", "Радиус разряда", 1.8f),
+        },
+        [HeroKitType.Mozg] = new[]
+        {
+            new SkillParamDef(0, "damage", "Урон щупалец, % Силы атаки", 100, P),
+            new SkillParamDef(0, "range", "Длина щупалец", 3.5f),
+            new SkillParamDef(1, "stats", "Зомби: характеристики, % от погибшего", 50, P),
+            new SkillParamDef(2, "bonus", "+Магия за каждого паразита", 40),
+        },
+        [HeroKitType.Frizen] = new[]
+        {
+            new SkillParamDef(0, "damage", "Урон ледяного шара, % Магии", 100, P),
+            new SkillParamDef(0, "stun", "Заморозка (стан), сек", 3),
+            new SkillParamDef(1, "damage", "Урон смерча, % Магии", 80, P),
+            new SkillParamDef(1, "time", "Сколько живёт смерч, сек", 3),
+            new SkillParamDef(1, "stun", "Стан после падения, сек", 2),
+            new SkillParamDef(2, "defense", "+Защита", 30),
+            new SkillParamDef(2, "spdefense", "+Спец. защита", 30),
+        },
     };
 
     private static readonly SkillParamDef[] none = new SkillParamDef[0]; // У кого навыков нет

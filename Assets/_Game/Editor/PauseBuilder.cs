@@ -72,7 +72,7 @@ public static class PauseBuilder
         foreach (PortalData d in All<PortalData>()) { d.rewardFactionPoints = PortalPoints; EditorUtility.SetDirty(d); }
 
         SetupRecommendations();
-        SetupInfirmary();
+        RemoveLivesAndInfirmary();
     }
 
     // ---------- Рекомендации по числу героев (вместо силы) ----------
@@ -99,69 +99,58 @@ public static class PauseBuilder
         foreach (PortalData d in All<PortalData>()) { d.recommendedHeroes = 4; EditorUtility.SetDirty(d); }
     }
 
-    // ---------- Лазарет ----------
+    // ---------- Лазарет и жизни убраны ----------
 
-    private const string InfirmaryPath = "Assets/_Game/Data/Buildings/Building_Infirmary.asset"; // Файл Лазарета
+    /// <summary>Скорость лечения героев дома (доля HP в секунду): было 0.02, теперь на 50% медленнее.</summary>
+    private const float HealPerSecond = 0.01f;
 
     /// <summary>
-    /// Лазарет: создать файл (если нет), добавить его в постройки обеих баз и в план стройки ИИ (после Бараков).
-    /// Ур.1 (500 золота) — ждать восстановления на 1 фазу меньше, ур.2 (1000) — ещё на 1 (восстановить в следующей паузе).
+    /// Убрать следы Лазарета и системы жизней (идёт каждый раз, безопасно повторять):
+    ///  - пустые ссылки (удалённый файл Лазарета) — из построек обеих баз и из плана стройки ИИ;
+    ///  - лечение дома на 50% медленнее (SquadManager.healPerSecond);
+    ///  - значок сердца и число жизней на аватарках героев (объекты LifeIcon и Lives).
     /// </summary>
-    private static void SetupInfirmary()
+    private static void RemoveLivesAndInfirmary()
     {
-        var inf = AssetDatabase.LoadAssetAtPath<BuildingData>(InfirmaryPath);
-        if (inf == null)
-        {
-            inf = ScriptableObject.CreateInstance<BuildingData>();
-            AssetDatabase.CreateAsset(inf, InfirmaryPath);
-        }
-        inf.displayName = "Лазарет";
-        inf.description = "Медицинский центр. Побеждённые герои восстанавливаются быстрее, а раненым можно купить жизнь за плутоний (клик по герою).";
-        inf.color = new Color(0.9f, 0.3f, 0.35f);
-        inf.type = BuildingType.Infirmary;
-        inf.availableFromStart = true;
-        inf.allowMultiple = false;
-        inf.levels = new[]
-        {
-            new BuildingLevel { goldCost = 500, recoveryPhasesCut = 1 },
-            new BuildingLevel { goldCost = 1000, recoveryPhasesCut = 2 },
-        };
-        EditorUtility.SetDirty(inf);
-
-        // В список построек обеих баз
         foreach (MainBase b in Object.FindObjectsByType<MainBase>(FindObjectsInactive.Include))
         {
             var so = new SerializedObject(b);
-            var list = so.FindProperty("availableBuildings");
-            if (!Contains(list, inf))
-            {
-                list.arraySize++;
-                list.GetArrayElementAtIndex(list.arraySize - 1).objectReferenceValue = inf;
-            }
+            RemoveEmpty(so.FindProperty("availableBuildings"));
             so.ApplyModifiedPropertiesWithoutUndo();
         }
-
-        // В план стройки ИИ — сразу после первых Бараков
         foreach (EnemyAI ai in Object.FindObjectsByType<EnemyAI>(FindObjectsInactive.Include))
         {
             var so = new SerializedObject(ai);
-            var order = so.FindProperty("buildOrder");
-            if (Contains(order, inf)) continue;
-            int at = order.arraySize;
-            for (int i = 0; i < order.arraySize; i++)
-                if (order.GetArrayElementAtIndex(i).objectReferenceValue is BuildingData bd && bd.type == BuildingType.Barracks) { at = i + 1; break; }
-            order.InsertArrayElementAtIndex(Mathf.Min(at, order.arraySize));
-            order.GetArrayElementAtIndex(Mathf.Min(at, order.arraySize - 1)).objectReferenceValue = inf;
+            RemoveEmpty(so.FindProperty("buildOrder"));
             so.ApplyModifiedPropertiesWithoutUndo();
         }
+        foreach (SquadManager sm in Object.FindObjectsByType<SquadManager>(FindObjectsInactive.Include))
+        {
+            var so = new SerializedObject(sm);
+            so.FindProperty("healPerSecond").floatValue = HealPerSecond;
+            so.ApplyModifiedPropertiesWithoutUndo();
+        }
+        // Сердечки жизней на аватарках
+        var dead = new List<GameObject>();
+        foreach (HeroAvatarUI a in Object.FindObjectsByType<HeroAvatarUI>(FindObjectsInactive.Include))
+            foreach (string n in new[] { "LifeIcon", "Lives" })
+            {
+                Transform t = a.transform.Find(n);
+                if (t != null) dead.Add(t.gameObject);
+            }
+        foreach (GameObject g in dead) Object.DestroyImmediate(g);
     }
 
-    /// <summary>Есть ли объект в списке-свойстве.</summary>
-    private static bool Contains(SerializedProperty list, Object item)
+    /// <summary>Убрать из списка-свойства пустые ссылки (например, на удалённый файл).</summary>
+    private static void RemoveEmpty(SerializedProperty list)
     {
-        for (int i = 0; i < list.arraySize; i++)
-            if (list.GetArrayElementAtIndex(i).objectReferenceValue == item) return true;
-        return false;
+        for (int i = list.arraySize - 1; i >= 0; i--)
+            if (list.GetArrayElementAtIndex(i).objectReferenceValue == null)
+            {
+                list.DeleteArrayElementAtIndex(i);
+                // У ссылок на объекты первый вызов только обнуляет элемент — удаляем второй раз, если он остался
+                if (i < list.arraySize && list.GetArrayElementAtIndex(i).objectReferenceValue == null) list.DeleteArrayElementAtIndex(i);
+            }
     }
 
     /// <summary>Назначить фракции её 3★ героя.</summary>
@@ -292,7 +281,6 @@ public static class PauseBuilder
         var row = Object.Instantiate(srcRow, heroList);
         row.name = "RowTemplate";
         row.gameObject.SetActive(false);
-        GameObject defeatedRow = DefeatedTemplate(heroList);
 
         // ---- Вкладка "База": копия панели окна базы ----
         BaseWindowUI baseTab = BaseTab(c, baseWindow);
@@ -329,7 +317,6 @@ public static class PauseBuilder
         so.FindProperty("leaderText").objectReferenceValue = leaderText;
         so.FindProperty("buyButton").objectReferenceValue = buy;
         so.FindProperty("inventoryButton").objectReferenceValue = inventory;
-        so.FindProperty("defeatedTemplate").objectReferenceValue = defeatedRow;
         so.FindProperty("roster").objectReferenceValue = roster;
         so.FindProperty("heroInfo").objectReferenceValue = heroInfo;
         so.FindProperty("baseTab").objectReferenceValue = baseTab;
@@ -593,30 +580,6 @@ public static class PauseBuilder
         sr.movementType = ScrollRect.MovementType.Clamped;
         sr.scrollSensitivity = 30;
         return content;
-    }
-
-    /// <summary>Шаблон строки побеждённого героя: текст + кнопка "Восстановить".</summary>
-    private static GameObject DefeatedTemplate(RectTransform list)
-    {
-        var rowImg = Img("DefeatedTemplate", list, rounded, new Color(0.35f, 0.15f, 0.15f, 0.9f));
-        rowImg.type = Image.Type.Sliced;
-        rowImg.rectTransform.sizeDelta = new Vector2(800, 56);
-        rowImg.gameObject.AddComponent<LayoutElement>().preferredHeight = 56;
-        var name = Text("Name", rowImg.rectTransform, "Герой", 22, Color.white, TextAlignmentOptions.Left, false);
-        name.rectTransform.anchorMin = new Vector2(0, 0);
-        name.rectTransform.anchorMax = new Vector2(1, 1);
-        name.rectTransform.offsetMin = new Vector2(16, 0);
-        name.rectTransform.offsetMax = new Vector2(-270, 0);
-        var btnImg = Img("Button", rowImg.rectTransform, rounded, new Color(0.247f, 0.639f, 0.302f));
-        btnImg.type = Image.Type.Sliced;
-        Place(btnImg.rectTransform, new Vector2(1f, 0.5f), new Vector2(-130, 0), new Vector2(240, 44));
-        var btn = btnImg.gameObject.AddComponent<Button>();
-        var colors = btn.colors;
-        colors.disabledColor = new Color(0.45f, 0.45f, 0.5f, 0.8f);
-        btn.colors = colors;
-        Stretch(Text("Text", btnImg.rectTransform, "ВОССТАНОВИТЬ", 18, Color.white, TextAlignmentOptions.Center, false).rectTransform);
-        rowImg.gameObject.SetActive(false);
-        return rowImg.gameObject;
     }
 
     /// <summary>

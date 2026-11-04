@@ -145,7 +145,7 @@ public class FighterMovement : MonoBehaviour
         {
             if (input.sqrMagnitude > 0.0004f)
             {
-                float v = Speed * (fighter.Kit != null ? fighter.Kit.SpeedMultiplier : 1f); // навык может ускорять (дым Сойки)
+                float v = Speed * (fighter.Kit != null ? fighter.Kit.SpeedMultiplier : 1f) * fighter.TempoMultiplier; // навык может ускорять (дым Сойки, Энерго темп)
                 if (wantRun && CanRun)
                 {
                     running = true;

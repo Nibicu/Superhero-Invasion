@@ -135,7 +135,6 @@ public class PhaseManager : MonoBehaviour
     /// <summary>Начать фазу миссий.</summary>
     private void BeginMissions()
     {
-        if (Phase != GamePhase.Draft && HeroManager.Instance != null) HeroManager.Instance.OnPhaseStarted();
         Phase = GamePhase.Missions;
         TimeLeft = Duration = missionsDuration;
         ToastUI.Show($"ФАЗА МИССИЙ — {Mathf.RoundToInt(missionsDuration / 60f)} мин. Выполняйте миссии");
@@ -145,7 +144,6 @@ public class PhaseManager : MonoBehaviour
     /// <summary>Начать фазу события (портал или объект — по очереди).</summary>
     private void BeginEvent()
     {
-        if (HeroManager.Instance != null) HeroManager.Instance.OnPhaseStarted();
         Phase = GamePhase.Event;
         TimeLeft = Duration = eventDuration;
         eventStarted = EventManager.Instance != null && EventManager.Instance.StartNext(eventDuration);
