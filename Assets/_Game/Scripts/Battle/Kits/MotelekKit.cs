@@ -2,7 +2,7 @@ using UnityEngine;
 
 /// <summary>
 /// Мотылёк (героиня, класс Поддержка, урон от Магии). Навыки:
-///  1) "Зачарованный снаряд" (ур. 1) — 2–5 магических шаров веером (сколько хватит энергии, каждый — 15 энергии),
+///  1) "Зачарованный снаряд" (ур. 1) — очередью 2–5 магических шаров (летят прямо, чуть доворачивают к цели) (сколько хватит энергии, каждый — 15 энергии),
 ///     каждый — 45% Магии (как звёздочки Фантома).
 ///  2) "Волшебная пыль" (ур. 3) — пыль вокруг Мотылька (4 с): союзник, зашедший в неё, лечится на 30% макс. HP (MotelekDust).
 ///  3) "Выброс энергии" (ур. 5) — волна во все стороны: враги рядом получают 50% Силы атаки и отлетают.
@@ -30,11 +30,10 @@ public class MotelekKit : HeroKit
     [SerializeField] private int orbsMax = 5;               // Больше этого не бросает
     [SerializeField] private float orbEnergy = 15f;         // Цена одного шара (энергия)
     [SerializeField] private float orbDamage = 0.45f;       // Урон одного шара (доля Магии)
-    [SerializeField] private float orbInterval = 0.15f;     // Интервал между шарами
+    [SerializeField] private float orbInterval = 0.25f;     // Интервал между шарами
     [SerializeField] private float orbSpeed = 10f;          // Скорость
     [SerializeField] private float orbRange = 9f;           // Дальность
     [SerializeField] private float orbMinRange = 1.5f;      // Ближе — бьёт рукой
-    [SerializeField] private float orbSpread = 1.4f;        // Ширина веера
     [SerializeField] private Color orbColor = new Color(0.75f, 0.5f, 1f); // Сиреневый
 
     [Header("Волшебная пыль")]
@@ -118,12 +117,12 @@ public class MotelekKit : HeroKit
         return true;
     }
 
-    /// <summary>Бросить один шар (веером: каждый — со своим уклоном по глубине).</summary>
+    /// <summary>Бросить один шар (очередь: прямо, с доворотом к цели).</summary>
     private void ThrowOrb()
     {
-        if (!self.Combat.TrySpendEnergy(orbEnergy)) { orbsTotal = orbsThrown; return; } // энергия кончилась
+        // Очередь (как в Little Fighter 2 при зажатой кнопке): кончилась энергия или цель выбыла — очередь обрывается
+        if (orbTarget == null || !orbTarget.IsAlive || !self.Combat.TrySpendEnergy(orbEnergy)) { orbsTotal = orbsThrown; actionLength = Mathf.Min(actionLength, ActionTime + 0.15f); return; }
         if (orbTarget != null && orbTarget.IsAlive) self.Movement.FaceTowards(orbTarget.Position.x);
-        float k = orbsTotal > 1 ? (float)orbsThrown / (orbsTotal - 1) * 2f - 1f : 0f; // −1 … +1
         orbsThrown++;
         AnimCycle++;
         self.Combat.FireShot(new ShotInfo
@@ -135,7 +134,7 @@ public class MotelekKit : HeroKit
             size = 0.5f,
             stagger = 1,
             knockback = 1.5f,
-            driftY = k * orbSpread,
+            steerTarget = orbTarget, // летит прямо, но чуть доворачивает к цели
             color = orbColor,
             flicker = new Color(1f, 0.85f, 1f)
         });

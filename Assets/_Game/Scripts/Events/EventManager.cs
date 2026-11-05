@@ -12,7 +12,7 @@ public enum GameEventKind
 /// <summary>
 /// События (объект Managers). Когда событие начинается, решают фазы игры (PhaseManager):
 ///  событие идёт в фазе события (eventDuration, 2 мин). Без PhaseManager — старое расписание (затишье → событие).
-/// События идут по порядку из списка order: "объект, объект, портал" и снова сначала.
+/// События идут по порядку из списка order: "объект, портал" и снова сначала (порталы — чаще: это интересная механика).
 /// Событие "Объект": открывается случайный неактивный объект; кто первым победит охрану,
 ///  сразу получает награду (золото, плутоний, очки фракции, артефакт), и объект исчезает (снова неактивен).
 /// Событие "Портал": открывается портал; закрыл один — урон базе другого (это делает сам Portal);
@@ -26,7 +26,7 @@ public class EventManager : MonoBehaviour
 
     [Header("Расписание")]
     [Tooltip("Порядок событий (повторяется по кругу)")]
-    [SerializeField] private GameEventKind[] order = { GameEventKind.Object, GameEventKind.Object, GameEventKind.Portal };
+    [SerializeField] private GameEventKind[] order = { GameEventKind.Object, GameEventKind.Portal };
     [Tooltip("Сколько секунд затишья перед первым событием")]
     [SerializeField] private float firstDelay = 240f;
     [Tooltip("Сколько секунд затишья между событиями")]
@@ -194,7 +194,6 @@ public class EventManager : MonoBehaviour
     {
         MapObjectData d = o.Data;
         ResourceManager.Instance.Add(winner, d.eventGold, d.eventPlutonium);
-        FactionManager.AddPoints(winner, d.eventFactionPoints);
         ArtifactData a = ArtifactManager.Instance != null ? ArtifactManager.Instance.GiveRandom(winner) : null;
         string res = d.GetEventRewardText(false);
         if (a != null) res += $", <color=#FF9EE6>артефакт «{a.displayName}»</color>";

@@ -56,14 +56,12 @@ public class GlobalMissionData : ScriptableObject
     public GuardWave[] waves = new GuardWave[0];
 
     [Header("Награда победителю")]
-    [Tooltip("Золото")]
+    [Tooltip("Очки фракции")]
     public int rewardGold = 500;
 
     [Tooltip("Плутоний")]
     public int rewardPlutonium = 0;
 
-    [Tooltip("Очки фракции победителю")]
-    public int rewardFactionPoints = 400;
 
     [Tooltip("Сколько случайных артефактов получает победитель")]
     [Min(0)] public int rewardArtifacts = 1;
@@ -90,9 +88,8 @@ public class GlobalMissionData : ScriptableObject
     public string GetRewardText()
     {
         var sb = new StringBuilder();
-        if (rewardGold > 0) sb.Append($"<color=#FFD84A>+{rewardGold} золота</color>   ");
+        if (rewardGold > 0) sb.Append(FactionManager.PointsText(rewardGold) + "   ");
         if (rewardPlutonium > 0) sb.Append($"<color=#C58BFF>+{rewardPlutonium} плутония</color>   ");
-        if (rewardFactionPoints > 0) sb.Append(FactionManager.PointsText(rewardFactionPoints) + "   ");
         if (rewardArtifacts > 0) sb.Append($"<color=#FF9EE6>+{rewardArtifacts} {(rewardArtifacts == 1 ? "артефакт" : "артефакта")}</color>   ");
         if (rewardHero) sb.Append($"<color=#7FE0FF>случайный герой 1–{rewardHeroMaxStars} зв.</color>");
         return sb.ToString().Trim();

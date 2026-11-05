@@ -40,5 +40,4 @@ MonoBehaviour:
       level: 3
   rewardGold: 200
   rewardPlutonium: 60
-  rewardFactionPoints: 400
   rewardArtifacts: 0

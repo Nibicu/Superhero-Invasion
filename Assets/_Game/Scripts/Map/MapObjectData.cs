@@ -49,22 +49,19 @@ public class MapObjectData : ScriptableObject
     public bool allowsHeroBoost = false;
 
     [Header("Разовая награда (событие «Объект»): победитель охраны получает её сразу, объект исчезает")]
-    [Tooltip("Золото победителю")]
+    [Tooltip("Очки фракции победителю")]
     public int eventGold = 300;
 
     [Tooltip("Плутоний победителю")]
     public int eventPlutonium = 0;
 
-    [Tooltip("Очки фракции победителю")]
-    public int eventFactionPoints = 500;
 
     /// <summary>Текст разовой награды (с цветами или без).</summary>
     public string GetEventRewardText(bool withArtifact = true)
     {
         var parts = new System.Collections.Generic.List<string>();
-        if (eventGold > 0) parts.Add($"<color=#FFD84A>+{eventGold} золота</color>");
+        if (eventGold > 0) parts.Add(FactionManager.PointsText(eventGold));
         if (eventPlutonium > 0) parts.Add($"<color=#C58BFF>+{eventPlutonium} плутония</color>");
-        if (eventFactionPoints > 0) parts.Add(FactionManager.PointsText(eventFactionPoints));
         if (withArtifact) parts.Add("<color=#FF9EE6>артефакт</color>");
         return string.Join(", ", parts);
     }
@@ -94,7 +91,7 @@ public class MapObjectData : ScriptableObject
     public string GetBonusText()
     {
         var sb = new StringBuilder();
-        if (goldIncome > 0) sb.AppendLine($"<color=#FFD84A>+{goldIncome} золота</color> каждые 10 с");
+        if (goldIncome > 0) sb.AppendLine($"<color=#C77DFF>+{goldIncome} очков фракции</color> каждые 10 с");
         if (plutoniumIncome > 0) sb.AppendLine($"<color=#C58BFF>+{plutoniumIncome} плутония</color> каждые 10 с");
         if (heroLimitBonus > 0) sb.AppendLine($"Лимит героев <color=#6EE07A>+{heroLimitBonus}</color>");
         if (unlocksFactoryUpgrades) sb.AppendLine("Доходные постройки можно улучшать до ур. 2");

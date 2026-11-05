@@ -2,7 +2,7 @@ using UnityEngine;
 
 /// <summary>
 /// Рейнджер (герой, класс Стрелок, урон от Силы атаки). Навыки:
-///  1) "Мощный выстрел" (ур. 1) — летит до конца арены, пробивает всех на пути и сбивает с ног: 150% Силы атаки.
+///  1) "Мощный выстрел" (ур. 1) — летит 4 с (или до края арены), пробивает всех на пути и сбивает с ног: 150% Силы атаки.
 ///  2) "Ястреб" (ур. 3) — ястреб раз в 3 с пикирует на ближайшего врага: 60% Силы атаки, враг шатается (гроги).
 ///     Бьёт 3 раза, потом улетает; перезарядка начинается после 3-го удара.
 ///  3) "Энерго стрела" (ур. 5, пассивный) — каждая 5-я авто атака выпускает ещё и энерго стрелу: 50% Силы атаки.
@@ -16,6 +16,7 @@ public class ReyndgerKit : HeroKit
     protected override void LoadParams()
     {
         shotDamage = Num(PowerShot, "damage");
+        shotLife = Num(PowerShot, "life");
         hawkStrikes = Count(Hawk, "strikes");
         hawkInterval = Num(Hawk, "interval");
         hawkDamage = Num(Hawk, "damage");
@@ -26,6 +27,7 @@ public class ReyndgerKit : HeroKit
     [Header("Мощный выстрел")]
     [SerializeField] private float shotDamage = 1.5f;        // Урон (доля Силы атаки)
     [SerializeField] private float shotSpeed = 16f;          // Скорость
+    [SerializeField] private float shotLife = 4f;            // Сколько секунд летит (потом исчезает)
     [SerializeField] private float shotKnockback = 6f;       // Сила отбрасывания
     [SerializeField] private float shotMaxRange = 12f;       // Стреляет, когда враг на линии ближе этого
 
@@ -108,7 +110,7 @@ public class ReyndgerKit : HeroKit
 
     // ---------- Скилы ----------
 
-    /// <summary>Мощный выстрел: до конца арены, пробивает и сбивает всех на пути.</summary>
+    /// <summary>Мощный выстрел: летит 4 с (или до края арены), пробивает и сбивает всех на пути.</summary>
     private void FirePowerShot()
     {
         if (shotTarget != null && shotTarget.IsAlive) self.Movement.FaceTowards(shotTarget.Position.x);
@@ -117,7 +119,8 @@ public class ReyndgerKit : HeroKit
             power = self.Stats.attack * shotDamage,
             vsSpecial = false,
             speed = shotSpeed,
-            range = 200f, // до края арены
+            range = 200f,          // летит до края арены...
+            lifetime = shotLife,   // ...но не дольше shotLife секунд (4) — не достаёт тех, кого Рейнджер не видит
             size = 0.8f,
             pierce = true,
             stagger = Knockdown,

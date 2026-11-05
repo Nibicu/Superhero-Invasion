@@ -25,6 +25,16 @@ public class Projectile : MonoBehaviour
     [Tooltip("Для правильного перекрытия по глубине")]
     [SerializeField] private SortingGroup sortingGroup;
 
+    [Header("Доворот снарядов скилов (как в Little Fighter 2)")]
+    [Tooltip("Самая большая скорость доворота по глубине (единиц в секунду). 0 — снаряды скилов летят строго прямо")]
+    [SerializeField] private float steerMaxSpeed = 2.2f;
+    [Tooltip("Как быстро снаряд набирает скорость доворота (единиц в секунду за секунду)")]
+    [SerializeField] private float steerAcceleration = 6f;
+    [Tooltip("Доворачивает к врагу, только если тот впереди не дальше этого по горизонтали")]
+    [SerializeField] private float steerRange = 12f;
+    [Tooltip("...и не дальше этого по глубине (кто ушёл совсем далеко вбок — того не догоняет)")]
+    [SerializeField] private float steerMaxDepth = 3f;
+
     private Fighter owner;          // Кто выстрелил
     private BattleFaction faction;  // Его сторона (снаряд бьёт только её противников)
     private bool charmed;           // Стрелок был зачарован — снаряд бьёт его союзников
@@ -76,6 +86,41 @@ public class Projectile : MonoBehaviour
                 if (r != null) r.color = new Color(Mathf.Lerp(c.r, 1f, 0.35f), Mathf.Lerp(c.g, 1f, 0.35f), Mathf.Lerp(c.b, 1f, 0.35f), r.color.a);
     }
 
+    /// <summary>
+    /// Доворот (как фаерболы в Little Fighter 2): снаряд летит прямо по горизонтали с той же скоростью,
+    /// но если враг впереди ушёл с линии — понемногу смещается к нему по глубине (не больше steerMaxSpeed).
+    /// Цель — та, в кого стреляли (steerTarget), а если её нет или она уже позади — ближайший враг впереди.
+    /// </summary>
+    private void Steer(BattleManager bm, float dt)
+    {
+        if (steerMaxSpeed <= 0f) return;
+        float dir = Mathf.Sign(velocity.x);
+        Vector2 p = transform.position;
+        Fighter t = shot.steerTarget;
+        if (!SteerableTarget(t, p, dir))
+        {
+            t = null;
+            float best = float.MaxValue;
+            foreach (Fighter e in bm.GetOpponents(faction))
+            {
+                if (!SteerableTarget(e, p, dir)) continue;
+                float d = Mathf.Abs(e.Position.x - p.x) + Mathf.Abs(e.Position.y - p.y);
+                if (d < best) { best = d; t = e; }
+            }
+        }
+        // Нужная скорость по глубине: к цели (чем дальше по глубине, тем быстрее, но не больше предела); цели нет — ровно
+        float want = t != null ? Mathf.Clamp((t.Position.y - p.y) * 3f, -steerMaxSpeed, steerMaxSpeed) : 0f;
+        velocity.y = Mathf.MoveTowards(velocity.y, want, steerAcceleration * dt);
+    }
+
+    /// <summary>Можно ли доворачивать к бойцу e: жив, впереди по ходу полёта, не слишком далеко.</summary>
+    private bool SteerableTarget(Fighter e, Vector2 p, float dir)
+    {
+        if (e == null || !e.IsAlive || e == owner) return false;
+        float dx = (e.Position.x - p.x) * dir;
+        return dx > 0.2f && dx <= steerRange && Mathf.Abs(e.Position.y - p.y) <= steerMaxDepth;
+    }
+
     /// <summary>Полёт и проверка попадания.</summary>
     private void Update()
     {
@@ -92,6 +137,8 @@ public class Projectile : MonoBehaviour
             if (visual != null && Mathf.Abs(velocity.x) > 0.05f)
                 visual.localScale = new Vector3(Mathf.Sign(velocity.x) * Mathf.Abs(visual.localScale.x), visual.localScale.y, 1f);
         }
+
+        else if (!shot.auto && !shot.noSteer && !shot.pierce) Steer(bm, dt); // снаряд скила: прямо, но чуть доворачивает
 
         Vector3 pos = transform.position + (Vector3)(velocity * dt);
         travelled += velocity.magnitude * dt;

@@ -78,7 +78,7 @@ public class SquadInfoWindowUI : WindowUI
             MainBase mine = MainBase.Get(Team.Player);
             if (mine == null || !mine.HasRadar)
             {
-                ToastUI.Show("Чтобы видеть состав команд врага, постройте Радар");
+                ToastUI.Show("Чтобы видеть состав команд врага, откройте иконку фракции «Радар»");
                 return;
             }
         }

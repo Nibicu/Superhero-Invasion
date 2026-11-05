@@ -68,7 +68,10 @@ public class BattleManager : MonoBehaviour
     [Tooltip("Зона флага в центре арены")]
     [SerializeField] private FlagZoneView flagZone;
     [Tooltip("Сколько секунд нужно удерживать флаг")]
-    [SerializeField] private float flagHoldTime = 10f;
+    [SerializeField] private float flagHoldTime = 20f;
+
+    /// <summary>Сколько секунд нужно удержать флаг в битве за флаг.</summary>
+    public float FlagHoldTime => flagHoldTime;
     [Tooltip("Размер зоны флага: полуширина по X и полувысота по глубине (Y)")]
     [SerializeField] private Vector2 flagZoneRadius = new Vector2(3f, 1.3f);
 

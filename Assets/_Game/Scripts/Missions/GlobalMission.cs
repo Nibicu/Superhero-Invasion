@@ -128,10 +128,8 @@ public class GlobalMission : AttackableSite
 
         ResourceManager.Instance.Add(team, Data.rewardGold, Data.rewardPlutonium);
         var got = new List<string>();
-        if (Data.rewardGold > 0) got.Add($"<color=#FFD84A>+{Data.rewardGold} золота</color>");
+        if (Data.rewardGold > 0) got.Add(FactionManager.PointsText(Data.rewardGold));
         if (Data.rewardPlutonium > 0) got.Add($"<color=#C58BFF>+{Data.rewardPlutonium} плутония</color>");
-        FactionManager.AddPoints(team, Data.rewardFactionPoints); // очки фракции
-        if (Data.rewardFactionPoints > 0) got.Add(FactionManager.PointsText(Data.rewardFactionPoints));
         if (ArtifactManager.Instance != null)
             for (int i = 0; i < Data.rewardArtifacts; i++)
             {

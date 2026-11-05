@@ -140,7 +140,7 @@ public class MissionWindowUI : WindowUI
         // Рекомендация по героям видна всегда (вместо силы); награда — только с Радаром
         detailsText.text = $"{Recommendation.Line(d.recommendedHeroes, Team.Player)}\n" +
                            $"Время выполнения: <color=#FFFFFF>{d.duration:0} с</color>\n" +
-                           (radar ? $"Награда: {d.GetRewardText()}" : "Награда: <color=#8792A6>??? (постройте Радар)</color>");
+                           (radar ? $"Награда: {d.GetRewardText()}" : "Награда: <color=#8792A6>??? (нужна иконка фракции «Радар»)</color>");
         RefreshStatus();
     }
 
@@ -179,7 +179,7 @@ public class MissionWindowUI : WindowUI
         MainBase myBase = MainBase.Get(Team.Player);
         string guard = myBase != null && myBase.HasRadar
             ? $"<color=#FFFFFF>{d.GetGuardText()}</color>"
-            : "<color=#8792A6>??? (нужен Радар)</color>";
+            : "<color=#8792A6>??? (нужна иконка фракции «Радар»)</color>";
         detailsText.text = $"Награда: {d.GetRewardText()}\n" +
                            $"{Recommendation.Line(currentGlobal.RecommendedHeroes, Team.Player)}  •  " +
                            $"Подготовка к бою: <color=#FFFFFF>{currentGlobal.PrepTime:0} с</color>\n" +
@@ -202,7 +202,7 @@ public class MissionWindowUI : WindowUI
         MainBase myBase = MainBase.Get(Team.Player);
         string guard = myBase != null && myBase.HasRadar
             ? $"<color=#FFFFFF>{d.TerritoryCount} территории, осталось пройти {d.TerritoryCount - p.GetProgress(Team.Player)}</color>"
-            : "<color=#8792A6>??? (нужен Радар)</color>";
+            : "<color=#8792A6>??? (нужна иконка фракции «Радар»)</color>";
         detailsText.text = $"Пройдено: <color=#7FB8FF>мы {p.GetProgress(Team.Player)}/{p.TerritoryCount}</color>   <color=#FF7A7A>враг {p.GetProgress(Team.Enemy)}/{p.TerritoryCount}</color>\n" +
                            $"Охрана: {guard}  •  {Recommendation.Line(p.RecommendedHeroes, Team.Player)}\n" +
                            $"Закрывший получает артефакт, база соперника — {d.baseDamage} урона.\n" +

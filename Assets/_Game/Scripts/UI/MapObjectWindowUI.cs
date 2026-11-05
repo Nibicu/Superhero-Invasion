@@ -89,7 +89,7 @@ public class MapObjectWindowUI : WindowUI
         MainBase myBase = MainBase.Get(Team.Player);
         string guard = myBase != null && myBase.HasRadar
             ? $"<color=#FFFFFF>{d.GetGuardText()}</color>"
-            : "<color=#8792A6>??? (нужен Радар)</color>";
+            : "<color=#8792A6>??? (нужна иконка фракции «Радар»)</color>";
         infoText.text = $"{Recommendation.Line(current.RecommendedHeroes, Team.Player)}\n" +
                         $"Подготовка к бою: <color=#FFFFFF>{current.PrepTime:0} с</color>\nОхрана: {guard}";
 

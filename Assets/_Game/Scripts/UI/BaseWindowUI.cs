@@ -101,7 +101,7 @@ public class BaseWindowUI : MonoBehaviour
             MainBase mine = MainBase.Get(Team.Player);
             if (mine == null || !mine.HasRadar)
             {
-                ToastUI.Show("Без Радара база врага скрыта. Выберите команду для атаки");
+                ToastUI.Show("Без иконки «Радар» база врага скрыта. Выберите команду для атаки");
                 if (picker != null) picker.OpenFor(b, null);
                 return;
             }
@@ -143,14 +143,10 @@ public class BaseWindowUI : MonoBehaviour
         MainBase b = current;
 
         header.color = b.Owner == Team.Player ? playerColor : enemyColor;
-        titleText.text = $"{b.BaseName}  <size=70%>уровень {b.Level} / {b.MaxLevel}</size>";
+        titleText.text = b.BaseName;
 
-        int incomeGold = b.GoldIncome;
-        for (int i = 0; i < MainBase.MaxSlots; i++)
-        {
-            BuildingInstance bi = b.GetBuilding(i);
-            if (bi != null) incomeGold += bi.GoldIncome;
-        }
+        // Строительства больше нет: база — только цель (HP, защитники); Радар, резерв найма и 2★ дают иконки фракции
+        int income = b.GoldIncome; // с артефактами "+к доходу"
         string stars = b.MaxHeroStars == 1 ? "1 звезды" : $"{b.MaxHeroStars} звёзд";
         Squad garrison = b.FindDefender();
         string garrisonText = garrison != null
@@ -158,41 +154,20 @@ public class BaseWindowUI : MonoBehaviour
             : "<color=#FF7A7A>Защитников нет</color>";
         subtitleText.text =
             $"HP: <color=#6EE07A>{b.Hp}/{b.MaxHp}</color>  •  {garrisonText}  •  " +
-            $"Доход: <color=#FFD84A>+{incomeGold}</color>  •  " +
-            $"Ячейки: {b.OpenSlots}/{MainBase.MaxSlots}  •  Найм до {stars}" +
-            (!readOnly && !CanBuildNow ? "\n<size=85%><color=#FFB84A>Строить и улучшать можно только в тактической паузе</color></size>" : "");
+            $"Доход: <color=#C77DFF>+{income} очков фракции</color> раз в 10 с  •  Найм до {stars}";
 
-        // Своя база — кнопка улучшения; база врага — кнопка атаки
-        upgradeButton.gameObject.SetActive(true);
+        // Своя база — без кнопки; база врага — кнопка атаки
+        upgradeButton.gameObject.SetActive(readOnly);
         if (readOnly)
         {
             upgradeButton.interactable = b.Hp > 0;
             upgradeText.text = $"АТАКОВАТЬ БАЗУ\n<size=80%>урон {b.DamagePerAttack} • рекомендуется {Recommendation.Text(b.RecommendedHeroes, Team.Player)}</size>";
         }
-        else if (!CanBuildNow)
-        {
-            upgradeButton.gameObject.SetActive(false); // в игре — только смотреть, строить в паузе
-        }
-        else
-        {
-            if (b.IsMaxLevel)
-            {
-                upgradeButton.interactable = false;
-                upgradeText.text = "БАЗА МАКС. УРОВНЯ";
-            }
-            else
-            {
-                bool afford = ResourceManager.Instance.CanAfford(b.Owner, b.UpgradeCost);
-                string col = afford ? "#FFD84A" : "#FF6B6B";
-                upgradeButton.interactable = true;
-                upgradeText.text = $"УЛУЧШИТЬ ДО УР. {b.Level + 1}\n<size=80%><color={col}>{b.UpgradeCost} золота</color> • +1 ячейка</size>";
-            }
-        }
 
+        // Ячейки построек спрятаны
         for (int i = 0; i < slotViews.Length; i++)
-            slotViews[i].Setup(b, i, readOnly || !CanBuildNow, this);
-
-        buildMenu.Refresh();
+            if (slotViews[i] != null) slotViews[i].gameObject.SetActive(false);
+        if (buildMenu != null) buildMenu.Close();
     }
 
     /// <summary>Нажата кнопка: "Улучшить базу" (своя) или "Атаковать базу" (враг).</summary>

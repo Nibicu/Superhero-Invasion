@@ -63,7 +63,7 @@ public class ArtifactData : ScriptableObject
             switch (effect)
             {
                 case ArtifactEffect.HeroLimit: return $"+{amount} к лимиту найма героев (навсегда)";
-                case ArtifactEffect.BaseIncome: return $"+{amount} золота к доходу базы (навсегда)";
+                case ArtifactEffect.BaseIncome: return $"+{amount} очков фракции к доходу базы (навсегда)";
                 case ArtifactEffect.FreeHeroLevel: return "+100 опыта (+1 уровень) выбранному герою";
                 default: return "";
             }

@@ -9,19 +9,15 @@ using UnityEngine.UI;
 /// Фракции и новое окно тактической паузы (сцена Game). Меню: Tools → Superhero → Собрать фракции и паузу.
 ///  - FactionManager на объекте Managers (очки фракции и 5 иконок), список фракций;
 ///  - 3★ герои фракций: Трон — Титан, Стражи — Аврора, Разрушители — Пожиратель, Тайный порядок — Император;
-///  - очки фракции в файлах миссий, общих миссий, объектов и портала;
-///  - окно паузы: сверху ресурсы, слева вкладки (Фракция / Герои / База), в центре содержимое, справа внизу "КОНЕЦ ХОДА".
-/// Повторный запуск пересоздаёт окно паузы; очки фракции в файлах перезаписываются значениями ниже.
+///  - очки фракции — главный ресурс (бывшее золото): цена иконок (2000), значок на верхней панели;
+///  - окно паузы: сверху очки фракции и плутоний, слева вкладки (Фракция / Герои), в центре содержимое, справа внизу "КОНЕЦ ХОДА".
+/// Повторный запуск пересоздаёт окно паузы; ручные правки цены иконок не трогаются.
 /// </summary>
 public static class PauseBuilder
 {
     private const string GameScenePath = "Assets/_Game/Scenes/Game.unity"; // Сцена карты
 
     // Очки фракции (распределены так, чтобы 5-ю иконку нельзя было открыть раньше 6-й фазы)
-    private const int MissionPoints = 150; // Обычная миссия
-    private const int GlobalPoints = 400;  // Общая миссия
-    private const int ObjectPoints = 500;  // Объект (событие)
-    private const int PortalPoints = 600;  // Портал (событие)
 
     private static Sprite rounded;       // Скруглённый прямоугольник
     private static Sprite circle;        // Круг
@@ -65,14 +61,78 @@ public static class PauseBuilder
             list.GetArrayElementAtIndex(i).objectReferenceValue = AssetDatabase.LoadAssetAtPath<FactionData>(AssetDatabase.GUIDToAssetPath(guids[i]));
         so.ApplyModifiedPropertiesWithoutUndo();
 
-        // Очки фракции в файлах
-        foreach (MissionData d in All<MissionData>()) { d.rewardFactionPoints = MissionPoints; EditorUtility.SetDirty(d); }
-        foreach (GlobalMissionData d in All<GlobalMissionData>()) { d.rewardFactionPoints = GlobalPoints; EditorUtility.SetDirty(d); }
-        foreach (MapObjectData d in All<MapObjectData>()) { d.eventFactionPoints = ObjectPoints; EditorUtility.SetDirty(d); }
-        foreach (PortalData d in All<PortalData>()) { d.rewardFactionPoints = PortalPoints; EditorUtility.SetDirty(d); }
+        // Очки фракции — главный ресурс (бывшее золото): цена иконок и верхняя панель
 
+        SetupEconomy(fm);
         SetupRecommendations();
         RemoveLivesAndInfirmary();
+    }
+
+    // ---------- Экономика: очки фракции — главный ресурс ----------
+
+    /// <summary>Новая цена иконки фракции: золото стало очками фракции, поэтому 5 иконок = 10 000 (5-я — не раньше 6-й фазы).</summary>
+    private const int IconCost = 2000;
+
+    /// <summary>
+    /// Очки фракции вместо золота: цена иконки 2000 (меняется, только если стоит старая 1000 — ручные правки не трогаем),
+    /// значок монеты на верхней панели — цвета очков фракции.
+    /// </summary>
+    private static void SetupEconomy(FactionManager fm)
+    {
+        var so = new SerializedObject(fm);
+        var cost = so.FindProperty("iconCost");
+        if (cost.intValue == 1000) cost.intValue = IconCost;
+        so.ApplyModifiedPropertiesWithoutUndo();
+
+        ShrinkBaseWindow();
+
+        // Подсказка с читами внизу экрана: золото → очки фракции
+        foreach (TMP_Text t in Object.FindObjectsByType<TMP_Text>(FindObjectsInactive.Include))
+            if (t.text.Contains("+1000 золота")) { t.text = t.text.Replace("+1000 золота", "+1000 очков фракции"); EditorUtility.SetDirty(t); }
+
+        // Верхняя панель: число и значок рядом с ним — фиолетовые (очки фракции)
+        var top = Object.FindAnyObjectByType<TopBarUI>(FindObjectsInactive.Include);
+        if (top == null) return;
+        var gold = new SerializedObject(top).FindProperty("goldText").objectReferenceValue as TMP_Text;
+        if (gold == null) return;
+        Transform icon = gold.transform.parent.Find("GoldIcon");
+        if (icon == null) return;
+        Sprite circleSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/_Game/Art/Placeholder/Circle.png");
+        foreach (Image img in icon.GetComponentsInChildren<Image>(true))
+        {
+            // Сама монета — фиолетовое кольцо, середина — светлее
+            img.sprite = circleSprite;
+            img.color = img.transform == icon ? new Color(0.72f, 0.3f, 0.78f) : new Color(0.85f, 0.6f, 0.95f);
+            EditorUtility.SetDirty(img);
+        }
+        foreach (TMP_Text t in icon.GetComponentsInChildren<TMP_Text>(true))
+        {
+            t.text = ""; // знак монеты больше не нужен
+            EditorUtility.SetDirty(t);
+        }
+    }
+
+    /// <summary>
+    /// Окно базы на карте: ячеек построек больше нет — оставляем только верхнюю полосу (название, HP, защитники, доход,
+    /// кнопка "Атаковать базу" у врага). Ячейки прячутся, панель становится высотой с заголовок. Повторно не сжимает.
+    /// </summary>
+    private static void ShrinkBaseWindow()
+    {
+        var bw = Object.FindAnyObjectByType<BaseWindowUI>(FindObjectsInactive.Include);
+        if (bw == null) return;
+        var panel = bw.transform.Find("Root/Panel") as RectTransform;
+        var header = panel != null ? panel.Find("Header") as RectTransform : null;
+        if (panel == null || header == null || panel.sizeDelta.y <= header.sizeDelta.y + 1f) return; // уже сжато
+        float shift = header.anchoredPosition.y; // всё, что осталось, — на высоте заголовка: опускаем к центру панели
+        foreach (Transform c in panel)
+        {
+            var rt = (RectTransform)c;
+            if (c.name.StartsWith("Slot")) { c.gameObject.SetActive(false); continue; }
+            rt.anchoredPosition -= new Vector2(0f, shift);
+        }
+        panel.sizeDelta = new Vector2(panel.sizeDelta.x, header.sizeDelta.y);
+        panel.anchoredPosition += new Vector2(0f, shift);
+        EditorUtility.SetDirty(panel);
     }
 
     // ---------- Рекомендации по числу героев (вместо силы) ----------
@@ -208,9 +268,9 @@ public static class PauseBuilder
         Place(next.rectTransform, new Vector2(0.5f, 1f), new Vector2(0, -132), new Vector2(1200, 40));
 
         // Ресурсы сверху: кольцо + название + число
-        TMP_Text gold = Resource(r, "Gold", "Золото", new Color(1f, 0.8f, 0.1f), -420);
-        TMP_Text plut = Resource(r, "Plutonium", "Плутоний", new Color(0.25f, 0.3f, 0.85f), 30);
-        TMP_Text fpts = Resource(r, "FactionPoints", "Очки фракции", new Color(0.72f, 0.3f, 0.78f), 480);
+        TMP_Text gold = null; // золота больше нет — главный ресурс теперь очки фракции
+        TMP_Text plut = Resource(r, "Plutonium", "Плутоний", new Color(0.25f, 0.3f, 0.85f), 250);
+        TMP_Text fpts = Resource(r, "FactionPoints", "Очки фракции", new Color(0.72f, 0.3f, 0.78f), -250);
 
         // Слева — вкладки (коричневая колонка)
         var tabs = Img("Tabs", r, rounded, new Color(0.71f, 0.48f, 0.33f));
@@ -220,7 +280,7 @@ public static class PauseBuilder
         Place(title.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(-790, 285), new Vector2(300, 80));
         Button tabFaction = TabBtn(tabs.rectTransform, "TabFaction", "Фракция", 160);
         Button tabHeroes = TabBtn(tabs.rectTransform, "TabHeroes", "Герои", 0);
-        Button tabBase = TabBtn(tabs.rectTransform, "TabBase", "База", -160);
+        Button tabBase = null; // вкладки "База" больше нет (строительство убрано)
 
         // В центре — зелёная рамка и тёмное поле
         var frame = Img("Content", r, rounded, new Color(0.08f, 0.8f, 0.3f));
@@ -283,7 +343,7 @@ public static class PauseBuilder
         row.gameObject.SetActive(false);
 
         // ---- Вкладка "База": копия панели окна базы ----
-        BaseWindowUI baseTab = BaseTab(c, baseWindow);
+        BaseWindowUI baseTab = null; // встроенной базы больше нет
 
         // ---- Компонент ----
         var ui = win.gameObject.AddComponent<TacticalPauseUI>();
@@ -363,9 +423,9 @@ public static class PauseBuilder
         var title = Text("Title", panel.rectTransform, "ИТОГИ ФАЗЫ", 44, new Color(1f, 0.85f, 0.4f), TextAlignmentOptions.Center, true);
         Place(title.rectTransform, new Vector2(0.5f, 1f), new Vector2(0, -50), new Vector2(900, 60));
 
-        TMP_Text gold = SummaryValue(panel.rectTransform, "Gold", "Золото", new Color(1f, 0.8f, 0.1f), -340);
-        TMP_Text plut = SummaryValue(panel.rectTransform, "Plutonium", "Плутоний", new Color(0.25f, 0.3f, 0.85f), 0);
-        TMP_Text fac = SummaryValue(panel.rectTransform, "FactionPoints", "Очки фракции", new Color(0.72f, 0.3f, 0.78f), 340);
+        TMP_Text gold = null; // золота больше нет
+        TMP_Text plut = SummaryValue(panel.rectTransform, "Plutonium", "Плутоний", new Color(0.25f, 0.3f, 0.85f), 220);
+        TMP_Text fac = SummaryValue(panel.rectTransform, "FactionPoints", "Очки фракции", new Color(0.72f, 0.3f, 0.78f), -220);
 
         var header = Text("LevelHeader", panel.rectTransform, "Повысили уровень:", 26, new Color(0.85f, 0.88f, 0.95f), TextAlignmentOptions.Center, false);
         Place(header.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0, -60), new Vector2(900, 36));

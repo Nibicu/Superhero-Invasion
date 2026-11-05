@@ -51,6 +51,16 @@ public class FighterAI : MonoBehaviour
     [SerializeField] private float kiteDistance = 5f;
     [Tooltip("Единственный враг лежит — на сколько от него отойти и ждать, пока встанет (чтобы не зажимать в углу)")]
     [SerializeField] private float backOffDistance = 2.2f;
+    [Tooltip("Пока единственный враг лежит — в каком радиусе искать предметы и ящики (по всей арене)")]
+    [SerializeField] private float idleItemRadius = 30f;
+    [Tooltip("Пока ждём — бродим вокруг: как далеко от себя выбирать точку")]
+    [SerializeField] private float wanderRadius = 3f;
+    [Tooltip("Пока ждём — через сколько секунд выбирать новую точку прогулки")]
+    [SerializeField] private float wanderTime = 2.5f;
+
+    private Vector2 wanderPoint;   // Куда сейчас бредём
+    private bool hasWanderPoint;   // Точка прогулки выбрана
+    private float wanderUntil;     // Когда выбрать новую точку
 
     [Header("Бег")]
     [Tooltip("Бежать можно, только если ближайший враг дальше этого (рядом с врагом — шагом). Отступающий бежит всегда")]
@@ -385,9 +395,10 @@ public class FighterAI : MonoBehaviour
     }
 
     /// <summary>
-    /// Враг лежит (или временно неуязвим после подъёма), а других целей нет: отходим от него на backOffDistance
-    /// (в сторону центра арены — от края, к которому его прижали) и ждём, повернувшись к нему.
-    /// Уже стоим на этом расстоянии — просто ждём.
+    /// Враг лежит (или временно неуязвим после подъёма), а других целей нет. Не стоим над ним:
+    ///  - стоим вплотную — отходим на backOffDistance (от края, к которому его прижали);
+    ///  - дальше — идём за предметом или к ящику (по всей арене), а если их нет — бродим по арене рядом,
+    ///    не подходя к лежачему ближе backOffDistance.
     /// </summary>
     private void BackOffFrom(BattleManager bm, Fighter down)
     {
@@ -395,8 +406,8 @@ public class FighterAI : MonoBehaviour
         Vector2 d = self.Position - down.Position;
         if (d.magnitude >= backOffDistance)
         {
-            hasDestination = false;
-            self.Movement.FaceTowards(down.Position.x);
+            if (TryTakeItem(bm, idleItemRadius)) return; // зелье, бафф, ящик — пока враг лежит
+            Wander(bm, down);
             return;
         }
         float away = Mathf.Abs(d.x) > 0.05f ? Mathf.Sign(d.x) : (bm.IsInsideArenaX(self.Position.x + 1f) ? 1f : -1f);
@@ -408,6 +419,31 @@ public class FighterAI : MonoBehaviour
         destination = p;
         hasDestination = (destination - self.Position).magnitude > 0.15f;
         wantRun = false;
+    }
+
+    /// <summary>
+    /// Бродить по арене: идти к случайной точке неподалёку (не ближе backOffDistance к лежачему врагу avoid);
+    /// дошли или прошло wanderTime секунд — выбрать новую.
+    /// </summary>
+    private void Wander(BattleManager bm, Fighter avoid)
+    {
+        bool reached = (wanderPoint - self.Position).magnitude < 0.3f;
+        if (!hasWanderPoint || reached || Time.time >= wanderUntil)
+        {
+            Vector2 best = self.Position;
+            for (int i = 0; i < 8; i++) // несколько попыток найти точку подальше от лежачего
+            {
+                Vector2 p = bm.RandomPointNear(self, wanderRadius);
+                if (!bm.IsReachable(self, p)) continue;
+                best = p;
+                if (avoid == null || Vector2.Distance(p, avoid.Position) >= backOffDistance) break;
+            }
+            wanderPoint = best;
+            hasWanderPoint = true;
+            wanderUntil = Time.time + wanderTime;
+        }
+        destination = wanderPoint;
+        hasDestination = (destination - self.Position).magnitude > 0.15f;
     }
 
     /// <summary>Ближайший живой противник в радиусе (даже недоступный — от него и отходим).</summary>

@@ -22,7 +22,7 @@ public class DraftUI : MonoBehaviour
     [Header("Окно")]
     [SerializeField] private GameObject root;         // Всё окно драфта
     [SerializeField] private TMP_Text timerText;      // "1:59"
-    [SerializeField] private TMP_Text goldText;       // "1 500 золота"
+    [SerializeField] private TMP_Text goldText;       // "1 500 очков фракции"
     [SerializeField] private TMP_Text myHeader;       // "ВАШИ ГЕРОИ • Трон • 2/6"
     [SerializeField] private TMP_Text enemyHeader;    // "ВРАГ • Разрушители • 3"
     [SerializeField] private Transform myList;        // Колонка героев игрока
@@ -129,7 +129,7 @@ public class DraftUI : MonoBehaviour
         HeroManager hm = HeroManager.Instance;
         ResourceManager rm = ResourceManager.Instance;
 
-        goldText.text = $"{rm.GetGold(Team.Player):N0} золота".Replace(',', ' ');
+        goldText.text = $"{rm.GetGold(Team.Player):N0} очков фракции".Replace(',', ' ');
         string myFaction = GameSetup.PlayerFaction != null ? GameSetup.PlayerFaction.displayName : SideName(hm.GetSide(Team.Player));
         string enemyFaction = GameSetup.EnemyFaction != null ? GameSetup.EnemyFaction.displayName : SideName(hm.GetSide(Team.Enemy));
         myHeader.text = $"ВАШИ {SideName(hm.GetSide(Team.Player)).ToUpper()}\n<size=70%><color=#C9D3E6>{myFaction}  •  {hm.GetHeroes(Team.Player).Count} / {hm.GetHeroLimit(Team.Player)}</color></size>";
@@ -150,7 +150,7 @@ public class DraftUI : MonoBehaviour
             spawned.Add(card.gameObject);
             bool canHire = hm.CanHire(Team.Player, data, out string reason);
             bool afford = rm.CanAfford(Team.Player, data.hireCost);
-            string info = $"<color=#C9D3E6>{UnitClasses.Name(data.unitClass)}</color>  •  <color={(afford ? "#FFD84A" : "#FF6B6B")}>{data.hireCost} золота</color>";
+            string info = $"<color=#C9D3E6>{UnitClasses.Name(data.unitClass)}</color>  •  {FactionManager.CostText(data.hireCost, afford)}";
             string action = !canHire ? reason.ToUpper() : afford ? "КУПИТЬ" : "НЕ ХВАТАЕТ";
             HeroData captured = data;
             card.Setup(data, info, action, canHire && afford, () => Buy(captured), () => heroInfo.ShowHero(captured));

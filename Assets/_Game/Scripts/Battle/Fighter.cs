@@ -295,7 +295,7 @@ public class Fighter : MonoBehaviour
     /// <summary>Оглушить на seconds секунд (не ходит, не бьёт).</summary>
     public void ApplyStun(float seconds)
     {
-        if (seconds <= 0f || !IsAlive || (Kit != null && Kit.IsBlocking)) return; // блок Стажёра
+        if (seconds <= 0f || !IsAlive || IsControlImmune || (Kit != null && Kit.IsBlocking)) return; // блок Стажёра, иммунитет
         stunTimer = Mathf.Max(stunTimer, seconds);
         StatusChanged?.Invoke(this);
     }
@@ -303,7 +303,7 @@ public class Fighter : MonoBehaviour
     /// <summary>Немота на seconds секунд (не применяет скилы).</summary>
     public void ApplySilence(float seconds)
     {
-        if (seconds <= 0f || !IsAlive || (Kit != null && Kit.IsBlocking)) return; // блок Стажёра
+        if (seconds <= 0f || !IsAlive || IsControlImmune || (Kit != null && Kit.IsBlocking)) return; // блок Стажёра, иммунитет
         silenceTimer = Mathf.Max(silenceTimer, seconds);
         StatusChanged?.Invoke(this);
     }
@@ -311,7 +311,7 @@ public class Fighter : MonoBehaviour
     /// <summary>Шарм на seconds секунд: бьёт своих союзников (блок Стажёра защищает).</summary>
     public void ApplyCharm(float seconds)
     {
-        if (seconds <= 0f || !IsAlive || (Kit != null && Kit.IsBlocking)) return;
+        if (seconds <= 0f || !IsAlive || IsControlImmune || (Kit != null && Kit.IsBlocking)) return;
         charmTimer = Mathf.Max(charmTimer, seconds);
         StatusChanged?.Invoke(this);
     }
@@ -336,7 +336,7 @@ public class Fighter : MonoBehaviour
     /// </summary>
     public void Launch(float upSpeed, Vector2 knock)
     {
-        if (!SetState(FighterState.Airborne)) return;
+        if (IsControlImmune || !SetState(FighterState.Airborne)) return; // иммунитет к контролю — не подбрасывается
         Movement.StartAir(upSpeed, Vector2.zero);
         Movement.ApplyKnockback(knock);
         StatusChanged?.Invoke(this);
@@ -360,13 +360,13 @@ public class Fighter : MonoBehaviour
     /// <summary>Зашататься: стоит, не бьёт, его можно схватить (на dizzyDuration секунд).</summary>
     public void BecomeDizzy()
     {
-        if (SetState(FighterState.Dizzy)) StatusChanged?.Invoke(this);
+        if (!IsControlImmune && SetState(FighterState.Dizzy)) StatusChanged?.Invoke(this);
     }
 
     /// <summary>Попасть в захват бойца by. Вернёт false, если сейчас нельзя (лежит, выбыл, уже схвачен).</summary>
     public bool BeginHeld(Fighter by)
     {
-        if (HeldBy != null || !SetState(FighterState.Held)) return false;
+        if (HeldBy != null || IsControlImmune || !SetState(FighterState.Held)) return false;
         HeldBy = by;
         StatusChanged?.Invoke(this);
         return true;
@@ -414,6 +414,14 @@ public class Fighter : MonoBehaviour
     /// <summary>Неуязвимость на seconds секунд (перекат).</summary>
     public void SetInvulnerable(float seconds) => invulnerableTimer = Mathf.Max(invulnerableTimer, seconds);
 
+    private float controlImmuneTimer; // Сколько ещё секунд контроль (стан, немота, шарм, шатание, захват, подброс) не действует
+
+    /// <summary>Иммунитет к контролю: стан, немота, шарм, шатание, захват и подброс не действуют (Прыжок ярости).</summary>
+    public bool IsControlImmune => controlImmuneTimer > 0f;
+
+    /// <summary>Дать иммунитет к контролю на seconds секунд.</summary>
+    public void SetControlImmune(float seconds) => controlImmuneTimer = Mathf.Max(controlImmuneTimer, seconds);
+
     /// <summary>Временно усилить параметр (бафф из коробки). Новый бафф заменяет старый.</summary>
     public void ApplyBuff(BoostStat stat, float multiplier, float duration)
     {
@@ -433,6 +441,7 @@ public class Fighter : MonoBehaviour
             if (buffTimer <= 0f) BuffChanged?.Invoke(this);
         }
         if (invulnerableTimer > 0f) invulnerableTimer -= Time.deltaTime;
+        if (controlImmuneTimer > 0f) controlImmuneTimer -= Time.deltaTime;
         if (dizzyImmuneTimer > 0f) dizzyImmuneTimer -= Time.deltaTime;
         if (Movement.InAir) groundClock = 0f; else groundClock += Time.deltaTime; // сколько уже на земле
         TickStatus(ref stunTimer);

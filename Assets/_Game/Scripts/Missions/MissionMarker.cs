@@ -158,7 +158,6 @@ public class MissionMarker : MonoBehaviour, ISquadTarget
         if (success)
         {
             ResourceManager.Instance.Add(team, Data.rewardGold, Data.rewardPlutonium);
-            FactionManager.AddPoints(team, Data.rewardFactionPoints); // очки фракции
             // Награда "+1 уровень героям" убрана — слишком ускоряла игру (герои растут за счёт опыта)
             if (Data.unlockBuilding != null)
             {
@@ -167,7 +166,7 @@ public class MissionMarker : MonoBehaviour, ISquadTarget
             }
             if (team == Team.Player)
             {
-                string extra = Data.unlockBuilding != null ? $" Открыта постройка: {Data.unlockBuilding.displayName}!" : "";
+                string extra = ""; // (особых построек больше нет)
                 ToastUI.Show($"Миссия «{Data.title}» выполнена! {StripTags(Data.GetRewardText())}.{extra}");
             }
         }

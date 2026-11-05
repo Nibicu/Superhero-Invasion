@@ -270,8 +270,6 @@ public class Portal : AttackableSite
         progress[closedBy] = TerritoryCount;
 
         var got = new List<string>();
-        FactionManager.AddPoints(closedBy, data.rewardFactionPoints); // очки фракции
-        if (data.rewardFactionPoints > 0) got.Add(FactionManager.PointsText(data.rewardFactionPoints));
         if (ArtifactManager.Instance != null)
             for (int i = 0; i < data.rewardArtifacts; i++)
             {

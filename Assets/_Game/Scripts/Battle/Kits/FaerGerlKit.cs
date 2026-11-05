@@ -2,7 +2,7 @@ using UnityEngine;
 
 /// <summary>
 /// Фаер Герл (злодейка, класс Маг, урон от Магии). Навыки:
-///  1) "Фаерболы" (ур. 1) — веером 2–5 огненных шаров (сколько хватит энергии, каждый — 15 энергии), каждый — 45% Магии.
+///  1) "Фаерболы" (ур. 1) — очередью 2–5 огненных шаров (как в Little Fighter 2: летят прямо и чуть доворачивают к цели) (сколько хватит энергии, каждый — 15 энергии), каждый — 45% Магии.
 ///  2) "Огненное торнадо" (ур. 3) — торнадо движется вперёд 3 с; задетый враг сразу получает 50% Магии,
 ///     крутится в нём по спирали и получает урон 20% Магии раз в 0.5 с, пока торнадо не кончится (FaerTornado).
 ///  3) "Полёт" (ур. 5, пассивный) — когда HP падает до 20%, взлетает и улетает в безопасное место (неуязвима в полёте).
@@ -30,11 +30,10 @@ public class FaerGerlKit : HeroKit
     [SerializeField] private int ballsMax = 5;              // Больше этого не бросает
     [SerializeField] private float ballEnergy = 15f;        // Цена одного шара (энергия)
     [SerializeField] private float ballDamage = 0.45f;      // Урон одного шара (доля Магии)
-    [SerializeField] private float ballInterval = 0.15f;    // Интервал между шарами
+    [SerializeField] private float ballInterval = 0.25f;    // Интервал между шарами
     [SerializeField] private float ballSpeed = 11f;         // Скорость
     [SerializeField] private float ballRange = 9f;          // Дальность
     [SerializeField] private float ballMinRange = 1.5f;     // Ближе — бьёт рукой
-    [SerializeField] private float ballSpread = 1.4f;       // Ширина веера
 
     [Header("Огненное торнадо")]
     [SerializeField] private float tornadoTime = 3f;        // Сколько живёт
@@ -102,12 +101,12 @@ public class FaerGerlKit : HeroKit
 
     // ---------- Скилы ----------
 
-    /// <summary>Бросить один фаербол (веером).</summary>
+    /// <summary>Бросить один фаербол (очередь: прямо, с доворотом к цели).</summary>
     private void ThrowBall()
     {
-        if (!self.Combat.TrySpendEnergy(ballEnergy)) { ballsTotal = ballsThrown; return; } // энергия кончилась
+        // Очередь (как в Little Fighter 2 при зажатой кнопке): кончилась энергия или цель выбыла — очередь обрывается
+        if (skillTarget == null || !skillTarget.IsAlive || !self.Combat.TrySpendEnergy(ballEnergy)) { ballsTotal = ballsThrown; actionLength = Mathf.Min(actionLength, ActionTime + 0.15f); return; }
         if (skillTarget != null && skillTarget.IsAlive) self.Movement.FaceTowards(skillTarget.Position.x);
-        float k = ballsTotal > 1 ? (float)ballsThrown / (ballsTotal - 1) * 2f - 1f : 0f; // −1 … +1
         ballsThrown++;
         AnimCycle++;
         self.Combat.FireShot(new ShotInfo
@@ -119,7 +118,7 @@ public class FaerGerlKit : HeroKit
             size = 0.55f,
             stagger = 1,
             knockback = 1.5f,
-            driftY = k * ballSpread,
+            steerTarget = skillTarget, // летит прямо, но чуть доворачивает к цели
             color = new Color(1f, 0.4f, 0.1f),
             flicker = new Color(1f, 0.85f, 0.25f)
         });

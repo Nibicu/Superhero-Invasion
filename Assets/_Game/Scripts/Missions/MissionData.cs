@@ -46,13 +46,11 @@ public class MissionData : ScriptableObject
     [Header("Награда")]
     public int rewardGold = 300;
     public int rewardPlutonium = 0;
-    [Tooltip("Очки фракции за выполнение")]
-    public int rewardFactionPoints = 150;
 
     [Tooltip("Все герои команды получают +1 уровень")]
     public bool levelUpTeam = false;
 
-    [Tooltip("Открывает особую постройку на базе (например, Лабораторию)")]
+    [Tooltip("Не используется: строительства больше нет")]
     public BuildingData unlockBuilding;
 
     [Tooltip("Миссия появляется только до первого успешного выполнения")]
@@ -84,10 +82,9 @@ public class MissionData : ScriptableObject
     public string GetRewardText()
     {
         var sb = new StringBuilder();
-        if (rewardGold > 0) sb.Append($"<color=#FFD84A>+{rewardGold} золота</color>   ");
+        if (rewardGold > 0) sb.Append(FactionManager.PointsText(rewardGold) + "   ");
         if (rewardPlutonium > 0) sb.Append($"<color=#C58BFF>+{rewardPlutonium} плутония</color>   ");
-        if (rewardFactionPoints > 0) sb.Append(FactionManager.PointsText(rewardFactionPoints) + "   ");
-        if (unlockBuilding != null) sb.Append($"<color=#7FD8FF>Новая постройка: {unlockBuilding.displayName}</color>");
+        // (особые постройки больше не открываются — строительства нет)
         return sb.ToString().Trim();
     }
 }

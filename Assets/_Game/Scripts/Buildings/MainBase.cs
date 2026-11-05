@@ -439,42 +439,27 @@ public class MainBase : AttackableSite, IIncomeSource
         return list;
     }
 
-    // ---------- Бонусы построек (для героев на Шаге 3) ----------
+    // ---------- Прокачка фракции (раньше это давали постройки) ----------
 
-    /// <summary>Сколько дополнительных мест для героев дают постройки (Резервные комнаты).</summary>
-    public int HeroCapacityBonus
-    {
-        get
-        {
-            int sum = 0;
-            foreach (BuildingInstance b in slots)
-                if (b != null) sum += b.Current.heroCapacityBonus;
-            return sum;
-        }
-    }
+    /// <summary>Сколько дополнительных мест для героев: иконка фракции 2 (резерв найма).</summary>
+    public int HeroCapacityBonus => FactionManager.ReserveBonus(owner);
 
-    /// <summary>Героев скольких звёзд можно нанимать (без Бараков — только 1 звезда).</summary>
-    public int MaxHeroStars
-    {
-        get
-        {
-            int max = 1;
-            foreach (BuildingInstance b in slots)
-                if (b != null) max = Mathf.Max(max, b.Current.maxHeroStars);
-            return max;
-        }
-    }
+    /// <summary>Героев скольких звёзд можно нанимать: 1★, с иконкой фракции 3 — до 2★ (3★ — иконка 5).</summary>
+    public int MaxHeroStars => FactionManager.MaxHireStars(owner);
 
-    /// <summary>Есть ли Радар.</summary>
-    public bool HasRadar => HasBuildingOfType(BuildingType.Radar);
+    /// <summary>Есть ли Радар: иконка фракции 1.</summary>
+    public bool HasRadar => FactionManager.HasRadar(owner);
 
     // ---------- Действия игрока ----------
 
-    /// <summary>Строить и улучшать можно только в тактической паузе (и на драфте).</summary>
+    /// <summary>
+    /// Строительства и улучшения базы больше нет (всё это теперь даёт прокачка фракции за очки фракции).
+    /// Код построек оставлен на будущее, но любая попытка строить или улучшать отклоняется.
+    /// </summary>
     private static bool BuildLocked(out string error)
     {
-        error = PhaseManager.Instance != null && !PhaseManager.Instance.CanBuild ? "Строить и улучшать можно только в тактической паузе" : null;
-        return error != null;
+        error = "Строительства больше нет — прокачивайте фракцию в тактической паузе";
+        return true;
     }
 
     /// <summary>Улучшить базу. Если нельзя — вернёт false и причину в error.</summary>
@@ -569,7 +554,7 @@ public class MainBase : AttackableSite, IIncomeSource
             attack = Phase == AttackPhase.Preparing
                 ? $"\n<size=60%><color=#FFB84A>Нападение! Бой через {Mathf.CeilToInt(PrepLeft)} с</color></size>"
                 : "\n<size=60%><color=#FFB84A>Идёт бой!</color></size>";
-        label.text = $"{baseName}\n<size=65%>Уровень {level}  •  HP {hp}</size>{attack}";
+        label.text = $"{baseName}\n<size=65%>HP {hp}</size>{attack}"; // уровней базы больше нет
     }
 
     /// <summary>Текст ошибки при покупке во время нападения.</summary>

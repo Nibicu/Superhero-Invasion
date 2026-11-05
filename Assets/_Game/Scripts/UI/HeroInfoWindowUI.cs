@@ -168,7 +168,8 @@ public class HeroInfoWindowUI : WindowUI
                 HeroSkill s = current.GetSkill(i);
                 int unlock = HeroData.SkillUnlockLevels[i];
                 string kind = s.passive ? "пассивный" : $"скил {i + 1}";
-                string cd = s.cooldown > 0f ? $", перезарядка {s.cooldown:0} с" : "";
+                string cd = (s.cooldown > 0f ? $", перезарядка {s.cooldown:0} с" : "")
+                            + (s.energyCost > 0f ? $", энергия {s.energyCost:0}" : "");
                 if (s.IsEmpty)
                     sb.AppendLine($"<color=#6B7385>Скил {i + 1} (ур. {unlock}): пока нет</color>");
                 else if (level >= unlock)
@@ -192,7 +193,7 @@ public class HeroInfoWindowUI : WindowUI
             bool afford = ResourceManager.Instance.CanAfford(Team.Player, current.hireCost);
             actionButton.interactable = canHire;
             actionText.text = canHire
-                ? $"НАНЯТЬ\n<size=75%><color={(afford ? "#FFD84A" : "#FF6B6B")}>{current.hireCost} золота</color></size>"
+                ? $"НАНЯТЬ\n<size=75%>{FactionManager.CostText(current.hireCost, afford)}</size>"
                 : reason.ToUpper();
         }
         actionButton.gameObject.SetActive(hero == null); // нанятого героя качает опыт — кнопки нет

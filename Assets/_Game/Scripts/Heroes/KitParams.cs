@@ -128,6 +128,7 @@ public static class KitParams
         [HeroKitType.Reyndger] = new[]
         {
             new SkillParamDef(0, "damage", "Урон выстрела, % Силы атаки", 150, P),
+            new SkillParamDef(0, "life", "Сколько летит выстрел, сек", 4),
             new SkillParamDef(1, "strikes", "Ударов ястреба", 3),
             new SkillParamDef(1, "interval", "Ястреб пикирует раз в, сек", 3),
             new SkillParamDef(1, "damage", "Урон ястреба, % Силы атаки", 60, P),

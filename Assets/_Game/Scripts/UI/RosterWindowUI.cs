@@ -72,10 +72,10 @@ public class RosterWindowUI : WindowUI
 
             bool canHire = hm.CanHire(Team.Player, data, out string reason);
             bool afford = ResourceManager.Instance.CanAfford(Team.Player, data.hireCost);
-            string costColor = afford ? "#FFD84A" : "#FF6B6B";
+            string costColor = afford ? "#C77DFF" : "#FF6B6B";
             string info = hm.IsHired(Team.Player, data)
                 ? "<color=#6EE07A>В вашей команде</color>"
-                : $"<color={costColor}>{data.hireCost} золота</color>";
+                : $"<color={costColor}>{data.hireCost} очков</color>";
             info = $"<color=#C9D3E6>{UnitClasses.Name(data.unitClass)}</color>  •  {info}"; // класс героя
             string action = canHire ? "НАНЯТЬ" : reason.ToUpper();
 

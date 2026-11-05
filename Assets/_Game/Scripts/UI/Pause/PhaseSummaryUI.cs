@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 /// <summary>
 /// Итоги фазы: в конце каждой фазы (миссий или события), когда начинается тактическая пауза,
-/// по центру экрана появляются золото, плутоний и очки фракции — сколько стало и сколько заработано
+/// по центру экрана появляются очки фракции и плутоний — сколько стало и сколько заработано
 /// за фазу (+N зелёным), а ниже — портреты героев, которые за фазу повысили уровень.
 /// Само исчезает через несколько секунд; клик закрывает сразу.
 /// Собирает окно PauseBuilder (Tools → Superhero → Собрать фракции и паузу).
@@ -19,7 +19,7 @@ public class PhaseSummaryUI : MonoBehaviour
     [SerializeField] private TMP_Text titleText;       // "ИТОГИ ФАЗЫ"
 
     [Header("Ресурсы")]
-    [SerializeField] private TMP_Text goldText;        // "1500  +600"
+    [SerializeField] private TMP_Text goldText;        // Больше не используется (золото стало очками фракции)
     [SerializeField] private TMP_Text plutoniumText;   // "120  +40"
     [SerializeField] private TMP_Text factionText;     // "900  +450"
 
@@ -37,7 +37,7 @@ public class PhaseSummaryUI : MonoBehaviour
     [SerializeField] private float countTime = 1f;
 
     private bool tracking;          // Идёт фаза миссий/события — считаем заработок
-    private int earnedGold;         // Заработано золота за фазу
+    private int earnedGold;         // Не используется (золото стало очками фракции)
     private int earnedPlutonium;    // Заработано плутония за фазу
     private int earnedPoints;       // Заработано очков фракции за фазу
     private readonly Dictionary<HeroInstance, int> startLevels = new Dictionary<HeroInstance, int>(); // Уровни героев в начале фазы
@@ -58,7 +58,6 @@ public class PhaseSummaryUI : MonoBehaviour
     {
         if (PhaseManager.Instance != null) PhaseManager.Instance.Changed += OnPhaseChanged;
         if (ResourceManager.Instance != null) ResourceManager.Instance.Added += OnResourcesAdded;
-        FactionManager.PointsAdded += OnPointsAdded;
         OnPhaseChanged();
     }
 
@@ -67,7 +66,6 @@ public class PhaseSummaryUI : MonoBehaviour
     {
         if (PhaseManager.Instance != null) PhaseManager.Instance.Changed -= OnPhaseChanged;
         if (ResourceManager.Instance != null) ResourceManager.Instance.Added -= OnResourcesAdded;
-        FactionManager.PointsAdded -= OnPointsAdded;
     }
 
     /// <summary>Фаза сменилась: началась фаза миссий/события — начинаем считать; началась пауза — показываем итоги.</summary>
@@ -98,14 +96,8 @@ public class PhaseSummaryUI : MonoBehaviour
     private void OnResourcesAdded(Team team, int gold, int plutonium)
     {
         if (!tracking || team != Team.Player) return;
-        if (gold > 0) earnedGold += gold;
+        if (gold > 0) earnedPoints += gold; // очки фракции лежат в кошельке на месте золота
         if (plutonium > 0) earnedPlutonium += plutonium;
-    }
-
-    /// <summary>Игроку выдали очки фракции.</summary>
-    private void OnPointsAdded(Team team, int amount)
-    {
-        if (tracking && team == Team.Player && amount > 0) earnedPoints += amount;
     }
 
     /// <summary>Показать итоги фазы.</summary>
@@ -114,7 +106,7 @@ public class PhaseSummaryUI : MonoBehaviour
         ResourceManager rm = ResourceManager.Instance;
         endGold = rm != null ? rm.GetGold(Team.Player) : 0;
         endPlutonium = rm != null ? rm.GetPlutonium(Team.Player) : 0;
-        endPoints = FactionManager.Instance != null ? FactionManager.Instance.GetPoints(Team.Player) : 0;
+        endPoints = endGold; // очки фракции = кошелёк (бывшее золото)
         if (titleText != null) titleText.text = "ИТОГИ ФАЗЫ";
 
         // Герои, которые за фазу выросли в уровне
@@ -162,7 +154,7 @@ public class PhaseSummaryUI : MonoBehaviour
     /// <summary>Нарисовать числа: от "было" (итог минус заработок) к итогу, t = 0..1.</summary>
     private void UpdateCounters(float t)
     {
-        goldText.text = Counter(endGold, earnedGold, t, "#FFD84A");
+        if (goldText != null) goldText.gameObject.SetActive(false); // отдельного золота больше нет
         plutoniumText.text = Counter(endPlutonium, earnedPlutonium, t, "#C58BFF");
         factionText.text = Counter(endPoints, earnedPoints, t, "#C77DFF");
     }

@@ -8,8 +8,8 @@ using UnityEngine;
 ///
 /// Правила найма (GDD):
 /// - игрок за супергероев нанимает только героев, враг — только злодеев;
-/// - без Бараков — только 1 звезда, Бараки ур.1 — до 2 звёзд, ур.2 — до 3;
-/// - лимит героев = стартовый (4) + Резервные комнаты + доп. бонусы (Военная база);
+/// - сначала только 1 звезда, иконка фракции 3 — до 2 звёзд, 3★ — только герой своей фракции после всех 5 иконок;
+/// - лимит героев = стартовый + иконка фракции 2 (резерв найма) + доп. бонусы (артефакты);
 /// - каждого героя можно нанять только один раз.
 /// </summary>
 [DefaultExecutionOrder(-90)]
@@ -27,7 +27,7 @@ public class HeroManager : MonoBehaviour
     [SerializeField] private Side playerSide = Side.Heroes;
 
     [Header("Лимиты и прокачка")]
-    [Tooltip("Сколько героев можно держать в начале игры (без Резервных комнат)")]
+    [Tooltip("Сколько героев можно держать в начале игры (без иконки фракции 2 — резерв найма)")]
     [SerializeField] private int baseHeroLimit = 6;
     [Tooltip("Больше этого героев не бывает никогда (со всеми постройками и бонусами)")]
     [SerializeField] private int maxHeroLimit = 20;
@@ -132,7 +132,7 @@ public class HeroManager : MonoBehaviour
         HeroesChanged?.Invoke(team);
     }
 
-    /// <summary>Героев скольких звёзд сторона может нанимать (зависит от Бараков).</summary>
+    /// <summary>Героев скольких звёзд сторона может нанимать (иконка фракции 3 — до 2★).</summary>
     public int GetMaxStars(Team team)
     {
         MainBase b = MainBase.Get(team);
@@ -159,7 +159,7 @@ public class HeroManager : MonoBehaviour
         }
         else if (data.stars > GetMaxStars(team))
         {
-            reason = GetMaxStars(team) <= 1 ? "Нужны Бараки" : "Нужны Бараки ур. 2";
+            reason = "Нужна иконка 3";
             return false;
         }
         if (GetHeroes(team).Count >= GetHeroLimit(team)) { reason = "Нет мест"; return false; }
@@ -171,7 +171,8 @@ public class HeroManager : MonoBehaviour
     {
         if (!CanHire(team, data, out error))
         {
-            if (error == "Нет мест") error = "Достигнут лимит героев — постройте Резервные комнаты";
+            if (error == "Нет мест") error = "Достигнут лимит героев — откройте иконку фракции 2 (резерв найма)";
+            else if (error == "Нужна иконка 3") error = "2-звёздочных героев можно нанять после 3-й иконки фракции";
             else if (error == "Фракция не прокачана") error = $"3-звёздочного героя можно нанять, только когда открыты все {(FactionManager.Instance != null ? FactionManager.Instance.IconCount : 5)} иконок фракции";
             else if (error == "Чужая фракция") error = "Этот 3-звёздочный герой — из другой фракции";
             else if (error == "Только в паузе") error = "Нанимать героев можно только на драфте и в тактической паузе";
@@ -179,7 +180,7 @@ public class HeroManager : MonoBehaviour
         }
         if (!ResourceManager.Instance.TrySpend(team, data.hireCost))
         {
-            error = "Не хватает золота";
+            error = "Не хватает очков фракции";
             return false;
         }
         var list = team == Team.Player ? playerHeroes : enemyHeroes;

@@ -37,5 +37,4 @@ MonoBehaviour:
   allowsHeroBoost: 0
   eventGold: 600
   eventPlutonium: 0
-  eventFactionPoints: 500
   extraBonusText: 

@@ -124,14 +124,37 @@ public abstract class HeroKit : MonoBehaviour
         i >= 0 && i < HeroData.SkillUnlockLevels.Length && self.Level >= HeroData.SkillUnlockLevels[i]
         && !self.Data.GetSkill(i).IsEmpty;
 
-    /// <summary>Можно ли применить скил i прямо сейчас (открыт, перезарядился, нет немоты, боец свободен).</summary>
-    public bool IsReady(int i) => IsUnlocked(i) && cooldowns[i] <= 0f && !self.IsSilenced && self.CanAct;
+    /// <summary>Можно ли применить скил i прямо сейчас (открыт, перезарядился, хватает энергии, нет немоты, боец свободен).</summary>
+    public bool IsReady(int i) => IsUnlocked(i) && cooldowns[i] <= 0f && HasSkillEnergy(i) && !self.IsSilenced && self.CanAct;
 
-    /// <summary>Скил i открыт, но перезаряжается.</summary>
-    public bool IsOnCooldown(int i) => IsUnlocked(i) && cooldowns[i] > 0f;
+    /// <summary>
+    /// Скил i открыт, но сейчас не сработает: перезаряжается или не хватает энергии
+    /// (так проверяют себя скилы-реакции: Контратака, Блок, Полёт).
+    /// </summary>
+    public bool IsOnCooldown(int i) => IsUnlocked(i) && (cooldowns[i] > 0f || !HasSkillEnergy(i));
 
-    /// <summary>Запустить перезарядку скила i (из файла героя).</summary>
-    protected void StartCooldown(int i) => cooldowns[i] = Mathf.Max(0.5f, self.Data.GetSkill(i).cooldown);
+    /// <summary>Сколько энергии тратит скил i (из файла героя, поле Energy Cost).</summary>
+    public float EnergyCost(int i) => self != null && self.Data != null ? self.Data.GetSkill(i).energyCost : 0f;
+
+    /// <summary>Хватает ли энергии на скил i.</summary>
+    public bool HasSkillEnergy(int i) => self.Combat.HasEnergy(EnergyCost(i));
+
+    /// <summary>
+    /// Скил i применён: запустить перезарядку (из файла героя) и потратить энергию скила
+    /// (spend = false — энергия уже потрачена раньше, например, Клоны Фантома платят при вызове).
+    /// </summary>
+    protected void StartCooldown(int i, bool spend = true)
+    {
+        cooldowns[i] = Mathf.Max(0.5f, self.Data.GetSkill(i).cooldown);
+        if (spend) SpendSkillEnergy(i);
+    }
+
+    /// <summary>Потратить энергию скила i (если она у скила есть).</summary>
+    protected void SpendSkillEnergy(int i)
+    {
+        float cost = EnergyCost(i);
+        if (cost > 0f) self.Combat.TrySpendEnergy(cost);
+    }
 
     /// <summary>Пассивка: изменить характеристики бойца (по умолчанию — без изменений).</summary>
     public virtual HeroStats ModifyStats(HeroStats s) => s;

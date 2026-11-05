@@ -36,8 +36,6 @@ public class PortalData : ScriptableObject
     [Tooltip("Сколько случайных артефактов получает закрывший портал")]
     [Min(0)] public int rewardArtifacts = 1;
 
-    [Tooltip("Очки фракции закрывшему портал")]
-    [Min(0)] public int rewardFactionPoints = 600;
 
     /// <summary>Сколько территорий у портала.</summary>
     public int TerritoryCount => waves != null ? waves.Length : 0;

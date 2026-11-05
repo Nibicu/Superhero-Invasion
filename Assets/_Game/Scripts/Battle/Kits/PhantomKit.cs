@@ -5,7 +5,7 @@ using UnityEngine;
 /// Фантом (злодей, класс Боец, ближний бой). Навыки:
 ///  1) "Клоны" (ур. 1) — выпускает 2 своих клона: бойцы без скилов с 30% его характеристик (скорость — как у Фантома), тёмные.
 ///     Перезарядка начинается, когда погибнет последний клон. Фантом выбыл — клоны исчезают.
-///  2) "Звёздочки" (ур. 3) — метает веером от 2 до 5 звёздочек (сколько хватает энергии, каждая — 15 энергии),
+///  2) "Звёздочки" (ур. 3) — метает очередью от 2 до 5 звёздочек (летят прямо, чуть доворачивают к цели) (сколько хватает энергии, каждая — 15 энергии),
 ///     каждая — 45% Силы атаки.
 ///  3) "Нематериальный" (ур. 5, пассивный) — 20% шанс увернуться от вражеской авто атаки.
 /// Перезарядки — в файле героя (Data/Villains/Villain_Phantom). Кадры — в Data/Characters/Sprites_Phantom.
@@ -38,11 +38,10 @@ public class PhantomKit : HeroKit
     [SerializeField] private int starsMax = 5;              // Больше этого не метает
     [SerializeField] private float starEnergy = 15f;        // Цена одной звёздочки (энергия)
     [SerializeField] private float starDamage = 0.45f;      // Урон одной звёздочки (доля Силы атаки)
-    [SerializeField] private float starInterval = 0.15f;    // Интервал между звёздочками
+    [SerializeField] private float starInterval = 0.25f;    // Интервал между звёздочками
     [SerializeField] private float starSpeed = 12f;         // Скорость полёта
     [SerializeField] private float starRange = 9f;          // Дальность
     [SerializeField] private float starMinRange = 1.5f;     // Ближе — бьёт рукой
-    [SerializeField] private float starSpread = 1.4f;       // Ширина веера (скорость по глубине у крайних звёздочек)
 
     [Header("Нематериальный (пассивка)")]
     [SerializeField] private float dodgeChance = 0.2f;      // Шанс увернуться от авто атаки
@@ -81,7 +80,7 @@ public class PhantomKit : HeroKit
         if (IsReady(Clones) && clones.Count == 0 && Vector2.Distance(target.Position, self.Position) <= self.detectionRadius)
             return StartClones(target);
 
-        // 2) Звёздочки — цель не вплотную, примерно на одной линии (веер накрывает), энергии хотя бы на 2
+        // 2) Звёздочки — цель не вплотную, примерно на одной линии (звёздочки доворачивают), энергии хотя бы на 2
         if (IsReady(Stars) && target.IsTargetable && absY <= 0.8f && absX >= starMinRange && absX <= starRange
             && self.Combat.HasEnergy(starEnergy * starsMin))
             return StartStars(target);
@@ -95,6 +94,7 @@ public class PhantomKit : HeroKit
     private bool StartClones(Fighter target)
     {
         if (!BeginAction(KitPose.Cast)) return false;
+        SpendSkillEnergy(Clones); // энергия — сразу при вызове (перезарядка — когда погибнет последний клон)
         current = Clones;
         done = false;
         actionLength = cloneActionTime;
@@ -133,12 +133,12 @@ public class PhantomKit : HeroKit
         Pop("КЛОНЫ", new Color(0.7f, 0.6f, 1f));
     }
 
-    /// <summary>Бросить одну звёздочку (веером: каждая — со своим уклоном по глубине).</summary>
+    /// <summary>Бросить одну звёздочку (очередь: прямо, с доворотом к цели).</summary>
     private void ThrowStar()
     {
-        if (!self.Combat.TrySpendEnergy(starEnergy)) { starsTotal = starsThrown; return; } // энергия кончилась
+        // Очередь (как в Little Fighter 2 при зажатой кнопке): кончилась энергия или цель выбыла — очередь обрывается
+        if (starTarget == null || !starTarget.IsAlive || !self.Combat.TrySpendEnergy(starEnergy)) { starsTotal = starsThrown; actionLength = Mathf.Min(actionLength, ActionTime + 0.15f); return; }
         if (starTarget != null && starTarget.IsAlive) self.Movement.FaceTowards(starTarget.Position.x);
-        float k = starsTotal > 1 ? (float)starsThrown / (starsTotal - 1) * 2f - 1f : 0f; // −1 … +1
         starsThrown++;
         AnimCycle++;
         self.Combat.FireShot(new ShotInfo
@@ -150,7 +150,7 @@ public class PhantomKit : HeroKit
             size = 0.45f,
             stagger = 1,
             knockback = 1.5f,
-            driftY = k * starSpread,
+            steerTarget = starTarget, // летит прямо, но чуть доворачивает к цели
             color = new Color(1f, 0.95f, 0.6f),
             flicker = new Color(0.8f, 0.85f, 1f)
         });
@@ -188,6 +188,6 @@ public class PhantomKit : HeroKit
             foreach (Fighter c in clones)
                 if (c != null && c.IsAlive) c.Vanish();
         clones.RemoveAll(c => c == null || !c.IsAlive);
-        if (clones.Count == 0) StartCooldown(Clones);
+        if (clones.Count == 0) StartCooldown(Clones, false);
     }
 }

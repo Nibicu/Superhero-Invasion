@@ -37,7 +37,7 @@ public class ResourceManager : MonoBehaviour
     [SerializeField] private float plutoniumInterval = 40f;
 
     [Header("Отладка")]
-    [Tooltip("Читы для проверки: G = +1000 золота, P = +50 плутония")]
+    [Tooltip("Читы для проверки: G = +1000 очков фракции, P = +50 плутония")]
     [SerializeField] private bool debugCheats = true;
 
     [Header("Текущие ресурсы (только смотреть)")]

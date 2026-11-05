@@ -103,6 +103,9 @@ public class HeroSkill
     [Tooltip("Перезарядка в секундах (0 — нет)")]
     [Min(0)] public float cooldown = 0f;
 
+    [Tooltip("Сколько энергии тратит скил (0 — бесплатно). Не хватает энергии — скил не применяется")]
+    [Min(0)] public float energyCost = 0f;
+
     [Tooltip("Пассивный навык: работает сам, применять не нужно")]
     public bool passive;
 
@@ -194,7 +197,7 @@ public class HeroData : ScriptableObject
     [Tooltip("Звёзды: 1, 2 или 3. Чем больше — тем сильнее и дороже")]
     [Range(1, 3)] public int stars = 1;
 
-    [Tooltip("Цена найма в золоте")]
+    [Tooltip("Цена найма в очках фракции")]
     public int hireCost = 300;
 
     [Tooltip("Можно ли нанять в РОСТЕРЕ. Выключено — это моб-охранник (только для охраны объектов)")]

@@ -167,7 +167,7 @@ public class BattlePrepWindowUI : MonoBehaviour
         List<List<BattleUnit>> waves = site.GetDefenderWaves();
         foreach (List<BattleUnit> wave in waves) guardsCount += wave.Count;
         hintText.text = $"Охрана: {waves.Count} территории, {guardsCount} бойцов — у каждой команды своя копия " +
-                        "(вы — слева, враг — справа). Пройдите свои территории быстрее врага и удержите флаг в центре 10 с.";
+                        $"(вы — слева, враг — справа). Пройдите свои территории быстрее врага и удержите флаг в центре {(BattleManager.Instance != null ? BattleManager.Instance.FlagHoldTime : 20f):0} с.";
 
         foreach (BattleUnit u in AttackableSite.GetSquadUnits(site.PlayerContestant)) AddRow(ourList, u.data, u.info);
         foreach (BattleUnit u in AttackableSite.GetSquadUnits(site.EnemyContestant)) AddRow(enemyList, u.data, u.info);

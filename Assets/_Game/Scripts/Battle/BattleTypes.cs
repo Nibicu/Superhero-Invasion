@@ -132,6 +132,8 @@ public struct ShotInfo
     public Color flicker;       // Второй цвет мерцания (прозрачный — не мерцает)
     public float driftY;        // Скорость по глубине (веер звёздочек Фантома; 0 — летит ровно)
     public Fighter homing;      // Самонаведение на этого бойца (null — летит прямо)
+    public Fighter steerTarget; // Доворот (как в Little Fighter 2): к кому снаряд скила чуть доворачивает по глубине (null — к ближайшему врагу впереди)
+    public bool noSteer;        // Не доворачивать (летит строго прямо)
     public float lifetime;      // Сколько секунд живёт (0 — пока не пролетит дальность)
     public bool noDamage;       // Не ранит (сердце Шарма) — только onHit
     public Action<Fighter> onHit; // Что сделать с целью после попадания (стан, метка, подтягивание)

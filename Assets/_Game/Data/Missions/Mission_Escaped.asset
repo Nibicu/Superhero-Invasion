@@ -22,7 +22,6 @@ MonoBehaviour:
   recommendedHeroes: 3
   rewardGold: 300
   rewardPlutonium: 10
-  rewardFactionPoints: 150
   levelUpTeam: 0
   unlockBuilding: {fileID: 0}
   oneTime: 0

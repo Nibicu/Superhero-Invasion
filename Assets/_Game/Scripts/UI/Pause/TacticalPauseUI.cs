@@ -5,13 +5,13 @@ using UnityEngine.UI;
 
 /// <summary>
 /// Большое окно тактической паузы (игра стоит между фазами):
-///  сверху — золото, плутоний, очки фракции, таймер и что будет дальше;
-///  слева — вкладки "Фракция", "Герои", "База"; в центре — содержимое вкладки;
+///  сверху — очки фракции (главный ресурс), плутоний, таймер и что будет дальше;
+///  слева — вкладки "Фракция" и "Герои" (вкладки "База" больше нет — строительство убрано); в центре — содержимое вкладки;
 ///  справа внизу — "КОНЕЦ ХОДА" (закончить паузу раньше).
 /// Вкладка "Фракция": 5 иконок, открываются по порядку за очки фракции (FactionManager).
 /// Вкладка "Герои": 3★ герой фракции (нанять — после всех 5 иконок), лидер и остальные герои
 ///  (перетаскиванием меняется порядок; перетащите героя на лидера — он станет лидером).
-/// Вкладка "База": 5 ячеек построек (встроенное окно базы).
+/// (Вкладка "База" убрана: Радар, резерв найма и найм 2★ теперь дают иконки фракции.)
 /// </summary>
 public class TacticalPauseUI : MonoBehaviour
 {
@@ -83,7 +83,7 @@ public class TacticalPauseUI : MonoBehaviour
         inventoryButton.onClick.AddListener(() => { if (ArtifactWindowUI.Instance != null) ArtifactWindowUI.Instance.OpenInventory(); });
         factionTabButton.onClick.AddListener(() => SetTab(Tab.Faction));
         heroesTabButton.onClick.AddListener(() => SetTab(Tab.Heroes));
-        baseTabButton.onClick.AddListener(() => SetTab(Tab.Base));
+        if (baseTabButton != null) baseTabButton.onClick.AddListener(() => SetTab(Tab.Base)); // вкладки "База" больше нет (строительство убрано)
         foreach (FactionIconUI icon in icons)
             icon.Button.onClick.AddListener(OnIconClicked);
         factionHeroButton.onClick.AddListener(() =>
@@ -155,15 +155,14 @@ public class TacticalPauseUI : MonoBehaviour
         tab = t;
         factionPage.SetActive(t == Tab.Faction);
         heroesPage.SetActive(t == Tab.Heroes);
-        if (t == Tab.Base)
+        if (baseTab != null)
         {
-            MainBase b = MainBase.Get(Team.Player);
-            if (b != null) baseTab.Open(b);
+            if (t == Tab.Base) { MainBase b = MainBase.Get(Team.Player); if (b != null) baseTab.Open(b); }
+            else baseTab.Close();
         }
-        else baseTab.Close();
         Paint(factionTabButton, t == Tab.Faction);
         Paint(heroesTabButton, t == Tab.Heroes);
-        Paint(baseTabButton, t == Tab.Base);
+        if (baseTabButton != null) Paint(baseTabButton, t == Tab.Base);
         Refresh();
     }
 
@@ -185,9 +184,9 @@ public class TacticalPauseUI : MonoBehaviour
         FactionManager fm = FactionManager.Instance;
 
         // Ресурсы сверху
-        goldText.text = rm.GetGold(Team.Player).ToString();
+        if (goldText != null) goldText.text = rm.GetGold(Team.Player).ToString(); // (золота больше нет — счётчик убран из окна)
         plutoniumText.text = rm.GetPlutonium(Team.Player).ToString();
-        factionText.text = fm != null ? fm.GetPoints(Team.Player).ToString() : "—";
+        factionText.text = rm.GetGold(Team.Player).ToString(); // очки фракции = кошелёк (бывшее золото)
 
         // Что дальше
         if (pm != null && EventManager.Instance != null)
@@ -214,9 +213,9 @@ public class TacticalPauseUI : MonoBehaviour
         int points = fm.GetPoints(Team.Player);
         for (int i = 0; i < icons.Length; i++)
         {
-            bool last = i == icons.Length - 1;
-            string caption = last ? $"{heroName} <color=#FFD84A>3 зв.</color>" : "";
-            if (i < opened) icons[i].ShowOpened(last ? caption : "Открыта");
+            // Подпись: что даёт иконка (1 — Радар, 2 — резерв найма, 3 — найм 2 зв., 5 — герой фракции 3 зв.)
+            string caption = fm.IconCaption(i + 1, $"{heroName} <color=#FFD84A>3 зв.</color>");
+            if (i < opened) icons[i].ShowOpened(caption);
             else if (i == opened) icons[i].ShowNext(fm.IconCost, points >= fm.IconCost, caption);
             else icons[i].ShowLocked(i + 1, caption);
         }
@@ -226,7 +225,7 @@ public class TacticalPauseUI : MonoBehaviour
         factionHint.text = opened >= fm.IconCount
             ? $"Фракция прокачана! Во вкладке «Герои» можно нанять <color=#7FE0FF>{heroName}</color> (3 зв.)"
             : $"Каждая иконка стоит <color=#C77DFF>{fm.IconCost} очков фракции</color>, открываются по порядку ({opened}/{fm.IconCount}).\n" +
-              $"Очки дают миссии, общие миссии, объекты и порталы. Откройте все — сможете нанять <color=#7FE0FF>{heroName}</color> (3 зв.)";
+              $"Очки фракции — главный ресурс: дают миссии, общие миссии, объекты и доход базы; на них же нанимают героев.";
     }
 
     /// <summary>Нажата иконка фракции — открыть следующую.</summary>

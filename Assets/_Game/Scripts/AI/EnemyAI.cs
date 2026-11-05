@@ -14,7 +14,7 @@ using UnityEngine;
 ///  5) отступает, если в битве за флаг у противника героев больше (3 против 4) — потом придёт полной командой;
 ///  6) гарнизон дома не держит. Если на базу напали — отзывает команды с ОБЫЧНЫХ миссий (чтобы дома было 3–4 героя),
 ///     команды с важных целей не трогает. Только если у базы осталось HP на одну атаку — отзывает и самую сильную;
-///  7) тратит золото на одно действие: найм, постройку по плану, улучшение построек или базы.
+///  7) в паузе тратит очки фракции: сначала нанимает до полной команды, потом открывает иконки фракции, потом нанимает ещё.
 /// Объект события тем ценнее, чем ближе конец события. Во время события и первые 2 минуты игры
 /// (мирное время) на базу не нападает; за полминуты до события не уходит на долгие дела.
 /// ИИ пользуется теми же правилами, что и игрок (ResourceManager, MainBase,
@@ -119,12 +119,9 @@ public class EnemyAI : MonoBehaviour
         // Артефакты из инвентаря: активируемые — сразу использовать, вещи — надеть на сильных героев
         UseArtifacts();
 
-        // Одно "денежное" действие за раз — по приоритету
-        if (HM.GetHeroes(team).Count < 2 && TryHire()) return;
-        if (TryBuild()) return;
-        if (TryHire()) return;
-        if (TryUpgradeBuildings()) return;
-        TryUpgradeBase();
+        // Тратить очки (найм, иконки) можно только в паузе и на драфте — это делает OnTacticalPause.
+        // Строительства больше нет (код TryBuild / TryUpgradeBuildings / TryUpgradeBase оставлен, но не вызывается).
+        TryHire();
     }
 
     // ---------- Команды ----------
@@ -582,7 +579,7 @@ public class EnemyAI : MonoBehaviour
                 bool join = gm.IsUnderAttack;
                 if (join && !CanContest(squad, gm)) continue;
                 GlobalMissionData d = gm.Data;
-                float value = d.rewardGold + d.rewardPlutonium * 15f + d.rewardArtifacts * 400f + d.rewardFactionPoints;
+                float value = d.rewardGold + d.rewardPlutonium * 15f + d.rewardArtifacts * 400f;
                 value *= objectPriority; // общая миссия — большой приоритет
                 if (join) value *= 1.6f; // перебить противника — заодно не дать ему награду
                 if (d.rewardHero) value += 900f; // герой в награду — очень ценно
@@ -600,7 +597,7 @@ public class EnemyAI : MonoBehaviour
                       && SM.EstimateTravelTime(squad, portal) + portal.PrepTime < portal.TimeLeft; // успеть до конца события
             if (ok)
             {
-                float value = 1200f + portal.Data.rewardArtifacts * 400f + portal.Data.rewardFactionPoints;
+                float value = 1200f + portal.Data.rewardArtifacts * 400f;
                 if (join) value *= 1.5f; // не дать противнику закрыть портал без боя
                 value *= objectPriority;
                 float score = value / (Vector3.Distance(home, portal.ApproachPoint) + 5f);
@@ -615,7 +612,7 @@ public class EnemyAI : MonoBehaviour
             bool join = o.IsUnderAttack;
             if (join && !CanContest(squad, o)) continue;
             MapObjectData d = o.Data;
-            float value = d.eventGold + d.eventPlutonium * 15f + d.eventFactionPoints + 400f; // + артефакт
+            float value = d.eventGold + d.eventPlutonium * 15f + 400f; // + артефакт
 
             // Объект события: успеть до конца события
             if (EM != null && o == EM.EventObject)
@@ -671,17 +668,18 @@ public class EnemyAI : MonoBehaviour
     // ---------- Деньги ----------
 
     /// <summary>
-    /// Тактическая пауза (вызывает PhaseManager): ИИ нанимает героев, прокачивает и усиливает их,
-    /// надевает вещи, строит.
+    /// Тактическая пауза (вызывает PhaseManager). Очки фракции — один ресурс и на найм, и на иконки, поэтому порядок такой:
+    ///  1) нанять героев, пока их меньше полной команды (4);
+    ///  2) открыть иконки фракции, на которые хватает очков (Радар, резерв найма, 2★, ..., свой 3★);
+    ///  3) на остаток — нанять ещё героев. Потом — звёзды и вещи. Строительства больше нет.
     /// </summary>
     public void OnTacticalPause()
     {
-        // Открыть иконки фракции, на которые хватает очков (после всех 5 можно нанять своего 3★)
+        for (int i = 0; i < 10 && HM.GetHeroes(team).Count < FullSize && TryHire(); i++) { }
         if (FactionManager.Instance != null)
             for (int i = 0; i < 10 && FactionManager.Instance.TryUnlockNext(team); i++)
                 Log($"открыл иконку фракции {FactionManager.Instance.GetUnlocked(team)}/{FactionManager.Instance.IconCount}");
         for (int i = 0; i < 10 && TryHire(); i++) { }
-        for (int i = 0; i < 10 && (TryBuild() || TryUpgradeBuildings() || TryUpgradeBase()); i++) { } // строить можно только в паузе
         // Повысить звезду героям 5 уровня (сильнейшим первыми), пока хватает плутония
         var heroes = new List<HeroInstance>(HM.GetHeroes(team));
         heroes.Sort((a, b) => BattleCalculator.HeroPower(b).CompareTo(BattleCalculator.HeroPower(a)));

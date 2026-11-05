@@ -2,9 +2,10 @@ using UnityEngine;
 
 /// <summary>
 /// Протатип 28 (злодей, класс Танк, урон от Силы атаки). Навыки:
-///  1) "Прыжок ярости" (ур. 1) — прыгает на врага: приземлился — враги рядом получают 120% Силы атаки и подлетают вверх.
+///  1) "Прыжок ярости" (ур. 1) — прыгает на врага (в прыжке неуязвим к ударам и контролю): приземлился — враги рядом
+///     получают 120% Силы атаки и подлетают вверх.
 ///  2) "Подземный удар" (ур. 3) — бьёт в землю: из-под ближайшего врага — удар 100% Силы атаки, враг подлетает вверх.
-///  3) "Ремонт" (ур. 5, пассивный) — пока HP меньше 50%, Реген HP больше на 50%.
+///  3) "Ремонт" (ур. 5, пассивный) — реген HP идёт без перерыва, даже под ударами; пока HP меньше 50% — Реген HP больше на 50%.
 /// Перезарядки — в файле героя (Data/Villains/Villain_Protatp28). Кадры — в Data/Characters/Sprites_Protatp28.
 /// </summary>
 public class Protatp28Kit : HeroKit
@@ -47,6 +48,9 @@ public class Protatp28Kit : HeroKit
     public override int AnimSkill => ActionAlive && striking ? Underground : -1;
 
     // ---------- Пассивка ----------
+
+    /// <summary>Ремонт: реген HP идёт без перерыва — даже когда Протатипа бьют (обычно удары его останавливают).</summary>
+    public override bool RegenAlways => self != null && IsUnlocked(Repair);
 
     /// <summary>Ремонт: пока HP меньше 50%, Реген HP +50%.</summary>
     public override HeroStats ModifyStats(HeroStats s)
@@ -93,6 +97,9 @@ public class Protatp28Kit : HeroKit
         self.Movement.FaceTowards(target.Position.x);
         if (!self.StartJump(leapUp, ground)) return false;
         self.Combat.SkipJumpAttack();
+        // В прыжке неуязвим к ударам и к контролю (стан, шарм, подброс, захват) — сбить нельзя
+        self.SetInvulnerable(airTime + 0.1f);
+        self.SetControlImmune(airTime + 0.1f);
         StartCooldown(RageLeap);
         leaping = true;
         Pop("ПРЫЖОК ЯРОСТИ", new Color(1f, 0.4f, 0.2f));
