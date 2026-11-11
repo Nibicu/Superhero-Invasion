@@ -24,7 +24,7 @@ MonoBehaviour:
   unitClass: 3
   skillDamage: 0
   baseStats:
-    hp: 560
+    hp: 600
     hpRegen: 14
     autoAttack: 18
     attack: 100

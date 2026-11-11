@@ -32,20 +32,27 @@ MonoBehaviour:
     defense: 227
     specialDefense: 189
     energy: 189
-    energyRegen: 28
+    energyRegen: 14
     speed: 72
+  autoAttackSpeed: 100
   kit: 0
   skills:
   - name: 
     description: 
     cooldown: 0
+    energyCost: 0
     passive: 0
+    values: []
   - name: 
     description: 
     cooldown: 0
+    energyCost: 0
     passive: 0
+    values: []
   - name: 
     description: 
     cooldown: 0
+    energyCost: 0
     passive: 0
+    values: []
   captainBonus: "+20% \u043A HP \u0438 \u0430\u0442\u0430\u043A\u0435 \u0432\u0441\u0435\u0439 \u043A\u043E\u043C\u0430\u043D\u0434\u044B"

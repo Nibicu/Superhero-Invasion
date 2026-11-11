@@ -24,15 +24,15 @@ MonoBehaviour:
   unitClass: 0
   skillDamage: 1
   baseStats:
-    hp: 840
+    hp: 800
     hpRegen: 12
-    autoAttack: 18
+    autoAttack: 20
     attack: 100
     specialAttack: 100
     defense: 54
     specialDefense: 45
     energy: 80
-    energyRegen: 12
+    energyRegen: 6
     speed: 52
   autoAttackSpeed: 100
   kit: 7

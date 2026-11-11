@@ -32,7 +32,7 @@ MonoBehaviour:
     defense: 54
     specialDefense: 36
     energy: 100
-    energyRegen: 12
+    energyRegen: 6
     speed: 78
   autoAttackSpeed: 100
   kit: 1
